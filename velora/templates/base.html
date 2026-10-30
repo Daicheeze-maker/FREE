@@ -21,11 +21,12 @@
   <div class="container header__row">
     <button class="icon-btn header__menu" type="button" data-open-drawer="mobile-nav" aria-label="Open menu" aria-controls="mobile-nav" aria-expanded="false">{{ icon('menu') }}</button>
     <nav class="header__nav" aria-label="Primary">
-      <a href="{{ url_for('catalog.listing') }}" class="nav-link {% if request.endpoint == 'catalog.listing' and not request.view_args %}is-active{% endif %}">Shop all</a>
+      {% set cat_by_slug = {} %}{% for c in nav_categories %}{% set _ = cat_by_slug.update({c.slug: c}) %}{% endfor %}
+      {% set current_slug = (request.view_args or {}).get('slug') if request.endpoint == 'catalog.listing' else None %}
       <div class="dropdown" data-dropdown>
-        <button class="nav-link dropdown__toggle" type="button" aria-expanded="false" aria-haspopup="true">Collections {{ icon('chevron-down', 'ic--sm') }}</button>
+        <button class="nav-link dropdown__toggle {% if current_slug in ('women', 'men') %}is-active{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">{{ icon('shirt', 'ic--sm') }} Clothing {{ icon('chevron-down', 'ic--sm') }}</button>
         <div class="dropdown__panel dropdown__panel--mega" role="menu">
-          {% for c in nav_categories %}
+          {% for slug in ('women', 'men') if slug in cat_by_slug %}{% set c = cat_by_slug[slug] %}
           <a role="menuitem" class="mega-item" href="{{ url_for('catalog.listing', slug=c.slug) }}">
             <span class="mega-item__icon">{{ icon(c.icon) }}</span>
             <span><strong>{{ c.name }}</strong><small>{{ c.description }}</small></span>
@@ -33,8 +34,9 @@
           {% endfor %}
         </div>
       </div>
-      <a href="{{ url_for('catalog.listing', sort='newest') }}" class="nav-link">New <span class="nav-pill">new</span></a>
-      <a href="{{ url_for('catalog.listing', sort='popular') }}" class="nav-link">Bestsellers</a>
+      {% for slug, label, ic in (('watches', 'Watches', 'watch'), ('jewelry', 'Jewelry', 'gem'), ('cars', 'Cars', 'car')) if slug in cat_by_slug %}
+      <a href="{{ url_for('catalog.listing', slug=slug) }}" class="nav-link {% if current_slug == slug %}is-active{% endif %}" {% if current_slug == slug %}aria-current="page"{% endif %}>{{ icon(ic, 'ic--sm') }} {{ label }}</a>
+      {% endfor %}
     </nav>
     <a href="{{ url_for('main.home') }}" class="logo" aria-label="Velora Market home">velora<span class="logo__dot">.</span><small>market</small></a>
     <div class="header__actions">
@@ -106,10 +108,12 @@
   <div class="drawer__head"><a href="{{ url_for('main.home') }}" class="logo">velora<span class="logo__dot">.</span></a><button class="icon-btn" type="button" data-close-drawer aria-label="Close menu">{{ icon('x') }}</button></div>
   <div class="drawer__body mobile-nav">
     <form action="{{ url_for('catalog.listing') }}" method="get" class="search search--block" role="search">{{ icon('search') }}<label class="sr-only" for="m-search">Search</label><input id="m-search" type="search" name="q" placeholder="Search products" maxlength="100"></form>
-    <a href="{{ url_for('catalog.listing') }}">Shop all {{ icon('arrow-right') }}</a>
-    <a href="{{ url_for('catalog.listing', sort='newest') }}">New arrivals {{ icon('arrow-right') }}</a>
-    <a href="{{ url_for('catalog.listing', sort='popular') }}">Bestsellers {{ icon('arrow-right') }}</a>
-    <p class="mobile-nav__label">Collections</p>
+    <a href="{{ url_for('catalog.listing', slug='women') }}">{{ icon('shirt') }} Clothing · Women {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', slug='men') }}">{{ icon('shirt') }} Clothing · Men {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', slug='watches') }}">{{ icon('watch') }} Watches {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', slug='jewelry') }}">{{ icon('gem') }} Jewelry {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', slug='cars') }}">{{ icon('car') }} Cars {{ icon('arrow-right') }}</a>
+    <p class="mobile-nav__label">All collections</p>
     {% for c in nav_categories %}<a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ icon(c.icon) }} {{ c.name }}</a>{% endfor %}
     <p class="mobile-nav__label">Account</p>
     {% if current_user.is_authenticated %}
