@@ -1,0 +1,37 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}Model photos · Seller studio{% endblock %}
+{% block page_title %}Model photos{% endblock %}
+{% block content %}
+<p class="alert alert--info">{{ icon('camera') }}<span>Be the face of the store. Upload your own model shots for the big site photos below. Portrait (taller than wide) photos at least 1200 px tall work best. To model a <strong>product</strong>, open it under <a href="{{ url_for('seller.products') }}">Products</a> and upload your photo as its cover image. Uploads are checked, resized and stored safely.</span></p>
+<div class="img-grid photo-slots" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px">
+  {% for key, (label, where, default) in slots.items() %}
+  {% set custom = current[key] %}
+  <section class="card" style="padding:0;overflow:hidden">
+    <div style="aspect-ratio:4/5;background:var(--bg-2);position:relative">
+      <img src="{{ site_photo(key) }}" alt="{{ label }} photo" style="width:100%;height:100%;object-fit:cover">
+      <span class="badge {{ 'badge--accent' if custom else 'badge--line' }}" style="position:absolute;top:12px;left:12px">{{ 'Your photo' if custom else 'Default stock photo' }}</span>
+    </div>
+    <div style="padding:16px;display:grid;gap:10px">
+      <div><strong>{{ label }}</strong><br><small class="muted">{{ where }}</small></div>
+      <form method="post" action="{{ url_for('seller.photo_upload', slot=key) }}" enctype="multipart/form-data" style="display:grid;gap:8px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="sr-only" for="ph-{{ key }}">Photo for {{ label }}</label>
+        <input id="ph-{{ key }}" class="input" type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+        <button class="btn btn--accent btn--sm" type="submit" data-loading-text="Uploading…">{{ icon('upload', 'ic--sm') }} Upload</button>
+      </form>
+      {% if custom %}
+      <form method="post" action="{{ url_for('seller.photo_reset', slot=key) }}" data-confirm="Remove your photo and go back to the default for “{{ label }}”?" data-confirm-title="Reset photo?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn--link btn--sm" type="submit">Reset to default</button>
+      </form>
+      {% endif %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+<section class="card">
+  <h2 style="font-size:17px">{{ icon('folder-open') }} Bulk option for many photos</h2>
+  <p class="muted" style="font-size:14px;margin:0">Put photos in the project's <code>model-photos/</code> folder (see the README inside it), then run <code>flask --app wsgi load-model-photos</code>. Each product photo becomes that product's cover.</p>
+</section>
+{% endblock %}

@@ -71,6 +71,16 @@ def register_cli(app):
         except RatesUnavailable as exc:
             raise click.ClickException(f"Frankfurter unavailable: {exc}")
 
+    @app.cli.command("load-model-photos")
+    @click.option("--folder", default=None, help="Defaults to the project's model-photos/ folder.")
+    def load_model_photos_cmd(folder):
+        """Use your own model photos for the site slots and products (see model-photos/README.txt)."""
+        from .config import BASE_DIR
+        report = load_model_photos(folder or BASE_DIR / "model-photos")
+        click.echo(f"Updated {report['slots']} site photo(s) and {report['products']} product(s).")
+        for line in report["skipped"]:
+            click.echo(f"  skipped {line}")
+
     @app.cli.command("check-images")
     def check_images():
         """Verify that every remote product image URL actually loads."""
@@ -88,3 +98,61 @@ def register_cli(app):
                 bad += 1
                 click.echo(f"BROKEN  product #{img.product_id}  {img.url}")
         click.echo("All remote images load." if not bad else f"{bad} broken image(s) — they fall back to a placeholder.")
+
+
+def load_model_photos(folder):
+    """Attach photos from FOLDER: <slot>.<ext> for site slots, products/<product-slug>/*.<ext> for products."""
+    from pathlib import Path
+
+    from werkzeug.datastructures import FileStorage
+
+    from .models import Product, ProductImage, StoreSetting
+    from .photos import SLOTS, setting_key
+    from .services.uploads import UploadError, delete_upload, save_product_image
+
+    folder = Path(folder)
+    exts = {".jpg", ".jpeg", ".png", ".webp"}
+    report = {"slots": 0, "products": 0, "skipped": []}
+
+    def store(path):
+        with open(path, "rb") as fh:
+            return save_product_image(FileStorage(stream=fh, filename=path.name))
+
+    for path in sorted(folder.glob("*")):
+        if path.suffix.lower() in exts and path.stem.lower() in SLOTS:
+            try:
+                name = store(path)
+            except UploadError as exc:
+                report["skipped"].append(f"{path.name}: {exc}")
+                continue
+            row = db.session.get(StoreSetting, setting_key(path.stem.lower()))
+            if row:
+                delete_upload(row.value)
+                row.value = name
+            else:
+                db.session.add(StoreSetting(key=setting_key(path.stem.lower()), value=name))
+            report["slots"] += 1
+
+    for pdir in sorted((folder / "products").glob("*")) if (folder / "products").is_dir() else []:
+        if not pdir.is_dir():
+            continue
+        product = Product.query.filter_by(slug=pdir.name).first()
+        if product is None:
+            report["skipped"].append(f"products/{pdir.name}: no product with that slug")
+            continue
+        files = sorted(p for p in pdir.iterdir() if p.suffix.lower() in exts)
+        new = []
+        for path in files:
+            try:
+                new.append(ProductImage(filename=store(path), alt=f"{product.name} — modelled by our team"))
+            except UploadError as exc:
+                report["skipped"].append(f"products/{pdir.name}/{path.name}: {exc}")
+        if new:
+            ordered = new + list(product.images)  # your photos go first, so the first becomes the cover
+            for img in new:
+                product.images.append(img)
+            for pos, img in enumerate(ordered):
+                img.position = pos
+            report["products"] += 1
+    db.session.commit()
+    return report

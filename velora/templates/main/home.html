@@ -5,27 +5,27 @@
 <section class="hero" data-hero>
   <div class="container hero__grid">
     <div class="hero__copy">
-      <p class="eyebrow" data-hero-fade>Small-batch pantry · Season 04 {{ icon('flame') }}</p>
+      <p class="eyebrow" data-hero-fade>New season · Collection 04 {{ icon('flame') }}</p>
       <h1 class="hero__title display">
-        <span class="line"><span>Good food,</span></span>
-        <span class="line"><span>kept <em>honest.</em></span></span>
+        <span class="line"><span>Style that</span></span>
+        <span class="line"><span>speaks <em>first.</em></span></span>
       </h1>
-      <p class="hero__lede" data-hero-fade>Single-origin coffee, bean-to-bar chocolate and pantry staples from independent makers — roasted, baked and packed in small batches every week.</p>
+      <p class="hero__lede" data-hero-fade>Clothing, watches and fine jewelry — and the keys to your next car. Every piece is hand-picked and modelled by our own team.</p>
       <div class="hero__ctas" data-hero-fade>
         <a href="{{ url_for('catalog.listing') }}" class="btn btn--dark btn--lg">Start shopping <span class="btn__orb">{{ icon('arrow-up-right') }}</span></a>
-        <a href="{{ url_for('catalog.listing', sort='newest') }}" class="play-link"><span class="play-link__box">{{ icon('sparkles') }}</span>What's in season?</a>
+        <a href="{{ url_for('catalog.listing', sort='newest') }}" class="play-link"><span class="play-link__box">{{ icon('sparkles') }}</span>What's trending?</a>
       </div>
       <div class="hero__proof" data-hero-fade>
         <div><strong data-count="{{ review_count }}">{{ review_count }}</strong><span>verified reviews</span></div>
-        <div><strong>{{ categories|length }}</strong><span>curated aisles</span></div>
-        <div><strong>48h</strong><span>Metro Manila delivery</span></div>
+        <div><strong>{{ categories|length }}</strong><span>collections</span></div>
+        <div><strong>30-day</strong><span>free returns</span></div>
       </div>
     </div>
 
     <div class="hero__visual" aria-hidden="false">
       <div class="hero__glow"></div>
       <div class="hero__block"></div>
-      <div class="hero__photo"><img src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=1100&q=80&auto=format&fit=crop" alt="Shopper browsing fresh produce at a market" fetchpriority="high" width="900" height="1100"></div>
+      <div class="hero__photo"><img src="{{ site_photo('hero') }}" alt="Velora model wearing the new collection" fetchpriority="high" width="900" height="1100"></div>
       <span class="hero__dots"></span><span class="hero__ring hero__ring--a"></span><span class="hero__ring hero__ring--b"></span>
       {% if hero %}
       <a class="hero__card" href="{{ url_for('catalog.detail', slug=hero.slug) }}">
@@ -38,7 +38,7 @@
       </a>
       {% endif %}
       <div class="hero__chip hero__chip--rating"><span class="orb">{{ icon('star', 'ic--fill') }}</span><div><strong>4.8 / 5</strong><span>from real buyers</span></div></div>
-      <div class="hero__chip hero__chip--ship"><span class="orb">{{ icon('truck') }}</span><div><strong>Roasted Tuesday</strong><span>at your door by Thursday</span></div></div>
+      <div class="hero__chip hero__chip--ship"><span class="orb">{{ icon('gem') }}</span><div><strong>Authenticity guaranteed</strong><span>on every watch & jewel</span></div></div>
     </div>
   </div>
 </section>
@@ -46,19 +46,19 @@
 <section class="section--tight">
   <div class="container">
     <div class="section-head" data-reveal>
-      <div class="row"><span class="icon-btn" style="background:var(--dark);color:var(--dark-ink)">{{ icon('sliders-horizontal') }}</span><h2>Shop by aisle</h2></div>
+      <div class="row"><span class="icon-btn" style="background:var(--dark);color:var(--dark-ink)">{{ icon('sliders-horizontal') }}</span><h2>Shop by collection</h2></div>
       <a class="link-arrow" href="{{ url_for('catalog.listing') }}">Browse everything {{ icon('arrow-right') }}</a>
     </div>
     <div class="aisles" data-reveal>
       <a class="aisles__intro" href="{{ url_for('catalog.listing', sort='popular') }}">
-        <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80&auto=format&fit=crop" alt="Crates of vegetables at a farmers market" loading="lazy">
-        <div><strong>From farm<br>to pantry</strong><span>Meet our makers {{ icon('arrow-right', 'ic--sm') }}</span></div>
+        <img src="{{ site_photo('lookbook') }}" alt="Our team modelling the lookbook" loading="lazy">
+        <div><strong>Worn by<br>our team</strong><span>See the lookbook {{ icon('arrow-right', 'ic--sm') }}</span></div>
       </a>
       <div class="aisles__panel">
         {% for c in categories %}
         <a class="aisle" href="{{ url_for('catalog.listing', slug=c.slug) }}">
           <span class="aisle__icon">{{ icon(c.icon) }}</span>
-          <span><strong>{{ c.name }}</strong><span>{{ counts.get(c.id, 0) }} products · See all</span></span>
+          <span><strong>{{ c.name }}</strong><span>{{ counts.get(c.id, 0) }} pieces · See all</span></span>
         </a>
         {% endfor %}
       </div>
@@ -69,7 +69,7 @@
 <section class="section">
   <div class="container">
     <div class="section-head" data-reveal>
-      <div><p class="eyebrow">{{ icon('award') }} Editors' picks</p><h2>Featured this week</h2><p>Bestselling staples and new small-batch drops our team keeps reaching for.</p></div>
+      <div><p class="eyebrow">{{ icon('award') }} Editors' picks</p><h2>Featured this week</h2><p>Statement pieces and everyday essentials our team keeps reaching for.</p></div>
       <a class="link-arrow" href="{{ url_for('catalog.listing') }}">Shop all {{ icon('arrow-right') }}</a>
     </div>
     <div class="grid-products">
@@ -80,13 +80,13 @@
 
 <section class="section--tight">
   <div class="container bento">
-    <a class="tile tile--promo" href="{{ url_for('catalog.listing', slug='pantry') }}" data-reveal>
-      <img src="https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=1100&q=80&auto=format&fit=crop" alt="Olive oil being poured" loading="lazy">
+    <a class="tile tile--promo" href="{{ url_for('catalog.listing', slug='women') }}" data-reveal>
+      <img src="{{ site_photo('promo') }}" alt="Model wearing pieces from the season sale" loading="lazy">
       <div class="tile__content">
         <p class="eyebrow" style="color:rgba(255,255,255,.75)">{{ icon('calendar-days') }} Limited · 3 weeks only</p>
-        <h3>The harvest<br>pantry sale</h3>
-        <p>Stock up on oils, honey and grains from this season's harvest.</p>
-        <span class="code-tag">{{ icon('ticket-percent') }} HARVEST15 · 15% off</span>
+        <h3>The season<br>style sale</h3>
+        <p>Dresses, jackets and accessories from this season's collection.</p>
+        <span class="code-tag">{{ icon('ticket-percent') }} SEASON15 · 15% off</span>
       </div>
     </a>
     <div class="tile tile--quote" data-reveal>
@@ -104,7 +104,7 @@
     <div class="tile tile--ship" data-reveal>
       {{ icon('package-check') }}
       <h4>Free delivery over {{ money(free_ship_minor) }}</h4>
-      <p>Plastic-free packing, carbon-neutral couriers across Metro Manila.</p>
+      <p>Insured, tracked delivery nationwide. Cars are delivered by our showroom team.</p>
     </div>
   </div>
 </section>
@@ -152,7 +152,7 @@
   <div class="container">
     <div class="newsletter" data-reveal>
       <span class="newsletter__orb" aria-hidden="true"></span>
-      <div><h2>The harvest<br>letter</h2><p>One email a fortnight: new drops, maker stories and members-only codes. No spam, unsubscribe anytime.</p></div>
+      <div><h2>The style<br>letter</h2><p>One email a fortnight: new drops, styling tips and members-only codes. No spam, unsubscribe anytime.</p></div>
       <form method="post" action="{{ url_for('main.newsletter') }}" data-newsletter novalidate>
         {{ newsletter_form.csrf_token }}
         <label class="sr-only" for="nl-email">Email address</label>

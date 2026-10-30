@@ -920,3 +920,4 @@ details.disclosure[open] { padding-bottom: 8px; }
 .theme-sun { display: none; }
 :root[data-theme="dark"] .theme-sun { display: inline-block; }
 :root[data-theme="dark"] .theme-moon { display: none; }
+.photo-slots > .card { margin-top: 0; }

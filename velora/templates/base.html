@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Velora Market — small-batch pantry & considered living{% endblock %}</title>
-  <meta name="description" content="{% block description %}Velora Market: single-origin coffee, bean-to-bar chocolate, pantry staples and wellness goods from independent makers.{% endblock %}">
+  <title>{% block title %}Velora Market — clothing, watches, jewelry & cars{% endblock %}</title>
+  <meta name="description" content="{% block description %}Velora Market: clothing, watches, fine jewelry and pre-owned cars, modelled by our own team.{% endblock %}">
   <meta name="theme-color" content="#F5F1EA">
   <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
   <link rel="preload" href="{{ url_for('static', filename='fonts/inter.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -23,7 +23,7 @@
     <nav class="header__nav" aria-label="Primary">
       <a href="{{ url_for('catalog.listing') }}" class="nav-link {% if request.endpoint == 'catalog.listing' and not request.view_args %}is-active{% endif %}">Shop all</a>
       <div class="dropdown" data-dropdown>
-        <button class="nav-link dropdown__toggle" type="button" aria-expanded="false" aria-haspopup="true">Aisles {{ icon('chevron-down', 'ic--sm') }}</button>
+        <button class="nav-link dropdown__toggle" type="button" aria-expanded="false" aria-haspopup="true">Collections {{ icon('chevron-down', 'ic--sm') }}</button>
         <div class="dropdown__panel dropdown__panel--mega" role="menu">
           {% for c in nav_categories %}
           <a role="menuitem" class="mega-item" href="{{ url_for('catalog.listing', slug=c.slug) }}">
@@ -41,7 +41,7 @@
       <form class="search" action="{{ url_for('catalog.listing') }}" method="get" role="search">
         {{ icon('search') }}
         <label class="sr-only" for="site-search">Search products</label>
-        <input id="site-search" type="search" name="q" placeholder="Search coffee, honey, matcha…" value="{{ request.args.get('q', '') if request.endpoint == 'catalog.listing' else '' }}" maxlength="100" autocomplete="off">
+        <input id="site-search" type="search" name="q" placeholder="Search dresses, watches, rings…" value="{{ request.args.get('q', '') if request.endpoint == 'catalog.listing' else '' }}" maxlength="100" autocomplete="off">
       </form>
       <div class="dropdown" data-dropdown>
         <button class="icon-btn currency-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Display currency: {{ money.currency }}">
@@ -109,7 +109,7 @@
     <a href="{{ url_for('catalog.listing') }}">Shop all {{ icon('arrow-right') }}</a>
     <a href="{{ url_for('catalog.listing', sort='newest') }}">New arrivals {{ icon('arrow-right') }}</a>
     <a href="{{ url_for('catalog.listing', sort='popular') }}">Bestsellers {{ icon('arrow-right') }}</a>
-    <p class="mobile-nav__label">Aisles</p>
+    <p class="mobile-nav__label">Collections</p>
     {% for c in nav_categories %}<a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ icon(c.icon) }} {{ c.name }}</a>{% endfor %}
     <p class="mobile-nav__label">Account</p>
     {% if current_user.is_authenticated %}
@@ -128,7 +128,7 @@
   <div class="container footer__grid">
     <div class="footer__brand">
       <a href="{{ url_for('main.home') }}" class="logo logo--lg">velora<span class="logo__dot">.</span></a>
-      <p>Small-batch pantry goods and considered objects from independent makers across the Philippines and beyond.</p>
+      <p>Clothing, watches, fine jewelry and hand-picked cars — curated in Manila and modelled by our own team.</p>
       <p class="footer__contact">{{ icon('mail') }} <a href="mailto:{{ support_email }}">{{ support_email }}</a><br>{{ icon('clock') }} Mon–Sat, 9:00–18:00 PHT</p>
     </div>
     <div><h4>Shop</h4><ul>{% for c in nav_categories %}<li><a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ c.name }}</a></li>{% endfor %}</ul></div>
@@ -146,7 +146,7 @@
   </div>
   <div class="container footer__base">
     <span>© {{ 2026 }} Velora Market · demo store, no real payments are processed.</span>
-    <span>Product data partly from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a> (ODbL) · Rates by <a href="https://frankfurter.dev" rel="noopener" target="_blank">Frankfurter</a> · Photos via Unsplash</span>
+    <span>Product data partly from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a> (ODbL) · Rates by <a href="https://frankfurter.dev" rel="noopener" target="_blank">Frankfurter</a> · Stock photos via Unsplash</span>
   </div>
 </footer>
 

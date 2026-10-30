@@ -1,6 +1,6 @@
 # Velora Market
 
-A full-stack demo e-commerce store for small-batch pantry goods, coffee, wellness and home items. It's built with **Python 3.11+ / Flask / SQLAlchemy / SQLite** and has four role-based experiences: guest, customer, seller and administrator. It integrates two real external APIs, **Open Food Facts** and **Frankfurter**, and adds smooth GSAP animation.
+A full-stack demo e-commerce store for **clothing, watches, jewelry and cars** (plus a small gifts & gourmet aisle), **modelled by our own team**. It's built with **Python 3.11+ / Flask / SQLAlchemy / SQLite** and has four role-based experiences: guest, customer, seller and administrator. It integrates two real external APIs, **Open Food Facts** and **Frankfurter**, and adds smooth GSAP animation.
 
 It runs directly on Windows 10/11 or Ubuntu, on bare metal or inside a virtual machine. Docker is not needed.
 
@@ -51,7 +51,34 @@ python serve.py
 | Seller / store manager | `seller@velora.example` | `Seller123!` |
 | Administrator | `admin@velora.example` | `Admin123!` |
 
-The sign-in page has one-click buttons that fill these in. Change or disable them before any real deployment. Demo discount codes: `WELCOME10`, `PANTRY200` (₱200 off ₱1,500+), `HARVEST15` (limited uses), and `SUMMER25` (expired, to show validation).
+The sign-in page has one-click buttons that fill these in. Change or disable them before any real deployment. Demo discount codes: `WELCOME10`, `STYLE500` (₱500 off ₱5,000+), `SEASON15` (limited uses), and `SUMMER25` (expired, to show validation).
+
+### Be the models: use your own photos
+
+The store ships with stock photos so it looks finished right away. To put **yourselves** in the photos:
+
+- **Site photos** (homepage hero, lookbook tile, sale banner, sign-in and register pages): sign in as the seller or admin and open **Seller studio → Model photos**. Upload one picture per spot, or reset it to the default.
+- **Product photos:** open **Seller studio → Products → (product)**, upload your photo and keep **“Use the new photo as the cover image”** ticked.
+- **Many photos at once:** drop files into `model-photos/` (instructions and every product's folder name are in `model-photos/README.txt`), then run:
+
+```bash
+flask --app wsgi load-model-photos
+```
+
+Portrait photos at least 1200 px tall look best. Every upload is checked, resized, converted to WebP and stored in `instance/uploads/`.
+
+### The collections
+
+| Collection | Examples |
+|---|---|
+| Women | linen wrap dress, silk slip dress, leather biker jacket, jeans, leather tote |
+| Men | tailored wool suit, heavyweight tee, field jacket, sneakers, sunglasses |
+| Watches | minimalist, chronograph, gold dress watch, automatic diver, smart watch |
+| Jewelry | 18k stacking rings, pearl earrings, diamond pendant, silver bracelet, gift set |
+| Cars | pre-owned sports coupes and a new electric SUV (demo listings, ₱2.19M–₱4.8M) |
+| Gifts & Gourmet | gift box, chocolate, coffee, candle — the natural home for Open Food Facts imports |
+
+If you created the database before this catalog existed, rebuild it with `flask --app wsgi reset-demo --yes-delete-everything`. This deletes all data.
 
 ---
 
@@ -108,7 +135,7 @@ The SQLite database and uploaded images live in `instance/` by default (`instanc
 |---|---|---|---|
 | **Guest shopper** | Not signed in | Storefront | Browse, search, filter (aisle / maker / price / availability), sort (featured, newest, popular, price, rating), view products, reviews and nutrition, use a session bag, switch currency, register / sign in. No access to account, seller or admin pages (server-side redirects or 403). |
 | **Customer** | Self-registration | `/account/` — stats, live tracker for the active order, recent orders, notifications, wishlist, “waiting for your review”, recently viewed | Persistent bag (merged from the guest bag at login), wishlist, addresses, discount codes, 3-step checkout, order history and tracking, cancel while *Pending/Confirmed*, review only **delivered** purchases (one per product), notifications, profile and password change. |
-| **Seller / store manager** | Assigned by an admin | `/seller/` — revenue chart, KPIs, fulfilment queue, order pipeline, low-stock alerts with one-click restock, top sellers, latest feedback | Product CRUD, archive and restore, secure image uploads, categories, inventory, order processing with enforced status transitions, promotions and discount codes, review moderation and public replies, **Open Food Facts import**, CSV exports. This is a single-store catalog, not a multi-vendor marketplace. |
+| **Seller / store manager** | Assigned by an admin | `/seller/` — revenue chart, KPIs, fulfilment queue, order pipeline, low-stock alerts with one-click restock, top sellers, latest feedback | **Model photos**, product CRUD, archive and restore, secure image uploads, categories, inventory, order processing with enforced status transitions, promotions and discount codes, review moderation and public replies, **Open Food Facts import**, CSV exports. This is a single-store catalog, not a multi-vendor marketplace. |
 | **Administrator** | Seeded, or created with `flask --app wsgi create-admin` | `/admin/` (blue “Admin console” theme) — store KPIs, 30-day revenue, integrations status, audit feed, accounts by role, inventory value | Everything a seller can do, plus users and roles, enable/disable accounts, clear login locks, sales and inventory reports, store settings (shipping rules, low-stock threshold, announcement), **API health with live test buttons**, and a full **audit log**. |
 
 Roles are stored only in the database. Registration has no role field, so a submitted `role=admin` is ignored. Every protected route checks the role on the server. Admins can't demote or disable themselves, and at least one active admin always remains.
@@ -123,7 +150,7 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
 - **Search:** `GET {OFF_BASE_URL}/cgi/search.pl?search_terms=…&search_simple=1&action=process&json=1&page=&page_size=&fields=…`
 - **Product by barcode:** `GET {OFF_BASE_URL}/api/v2/product/{barcode}.json?fields=…`
 - Read-only and no API key. Every request sends a descriptive `User-Agent: VeloraMarket/1.0 (<VELORA_CONTACT_EMAIL>)` as OFF's usage policy asks. Searches happen only when staff explicitly ask for one, and HTTP 429 (rate limited) gets a clear message.
-- **Where it's used:** *Seller studio → Import · Open Food Facts* shows real results (image if any, brand, quantity, categories, ingredients, Nutri-Score, and how complete the data is) with skeleton loading, empty and error states. **Import** re-fetches the product by barcode on the server, so data posted by the browser is never trusted. It validates and normalizes the record (trims, length limits, numeric nutrients only, https images, valid barcode and grade) and stores it locally as a draft at your price and stock. Imported products look like hand-made ones, and the product page shows ingredients, allergens, a Nutri-Score badge and a per-100 g nutrition table, with attribution. A *Refresh from Open Food Facts* button re-syncs a product. The storefront never calls OFF, so imported products keep working offline.
+- **Where it's used:** Open Food Facts is a food database, so imports suit the **Gifts & Gourmet** collection (chocolate, coffee, snacks for gift boxes). *Seller studio → Import · Open Food Facts* shows real results (image if any, brand, quantity, categories, ingredients, Nutri-Score, and how complete the data is) with skeleton loading, empty and error states. **Import** re-fetches the product by barcode on the server, so data posted by the browser is never trusted. It validates and normalizes the record (trims, length limits, numeric nutrients only, https images, valid barcode and grade) and stores it locally as a draft at your price and stock. Imported products look like hand-made ones, and the product page shows ingredients, allergens, a Nutri-Score badge and a per-100 g nutrition table, with attribution. A *Refresh from Open Food Facts* button re-syncs a product. The storefront never calls OFF, so imported products keep working offline.
 
 ### Frankfurter — `velora/services/currency.py`
 - `GET {FRANKFURTER_BASE_URL}/latest?base=PHP&symbols=USD,EUR,GBP,JPY,SGD,AUD` (default base URL `https://api.frankfurter.dev/v1`). No key needed. Rates are ECB reference rates, updated on working days.
@@ -195,7 +222,7 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
 python -m pytest -q
 ```
 
-There are 88 tests. External APIs are mocked, so no network is needed. They cover:
+There are 94 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**
@@ -207,7 +234,7 @@ There are 88 tests. External APIs are mocked, so no network is needed. They cove
   - order ownership, cancellation rules with restocking, seller status transitions;
   - reviews (purchase required, duplicate blocked, rating range).
 - **Integrations:** currency conversion, caching, stale-cache and offline fallback, Open Food Facts parsing, normalization, rate limits, import and offline display.
-- **Staff tools and setup:** invalid, oversized and spoofed uploads, path traversal, CSV export, settings, database initialization via migrations, and the non-destructive seed.
+- **Staff tools and setup:** invalid, oversized and spoofed uploads, path traversal, CSV export, settings, model-photo uploads, cover photos and the bulk loader, database initialization via migrations, and the non-destructive seed.
 
 Useful commands: `flask --app wsgi create-admin`, `flask --app wsgi refresh-rates`, `flask --app wsgi check-images` (checks every remote product photo; broken ones fall back to a local placeholder automatically), `flask --app wsgi db upgrade` / `db migrate`.
 
@@ -240,8 +267,8 @@ serve.py  wsgi.py      Waitress runner / WSGI entry point
 
 ## 9. Known limitations
 
-- **Payments are simulated** by design (`DemoPaymentProvider`). A real gateway needs a new `PaymentProvider`, webhooks and PCI-compliant hosted fields.
-- **Product photos** are hot-linked from Unsplash and couldn't be checked from the build sandbox, which had no outbound access to those hosts. Run `flask --app wsgi check-images` in your VM. Any failing image automatically shows the local placeholder.
+- **Payments are simulated** by design (`DemoPaymentProvider`). A real gateway needs a new `PaymentProvider`, webhooks and PCI-compliant hosted fields. Car listings are demo items: a real dealership would take a reservation deposit rather than full checkout.
+- **Stock photos** are hot-linked from Unsplash and couldn't be checked from the build sandbox, which had no outbound access to those hosts. Run `flask --app wsgi check-images` in your VM. Any failing image automatically shows the local placeholder. Replace them with your own model photos anytime (see section 1).
 - SQLite is fine for a single VM and moderate traffic. With many concurrent writers, move to PostgreSQL by setting `DATABASE_URL`; the code is ORM-only. The per-IP login throttle is per-process, while the per-account lockout is shared through the database.
 - No outbound email: notifications are in-app. Password reset by email isn't implemented, but admins can manage accounts.
 - Exchange rates are ECB daily reference rates, so they don't move intraday and are for display only.

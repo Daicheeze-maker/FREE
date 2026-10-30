@@ -37,5 +37,5 @@
   <a class="btn btn--ghost btn--block" href="{{ url_for('shop.cart') }}">View bag</a>
 </div>
 {% else %}
-{{ empty('shopping-bag', 'Your bag is empty', 'Fill it with something good — fresh roasts land every Tuesday.', url_for('catalog.listing'), 'Start shopping') }}
+{{ empty('shopping-bag', 'Your bag is empty', 'Fill it with something good — new pieces drop every week.', url_for('catalog.listing'), 'Start shopping') }}
 {% endif %}

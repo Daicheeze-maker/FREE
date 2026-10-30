@@ -163,3 +163,59 @@ def test_production_requires_secret_key(monkeypatch):
     monkeypatch.setattr(ProductionConfig, "SECRET_KEY", "")
     with pytest.raises(RuntimeError):
         create_app("production")
+
+
+# ------------------------------------------------------------- model photos
+
+def test_new_catalog_has_requested_collections(client):
+    names = {c.name for c in Category.query.all()}
+    assert {"Women", "Men", "Watches", "Jewelry", "Cars"} <= names
+    html = client.get("/shop/c/cars").get_data(as_text=True)
+    assert "Classic Red Sports Coupe" in html
+    car = Product.query.filter_by(slug="classic-red-sports-coupe-pre-owned").first()
+    assert "Specifications" in client.get(f"/shop/p/{car.slug}").get_data(as_text=True)
+
+
+def test_site_photo_upload_and_reset(seller):
+    assert seller.get("/seller/photos").status_code == 200
+    r = seller.post("/seller/photos/hero", data={"photo": (_png_bytes(), "me.png")}, content_type="multipart/form-data")
+    assert r.status_code == 302
+    row = db.session.get(StoreSetting, "photo_hero")
+    assert row and row.value.endswith(".webp")
+    assert f"/media/{row.value}" in seller.get("/").get_data(as_text=True)
+    seller.post("/seller/photos/hero/reset")
+    db.session.expire_all()
+    assert db.session.get(StoreSetting, "photo_hero") is None
+    assert "/media/" not in seller.get("/").get_data(as_text=True).split("hero__photo")[1][:200]
+    assert seller.post("/seller/photos/nope", data={}).status_code == 404
+
+
+def test_site_photo_rejects_non_images(seller):
+    seller.post("/seller/photos/promo", data={"photo": (io.BytesIO(b"nope"), "x.png")}, content_type="multipart/form-data")
+    assert db.session.get(StoreSetting, "photo_promo") is None
+
+
+def test_customer_cannot_change_site_photos(customer):
+    assert customer.post("/seller/photos/hero", data={}).status_code == 403
+
+
+def test_uploaded_product_photo_becomes_cover(seller):
+    p = Product.query.filter_by(slug="linen-wrap-midi-dress").first()
+    data = _product_form(name=p.name, category_id=p.category_id, price="2490", stock=str(p.stock), make_cover="y")
+    data["image"] = (_png_bytes(), "model.png")
+    assert seller.post(f"/seller/products/{p.id}", data=data, content_type="multipart/form-data").status_code == 302
+    db.session.expire_all()
+    p = db.session.get(Product, p.id)
+    assert p.primary_image.filename and len(p.images) == 2
+
+
+def test_load_model_photos_folder(app, tmp_path):
+    from velora.cli import load_model_photos
+    (tmp_path / "products" / "red-silk-slip-dress").mkdir(parents=True)
+    Image.new("RGB", (60, 80), (200, 20, 20)).save(tmp_path / "hero.jpg")
+    Image.new("RGB", (60, 80), (20, 20, 200)).save(tmp_path / "products" / "red-silk-slip-dress" / "01.jpg")
+    (tmp_path / "products" / "not-a-product").mkdir()
+    report = load_model_photos(tmp_path)
+    assert report["slots"] == 1 and report["products"] == 1 and report["skipped"]
+    p = Product.query.filter_by(slug="red-silk-slip-dress").first()
+    assert p.primary_image.filename and db.session.get(StoreSetting, "photo_hero")

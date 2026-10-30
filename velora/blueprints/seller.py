@@ -14,7 +14,8 @@ from ..extensions import db
 from ..forms import (CategoryForm, DiscountForm, OFFImportForm, OFFSearchForm, OrderStatusForm, ProductForm,
                      StaffReplyForm)
 from ..models import (PRODUCT_ACTIVE, PRODUCT_ARCHIVED, PRODUCT_DRAFT, PRODUCT_STATUSES, Category, DiscountCode,
-                      Order, OrderStatus, Product, ProductImage, ProductReview, utcnow)
+                      Order, OrderStatus, Product, ProductImage, ProductReview, StoreSetting, utcnow)
+from ..photos import SLOTS, setting_key
 from ..money import to_major
 from ..security import audit, roles_required
 from ..services import openfoodfacts as off
@@ -96,12 +97,21 @@ def _apply_product_form(form, product):
 
 
 def _attach_image(form, product):
+    added = []
     upload = request.files.get(form.image.name)
     if upload and upload.filename:
-        name = save_product_image(upload)
-        product.images.append(ProductImage(filename=name, alt=product.name, position=len(product.images)))
+        added.append(ProductImage(filename=save_product_image(upload), alt=product.name))
     if form.image_url.data:
-        product.images.append(ProductImage(url=form.image_url.data, alt=product.name, position=len(product.images)))
+        added.append(ProductImage(url=form.image_url.data, alt=product.name))
+    if not added:
+        return
+    existing = list(product.images)
+    ordered = added + existing if form.make_cover.data else existing + added
+    for img in added:
+        product.images.append(img)
+    for pos, img in enumerate(ordered):
+        img.position = pos
+    product.images.sort(key=lambda i: i.position)
 
 
 @bp.route("/products/new", methods=["GET", "POST"])
@@ -477,3 +487,46 @@ def export(kind):
     stamp = utcnow().strftime("%Y%m%d")
     return Response(body, mimetype="text/csv",
                     headers={"Content-Disposition": f"attachment; filename=velora-{kind}-{stamp}.csv"})
+
+
+# ------------------------------------------------------------- model photos
+
+@bp.route("/photos")
+def photos():
+    current = {slot: db.session.get(StoreSetting, setting_key(slot)) for slot in SLOTS}
+    return render_template("seller/photos.html", slots=SLOTS, current=current)
+
+
+@bp.post("/photos/<slot>")
+def photo_upload(slot):
+    if slot not in SLOTS:
+        abort(404)
+    try:
+        name = save_product_image(request.files.get("photo"))
+    except UploadError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("seller.photos"))
+    row = db.session.get(StoreSetting, setting_key(slot))
+    if row:
+        delete_upload(row.value)
+        row.value = name
+    else:
+        db.session.add(StoreSetting(key=setting_key(slot), value=name))
+    audit("photo.update", "photo", slot, SLOTS[slot][0])
+    db.session.commit()
+    flash(f"{SLOTS[slot][0]} photo updated.", "success")
+    return redirect(url_for("seller.photos"))
+
+
+@bp.post("/photos/<slot>/reset")
+def photo_reset(slot):
+    if slot not in SLOTS:
+        abort(404)
+    row = db.session.get(StoreSetting, setting_key(slot))
+    if row:
+        delete_upload(row.value)
+        db.session.delete(row)
+        audit("photo.reset", "photo", slot, SLOTS[slot][0])
+        db.session.commit()
+    flash(f"{SLOTS[slot][0]} is back to the default photo.", "info")
+    return redirect(url_for("seller.photos"))

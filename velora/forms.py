@@ -107,12 +107,13 @@ class ProductForm(FlaskForm):
     price = MoneyField("Price (₱)", validators=[DataRequired()])
     compare_at = MoneyField("Compare-at price (₱, optional)", validators=[Optional()])
     stock = IntegerField("Stock", validators=[InputRequired(), NumberRange(min=0, max=100000)])
-    size_label = StringField("Size / pack", validators=[Optional(), Length(max=60)], filters=[strip])
+    size_label = StringField("Size / variant", validators=[Optional(), Length(max=60)], filters=[strip])
     origin = StringField("Origin", validators=[Optional(), Length(max=120)], filters=[strip])
-    ingredients = TextAreaField("Ingredients", validators=[Optional(), Length(max=4000)], filters=[strip])
+    ingredients = TextAreaField("Materials, care, specs or ingredients", validators=[Optional(), Length(max=4000)], filters=[strip])
     status = SelectField("Status", choices=[(s, s.title()) for s in PRODUCT_STATUSES])
     is_featured = BooleanField("Feature on homepage")
     image = FileField("Add image (JPG, PNG, WebP · max 4 MB)")
+    make_cover = BooleanField("Use the new photo as the cover image", default=True)
     image_url = StringField("…or image URL (https)", validators=[Optional(), Length(max=500), Regexp(r"^https://", message="Use an https:// URL.")], filters=[strip])
 
     def validate_price(self, field):

@@ -10,7 +10,7 @@
       {% if category %}{{ icon('chevron-right', 'ic--sm') }}<span>{{ category.name }}</span>{% endif %}
     </nav>
     <h1>{% if q %}Results for “{{ q }}”{% elif category %}{{ category.name }}{% else %}Shop all{% endif %}</h1>
-    <p>{{ category.description if category else 'Every product in the market — filter by aisle, maker, price or availability.' }}</p>
+    <p>{{ category.description if category else 'Every piece in the store — filter by collection, brand, price or availability.' }}</p>
   </header>
 
   <div class="catalog">
@@ -22,14 +22,14 @@
         <div class="search search--block">{{ icon('search') }}<input id="f-q" type="search" name="q" value="{{ q }}" placeholder="Search…" maxlength="100"></div>
       </div>
       <div>
-        <h3>Aisles</h3>
+        <h3>Collections</h3>
         <ul class="filter-cats">
           <li><a href="{{ url_for('catalog.listing', q=q or None, sort=sort) }}" class="{% if not category %}is-active{% endif %}">{{ icon('layout-grid') }} All products</a></li>
           {% for c in nav_categories %}<li><a href="{{ url_for('catalog.listing', slug=c.slug, q=q or None, sort=sort) }}" class="{% if category and category.id == c.id %}is-active{% endif %}">{{ icon(c.icon) }} {{ c.name }}</a></li>{% endfor %}
         </ul>
       </div>
       <fieldset style="border:0;padding:0;margin:0">
-        <legend><h3>Maker</h3></legend>
+        <legend><h3>Brand</h3></legend>
         <div class="filter-list">
           {% for b in brands %}<label class="check"><input type="checkbox" name="brand" value="{{ b }}" {% if b in selected_brands %}checked{% endif %}><span>{{ b }}</span></label>{% endfor %}
         </div>

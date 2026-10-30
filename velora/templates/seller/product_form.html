@@ -20,7 +20,7 @@
         {{ field(form.brand) }}{{ field(form.category_id) }}
         {{ field(form.short_description, "One line shown on product cards", cls="span-2") }}
         {{ field(form.description, cls="span-2") }}
-        {{ field(form.size_label, "250 g, 6 pack…") }}{{ field(form.origin, "Region, country") }}
+        {{ field(form.size_label, "S–XL, 40 mm, 2021 · 18,000 km…") }}{{ field(form.origin, "Region, country") }}
         {{ field(form.ingredients, cls="span-2") }}
       </div>
     </section>
@@ -48,7 +48,9 @@
           <p class="field__hint">Validated, re-encoded to WebP and stored with a random filename.</p>
         </div>
         {{ field(form.image_url, "https://…") }}
+        <div class="span-2">{{ field(form.make_cover) }}</div>
       </div>
+      <p class="field__hint">{{ icon('camera', 'ic--sm') }} Modelling it yourselves? Upload your own photo here and keep “cover image” ticked so it becomes the main product photo.</p>
     </section>
   </div>
   <div>

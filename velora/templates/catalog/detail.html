@@ -58,21 +58,25 @@
       <form id="pdp-wish" method="post" action="{{ url_for('account.toggle_wishlist', product_id=product.id) }}" data-wishlist hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="wish-btn"></button></form>
 
       <div class="perks">
-        <div class="perk">{{ icon('truck') }}<strong>Fast delivery</strong>48h in Metro Manila</div>
-        <div class="perk">{{ icon('leaf') }}<strong>Plastic-free</strong>Compostable packing</div>
-        <div class="perk">{{ icon('shield-check') }}<strong>Arrives right</strong>or we replace it</div>
+        {% if product.category.slug == 'cars' %}<div class="perk">{{ icon('key-round') }}<strong>Test drive</strong>at our Taguig showroom</div>
+        <div class="perk">{{ icon('clipboard-check') }}<strong>150-point check</strong>by our technicians</div>
+        <div class="perk">{{ icon('shield-check') }}<strong>12-month warranty</strong>demo listing</div>
+        {% else %}<div class="perk">{{ icon('truck') }}<strong>Fast delivery</strong>insured & tracked</div>
+        <div class="perk">{{ icon('rotate-ccw') }}<strong>Free returns</strong>within 30 days</div>
+        <div class="perk">{{ icon('shield-check') }}<strong>Authentic</strong>guaranteed</div>{% endif %}
       </div>
 
       <div class="tabs" data-tabs>
         <div class="tabs__list" role="tablist" aria-label="Product information">
           <button class="tabs__tab" role="tab" id="t-desc" aria-controls="p-desc" aria-selected="true">Description</button>
-          <button class="tabs__tab" role="tab" id="t-ingr" aria-controls="p-ingr" aria-selected="false" tabindex="-1">Ingredients & nutrition</button>
+          {% set is_food = product.source == 'openfoodfacts' or product.nutrition_json or product.category.slug == 'gifts-gourmet' %}{% set is_car = product.category.slug == 'cars' %}
+          <button class="tabs__tab" role="tab" id="t-ingr" aria-controls="p-ingr" aria-selected="false" tabindex="-1">{{ 'Ingredients & nutrition' if is_food else 'Specifications' if is_car else 'Materials & care' }}</button>
           <button class="tabs__tab" role="tab" id="t-spec" aria-controls="p-spec" aria-selected="false" tabindex="-1">Details</button>
           <span class="tabs__ink" aria-hidden="true"></span>
         </div>
         <div class="tabs__panel prose" role="tabpanel" id="p-desc" aria-labelledby="t-desc"><p>{{ product.description }}</p></div>
         <div class="tabs__panel" role="tabpanel" id="p-ingr" aria-labelledby="t-ingr" hidden>
-          {% if product.ingredients %}<h3 style="font-size:14px">Ingredients</h3><p class="prose">{{ product.ingredients }}</p>{% else %}<p class="muted">Ingredient information isn't available for this product.</p>{% endif %}
+          {% set info_label = 'Ingredients' if is_food else 'Specifications' if is_car else 'Materials & care' %}{% if product.ingredients %}<h3 style="font-size:14px">{{ info_label }}</h3><p class="prose">{{ product.ingredients }}</p>{% else %}<p class="muted">{{ info_label }} information isn't available for this product.</p>{% endif %}
           {% if product.allergens %}<p><strong>Allergens:</strong> {{ product.allergens }}</p>{% endif %}
           {% if product.nutriscore %}
             <p class="row"><strong>Nutri-Score</strong><span class="nutri" aria-label="Nutri-Score {{ product.nutriscore|upper }}">{% for g in 'abcde' %}<span class="{{ g }} {% if g == product.nutriscore %}is-on{% endif %}">{{ g|upper }}</span>{% endfor %}</span></p>
@@ -88,8 +92,8 @@
         <div class="tabs__panel" role="tabpanel" id="p-spec" aria-labelledby="t-spec" hidden>
           <table class="specs">
             <tr><th scope="row">Maker</th><td>{{ product.brand }}</td></tr>
-            <tr><th scope="row">Aisle</th><td><a href="{{ url_for('catalog.listing', slug=product.category.slug) }}">{{ product.category.name }}</a></td></tr>
-            {% if product.size_label %}<tr><th scope="row">Size</th><td>{{ product.size_label }}</td></tr>{% endif %}
+            <tr><th scope="row">Collection</th><td><a href="{{ url_for('catalog.listing', slug=product.category.slug) }}">{{ product.category.name }}</a></td></tr>
+            {% if product.size_label %}<tr><th scope="row">{{ 'Year · mileage' if is_car else 'Size' }}</th><td>{{ product.size_label }}</td></tr>{% endif %}
             {% if product.origin %}<tr><th scope="row">Origin</th><td>{{ product.origin }}</td></tr>{% endif %}
             <tr><th scope="row">SKU</th><td class="mono">{{ product.sku }}</td></tr>
             {% if product.off_categories %}<tr><th scope="row">Categories</th><td>{{ product.off_categories }}</td></tr>{% endif %}

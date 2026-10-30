@@ -126,10 +126,10 @@ def test_staff_cannot_checkout(seller):
 def test_discount_percent_and_minimum(app):
     t = compute_totals(100000, "WELCOME10")
     assert t.discount_minor == 10000
-    t = compute_totals(100000, "PANTRY200")  # min ₱1,500
+    t = compute_totals(100000, "STYLE500")  # min ₱5,000
     assert t.discount_minor == 0
-    t = compute_totals(200000, "PANTRY200")
-    assert t.discount_minor == 20000
+    t = compute_totals(600000, "STYLE500")
+    assert t.discount_minor == 50000
 
 
 def test_expired_and_exhausted_codes(customer):
@@ -137,15 +137,15 @@ def test_expired_and_exhausted_codes(customer):
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     customer.post("/cart/discount", data={"code": "SUMMER25"})
     assert customer.get("/cart").get_data(as_text=True).count("SUMMER25") == 0
-    d = DiscountCode.query.filter_by(code="HARVEST15").first()
+    d = DiscountCode.query.filter_by(code="SEASON15").first()
     d.used_count = d.max_uses
     db.session.commit()
-    r = customer.post("/cart/discount", data={"code": "HARVEST15"}, follow_redirects=True)
+    r = customer.post("/cart/discount", data={"code": "SEASON15"}, follow_redirects=True)
     assert "usage limit" in r.get_data(as_text=True)
 
 
 def test_discount_applied_in_order_and_usage_counted(customer):
-    p = Product.query.filter_by(name="Ceremonial Grade Matcha").first()
+    p = Product.query.filter_by(name="Minimalist Leather Strap Watch").first()
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     customer.post("/cart/discount", data={"code": "welcome10"})
     _checkout(customer)

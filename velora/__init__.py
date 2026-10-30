@@ -110,6 +110,16 @@ def _register_template_helpers(app):
         return {k: v for k, v in args.items() if k != "page"}
 
     @app.template_global()
+    def site_photo(slot):
+        """Uploaded model photo for a site slot, or the default stock image."""
+        from flask import url_for
+        from .photos import SLOTS, setting_key
+        filename = get_setting(setting_key(slot))
+        if filename:
+            return url_for("main.media", filename=filename)
+        return SLOTS[slot][2]
+
+    @app.template_global()
     def image_src(img):
         from flask import url_for
         if img is None:

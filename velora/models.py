@@ -459,7 +459,7 @@ DEFAULT_SETTINGS = {
     "shipping_flat_minor": "15000",          # ₱150.00
     "free_shipping_threshold_minor": "250000",  # ₱2,500.00
     "low_stock_threshold": "8",
-    "store_announcement": "Free delivery on orders over ₱2,500 · Small-batch goods, restocked weekly",
+    "store_announcement": "Free delivery on orders over ₱2,500 · 30-day free returns on clothing & accessories",
     "support_email": "care@veloramarket.example",
 }
 

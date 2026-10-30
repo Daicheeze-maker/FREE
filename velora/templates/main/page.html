@@ -10,18 +10,19 @@
   <div class="cart-layout">
     <article class="prose card">
       {% if slug == 'about' %}
-        <p>Velora Market started as a weekend stall selling coffee we roasted in a borrowed oven. Today we work with more than twenty independent makers — roasters, beekeepers, bakers and potters — and we still taste every batch before it reaches you.</p>
+        <p>Velora Market is a small Manila team with a big wardrobe. We curate clothing, watches, fine jewelry and a hand-picked selection of cars — and instead of hiring an agency, <strong>we model every piece ourselves</strong>. What you see on the site is how it really looks on real people.</p>
         <h2>What we stand for</h2>
-        <ul><li>Small batches, restocked weekly rather than warehoused for months.</li><li>Fair, published prices to our makers.</li><li>Honest labels: real ingredients, real origins, real reviews from real buyers.</li></ul>
+        <ul><li>Honest photos, worn by our own team.</li><li>Authentic watches and certified jewelry.</li><li>Real reviews from verified buyers only.</li></ul>
       {% elif slug == 'shipping' %}
-        <p>We deliver across the Philippines. Metro Manila orders placed before 2pm usually arrive within 48 hours; provincial deliveries take 3–7 business days.</p>
+        <p>We deliver across the Philippines. Metro Manila orders placed before 2pm usually arrive within 48 hours; provincial deliveries take 3–7 business days. Watches and jewelry ship insured.</p>
         <h2>Rates</h2>
         <p>A flat fee of {{ fmt_base(15000) }} applies, and delivery is free on orders over {{ fmt_base(free_ship_minor) }} after discounts. (These values are configurable by store administrators.)</p>
+        <h2>Cars</h2><p>Cars are handed over at our Taguig showroom or delivered by our team in Metro Manila after paperwork is complete.</p>
         <h2>Tracking</h2><p>Every order has a live tracker under <em>My account → Orders</em>.</p>
       {% elif slug == 'returns' %}
-        <p>Food items can't be returned for hygiene reasons, but if anything arrives damaged or not as described we'll replace or refund it — just contact us within 7 days of delivery with a photo.</p>
-        <p>Home goods can be returned unused within 30 days. Orders can be cancelled from your account while they're still <strong>Pending</strong> or <strong>Confirmed</strong>.</p>
-      {% elif slug == 'privacy' %}
+        <p>Clothing, watches and accessories can be returned unworn with tags within 30 days for a full refund. Earrings can't be returned for hygiene reasons unless faulty.</p>
+        <p>Car reservations can be cancelled before handover. Any order can be cancelled from your account while it's still <strong>Pending</strong> or <strong>Confirmed</strong>.</p>
+{% elif slug == 'privacy' %}
         <p>We collect only what's needed to fulfil your orders: your name, email, delivery addresses and order history. Passwords are stored as salted hashes, never in plain text.</p>
         <p>This is a demonstration store: payments are simulated and we never collect card numbers, CVVs or bank credentials. Newsletter subscribers can ask to be removed at any time.</p>
       {% elif slug == 'terms' %}
@@ -29,7 +30,8 @@
       {% elif slug == 'faq' %}
         <h2>Is payment real?</h2><p>No — checkout uses a clearly labelled demo payment that simulates approval or decline. Nothing is charged.</p>
         <h2>Why are some prices marked “≈”?</h2><p>If you pick a display currency other than PHP we convert using daily reference rates from the European Central Bank via the Frankfurter API. You're always charged in PHP.</p>
-        <h2>Where does nutrition data come from?</h2><p>Some products are enriched with data from Open Food Facts, a free, collaborative food products database.</p>
+        <h2>Who are the models?</h2><p>Our own team! Every product photo is styled and modelled in-house.</p>
+        <h2>Where does nutrition data come from?</h2><p>Gourmet gift items can be enriched with data from Open Food Facts, a free, collaborative food products database.</p>
       {% else %}
         <p>We're here Monday to Saturday, 9:00–18:00 Philippine time.</p>
         <p>{{ icon('mail') }} <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>

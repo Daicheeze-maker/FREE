@@ -11,10 +11,10 @@ def test_home_and_catalog_render(client):
 
 
 def test_search_matches_name_and_category(client):
-    html = client.get("/shop/?q=matcha").get_data(as_text=True)
-    assert "Ceremonial Grade Matcha" in html
-    html = client.get("/shop/?q=bakery").get_data(as_text=True)  # category name
-    assert "Country Sourdough Loaf" in html
+    html = client.get("/shop/?q=linen").get_data(as_text=True)
+    assert "Linen Wrap Midi Dress" in html
+    html = client.get("/shop/?q=watches").get_data(as_text=True)  # matches the category name
+    assert "Diver Automatic 200m" in html
 
 
 def test_search_empty_state(client):
@@ -24,16 +24,16 @@ def test_search_empty_state(client):
 
 def test_filters_and_sorting(client):
     html = client.get("/shop/?sort=price_asc&max=300").get_data(as_text=True)
-    assert "Cold-Pressed Extra Virgin Olive Oil" not in html  # ₱980
-    assert "72% Davao Dark Chocolate" in html
-    html = client.get("/shop/?availability=in_stock").get_data(as_text=True)
-    assert "Sea Salt Rosemary Almonds" not in html  # stock 0
-    html = client.get("/shop/?brand=Casa+Oliva").get_data(as_text=True)
-    assert "Olive Oil" in html and "Matcha" not in html
+    assert "Heavyweight White Tee" not in html  # ₱790
+    assert "72% Dark Chocolate Bar" in html
+    html = client.get("/shop/?availability=in_stock&q=sunglasses").get_data(as_text=True)
+    assert "Tortoiseshell Sunglasses" not in html  # stock 0
+    html = client.get("/shop/?brand=Pulse").get_data(as_text=True)
+    assert "Smart Fitness Watch" in html and "Linen Wrap" not in html
 
 
 def test_category_page_and_ajax_partial(client):
-    r = client.get("/shop/c/pantry", headers={"X-Requested-With": "fetch"})
+    r = client.get("/shop/c/watches", headers={"X-Requested-With": "fetch"})
     assert r.status_code == 200 and "<html" not in r.get_data(as_text=True)
     assert client.get("/shop/c/no-such-aisle").status_code == 404
 
@@ -90,7 +90,7 @@ def test_customer_cart_is_persistent(app):
 
 
 def test_wishlist_toggle(customer):
-    p = Product.query.filter_by(name="Bronze-Cut Rigatoni").first()
+    p = Product.query.filter_by(name="Relaxed Straight Jeans").first()
     r = customer.post(f"/account/wishlist/{p.id}", headers={"X-Requested-With": "fetch"})
     assert r.json["saved"] is True
     r = customer.post(f"/account/wishlist/{p.id}", headers={"X-Requested-With": "fetch"})
