@@ -219,3 +219,23 @@ def test_load_model_photos_folder(app, tmp_path):
     assert report["slots"] == 1 and report["products"] == 1 and report["skipped"]
     p = Product.query.filter_by(slug="red-silk-slip-dress").first()
     assert p.primary_image.filename and db.session.get(StoreSetting, "photo_hero")
+
+
+def test_seed_runs_when_catalog_empty_even_if_accounts_exist(tmp_path):
+    from velora.cli import init_database
+    from velora.seed import seed
+    app = create_app("testing", SQLALCHEMY_DATABASE_URI=f"sqlite:///{tmp_path / 'early.db'}")
+    with app.app_context():
+        init_database()
+        early = User(email="early@example.com", full_name="Signed Up Early", role="customer")
+        early.set_password("Secret123")
+        db.session.add(early)
+        db.session.commit()
+        assert seed() is True
+        assert Category.query.count() == 6 and Product.query.count() > 20
+        assert User.query.filter_by(email="early@example.com").count() == 1
+        assert seed() is False
+
+
+def test_announcement_bar_removed(client):
+    assert 'class="announce"' not in client.get("/").get_data(as_text=True)

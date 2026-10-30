@@ -167,7 +167,8 @@ def seed_settings():
 
 def seed(force=False):
     """Seed demo data into an empty database. Returns False if data already existed."""
-    if User.query.first() is not None and not force:
+    # Seed whenever the catalog is empty (even if someone already registered an account)
+    if Category.query.first() is not None and not force:
         return False
     rng = random.Random(7)
     now = utcnow()
@@ -193,6 +194,9 @@ def seed(force=False):
     db.session.flush()
 
     def user(email, name, role, pw):
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            return existing
         u = User(email=email, full_name=name, role=role, created_at=now - timedelta(days=rng.randint(20, 120)))
         u.set_password(pw)
         db.session.add(u)
@@ -281,7 +285,8 @@ def seed(force=False):
 
     for p in products[:3]:
         db.session.add(WishlistItem(user_id=customer.id, product_id=p.id))
-    db.session.add(Cart(user_id=customer.id))
+    if not Cart.query.filter_by(user_id=customer.id).first():
+        db.session.add(Cart(user_id=customer.id))
     db.session.add_all([
         Notification(user_id=customer.id, title="Welcome to Velora Market", body="Use WELCOME10 for 10% off.",
                      link="/shop/", icon="sparkles", is_read=True, created_at=now - timedelta(days=30)),

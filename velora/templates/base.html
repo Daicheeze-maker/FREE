@@ -16,7 +16,6 @@
 <body class="{% block body_class %}{% endblock %}" data-placeholder="{{ url_for('static', filename='img/placeholder.svg') }}">
 <a class="skip-link" href="#main">Skip to content</a>
 {% block shell %}
-{% if announcement %}<div class="announce"><div class="container announce__inner">{{ icon('sparkles') }}<span>{{ announcement }}</span></div></div>{% endif %}
 <header class="site-header" data-header>
   <div class="container header__row">
     <button class="icon-btn header__menu" type="button" data-open-drawer="mobile-nav" aria-label="Open menu" aria-controls="mobile-nav" aria-expanded="false">{{ icon('menu') }}</button>

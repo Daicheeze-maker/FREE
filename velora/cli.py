@@ -29,7 +29,7 @@ def register_cli(app):
         if seed():
             click.echo("Seeded demo data. Sign in with the demo accounts listed in README.md.")
         else:
-            click.echo("Database already has data — seed skipped (nothing was changed).")
+            click.echo("Catalog already has data — seed skipped (nothing was changed).")
 
     @app.cli.command("reset-demo")
     @click.option("--yes-delete-everything", is_flag=True, help="Required confirmation flag.")
