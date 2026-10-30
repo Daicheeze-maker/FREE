@@ -1,0 +1,47 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, status_badge, pagination_nav, confirm_form, empty %}
+{% block title %}Products · Seller studio{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block actions %}
+<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.export', kind='products') }}">{{ icon('download') }} Export CSV</a>
+<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.off_import') }}">{{ icon('scan-barcode') }} Import</a>
+<a class="btn btn--accent btn--sm" href="{{ url_for('seller.product_new') }}">{{ icon('plus') }} New product</a>
+{% endblock %}
+{% block content %}
+<form class="filters-bar" method="get">
+  <label class="sr-only" for="pq">Search</label><input id="pq" class="input search-input" type="search" name="q" value="{{ q }}" placeholder="Search name, SKU or maker">
+  <label class="sr-only" for="ps">Status</label><select id="ps" class="input select" name="status"><option value="">All statuses</option>{% for s in statuses %}<option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s|title }}</option>{% endfor %}</select>
+  <label class="sr-only" for="pc">Category</label><select id="pc" class="input select" name="category"><option value="">All categories</option>{% for c in categories %}<option value="{{ c.id }}" {% if c.id == cat %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+  <label class="check"><input type="checkbox" name="low" value="1" {% if request.args.get('low') %}checked{% endif %}> Low stock only</label>
+  <button class="btn btn--dark btn--sm" type="submit">Filter</button>
+  {% if q or status or cat or request.args.get('low') %}<a class="btn btn--link btn--sm" href="{{ url_for('seller.products') }}">Reset</a>{% endif %}
+</form>
+{% if pagination.items %}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Product</th><th>Category</th><th class="num">Price</th><th class="num">Stock</th><th class="num">Sold</th><th>Status</th><th>Source</th><th><span class="sr-only">Actions</span></th></tr></thead>
+    <tbody>
+    {% for p in pagination.items %}
+    <tr>
+      <td><div class="cell-product"><img src="{{ image_src(p.primary_image) }}" alt=""><div><a href="{{ url_for('seller.product_edit', product_id=p.id) }}">{{ p.name }}</a><small>{{ p.brand }} · <span class="mono">{{ p.sku }}</span></small></div></div></td>
+      <td>{{ p.category.name }}</td>
+      <td class="num">{{ fmt_base(p.price_minor) }}</td>
+      <td class="num"><span class="{{ 'tag tag--warn' if p.stock_state != 'ok' }}">{{ p.stock }}</span></td>
+      <td class="num">{{ p.sold_count }}</td>
+      <td>{{ status_badge(p.status) }}</td>
+      <td>{% if p.source == 'openfoodfacts' %}<span class="tag">{{ icon('database', 'ic--sm') }} OFF</span>{% else %}<span class="tag">Manual</span>{% endif %}</td>
+      <td style="white-space:nowrap">
+        <a class="btn btn--ghost btn--sm" href="{{ url_for('seller.product_edit', product_id=p.id) }}">Edit</a>
+        {% if p.status != 'archived' %}{{ confirm_form(url_for('seller.product_status', product_id=p.id, status='archived'), 'Archive', 'Archive “' ~ p.name ~ '”? It disappears from the store but order history is kept.', 'btn btn--link btn--sm', None, 'Archive product?') }}
+        {% else %}<form method="post" action="{{ url_for('seller.product_status', product_id=p.id, status='active') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--link btn--sm" type="submit">Restore</button></form>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{{ pagination_nav(pagination, 'seller.products', request.args.to_dict()|reject_page) }}
+{% else %}
+{{ empty('boxes', 'No products found', 'Try a different filter, or add your first product.', url_for('seller.product_new'), 'New product') }}
+{% endif %}
+{% endblock %}

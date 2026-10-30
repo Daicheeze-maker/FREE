@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, field %}
+{% block title %}Sign in · Velora Market{% endblock %}
+{% block content %}
+<div class="auth">
+  <div class="auth__art">
+    <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1100&q=80&auto=format&fit=crop" alt="A latte on a wooden table" loading="lazy">
+    <p class="auth__quote">Welcome back.<br>The kettle's on.</p>
+  </div>
+  <div class="auth__panel">
+    <div class="auth__form" data-reveal>
+      <h1>Sign in</h1>
+      <p>New here? <a href="{{ url_for('auth.register', next=request.args.get('next')) }}">Create an account</a> — it takes 30 seconds.</p>
+      <form method="post" novalidate>
+        {{ form.csrf_token }}
+        {{ field(form.email, "you@example.com", autocomplete="email") }}
+        {{ field(form.password, "Your password", autocomplete="current-password") }}
+        {{ field(form.remember) }}
+        <button class="btn btn--dark btn--lg btn--block" type="submit" data-loading-text="Signing in…">Sign in {{ icon('arrow-right') }}</button>
+      </form>
+      <aside class="demo-accounts" aria-labelledby="demo-h">
+        <h2 id="demo-h">Demo accounts · click to fill</h2>
+        <ul>
+          <li><button type="button" data-demo-login data-email="customer@velora.example" data-password="Customer123!"><span>{{ icon('user-round', 'ic--sm') }} Customer</span><span class="mono">customer@velora.example</span></button></li>
+          <li><button type="button" data-demo-login data-email="seller@velora.example" data-password="Seller123!"><span>{{ icon('store', 'ic--sm') }} Seller / store manager</span><span class="mono">seller@velora.example</span></button></li>
+          <li><button type="button" data-demo-login data-email="admin@velora.example" data-password="Admin123!"><span>{{ icon('shield-check', 'ic--sm') }} Administrator</span><span class="mono">admin@velora.example</span></button></li>
+        </ul>
+        <p class="muted" style="margin:10px 0 0;font-size:12px">Seeded demo data only. Change or disable these accounts before any real deployment.</p>
+      </aside>
+    </div>
+  </div>
+</div>
+{% endblock %}

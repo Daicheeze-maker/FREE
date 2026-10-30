@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, product_card, price, stars, field %}
+{% block title %}{{ product.name }} · {{ product.brand }} · Velora Market{% endblock %}
+{% block description %}{{ product.short_description }}{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="crumbs" aria-label="Breadcrumb" style="padding-top:26px">
+    <a href="{{ url_for('main.home') }}">Home</a>{{ icon('chevron-right', 'ic--sm') }}
+    <a href="{{ url_for('catalog.listing', slug=product.category.slug) }}">{{ product.category.name }}</a>{{ icon('chevron-right', 'ic--sm') }}
+    <span aria-current="page">{{ product.name }}</span>
+  </nav>
+  {% if product.status != 'active' %}<div class="alert alert--warn">{{ icon('eye-off') }} <div>This product is <strong>{{ product.status }}</strong> and hidden from shoppers. You're seeing it because you're staff.</div></div>{% endif %}
+
+  <div class="pdp">
+    <div class="gallery" data-gallery>
+      <div class="gallery__main">
+        <img src="{{ image_src(product.primary_image) }}" alt="{{ product.primary_image.alt if product.primary_image else product.name }}" data-gallery-main width="800" height="1000" fetchpriority="high">
+      </div>
+      {% if product.images|length > 1 %}
+      <div class="gallery__thumbs" role="group" aria-label="Product images">
+        {% for img in product.images %}
+        <button type="button" class="gallery__thumb {% if loop.first %}is-active{% endif %}" data-gallery-thumb data-src="{{ image_src(img) }}" data-alt="{{ img.alt }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" aria-label="Show image {{ loop.index }}">
+          <img src="{{ image_src(img) }}" alt="" loading="lazy">
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="pdp__info">
+      <a class="pdp__brand" href="{{ url_for('catalog.listing', brand=product.brand) }}">{{ product.brand }}</a>
+      <h1>{{ product.name }}</h1>
+      <div class="row" style="margin-bottom:18px">
+        <a href="#reviews" style="text-decoration:none">{{ stars(product.rating, reviews|length) }}</a>
+        {% if product.size_label %}<span class="tag">{{ product.size_label }}</span>{% endif %}
+        {% if product.nutriscore %}<span class="tag">Nutri-Score {{ product.nutriscore|upper }}</span>{% endif %}
+      </div>
+      {{ price(product, money, 'price--lg') }}
+      {% if money.converted %}<p class="fx-note">{{ icon('info', 'ic--sm') }} Estimate. You'll be charged {{ money.base_fmt(product.price_minor) }} PHP.</p>{% endif %}
+      <p class="pdp__short" style="margin-top:16px">{{ product.short_description }}</p>
+      <span class="stock stock--{{ product.stock_state }}">{{ product.stock_label }}</span>
+
+      {% if product.in_stock and product.status == 'active' %}
+      <form method="post" action="{{ url_for('shop.add', product_id=product.id) }}" class="pdp__buy" data-add-to-cart>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="qty qty--lg">
+          <button type="button" data-qty-step="-1" aria-label="Decrease quantity">{{ icon('minus') }}</button>
+          <label class="sr-only" for="pdp-qty">Quantity</label>
+          <input id="pdp-qty" type="number" name="quantity" value="1" min="1" max="{{ [product.stock, 20]|min }}" inputmode="numeric">
+          <button type="button" data-qty-step="1" aria-label="Increase quantity">{{ icon('plus') }}</button>
+        </div>
+        <button type="submit" class="btn btn--dark btn--lg">{{ icon('shopping-bag') }} Add to bag</button>
+        <button type="submit" form="pdp-wish" class="wish-btn {% if product.id in wishlist_ids %}is-saved{% endif %}" aria-pressed="{{ 'true' if product.id in wishlist_ids else 'false' }}" aria-label="Save to wishlist">{{ icon('heart') }}</button>
+      </form>
+      {% else %}
+      <div class="pdp__buy"><button class="btn btn--lg" disabled style="grid-column: span 2">Sold out — restocking soon</button><button type="submit" form="pdp-wish" class="wish-btn {% if product.id in wishlist_ids %}is-saved{% endif %}" aria-label="Save to wishlist">{{ icon('heart') }}</button></div>
+      {% endif %}
+      <form id="pdp-wish" method="post" action="{{ url_for('account.toggle_wishlist', product_id=product.id) }}" data-wishlist hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="wish-btn"></button></form>
+
+      <div class="perks">
+        <div class="perk">{{ icon('truck') }}<strong>Fast delivery</strong>48h in Metro Manila</div>
+        <div class="perk">{{ icon('leaf') }}<strong>Plastic-free</strong>Compostable packing</div>
+        <div class="perk">{{ icon('shield-check') }}<strong>Arrives right</strong>or we replace it</div>
+      </div>
+
+      <div class="tabs" data-tabs>
+        <div class="tabs__list" role="tablist" aria-label="Product information">
+          <button class="tabs__tab" role="tab" id="t-desc" aria-controls="p-desc" aria-selected="true">Description</button>
+          <button class="tabs__tab" role="tab" id="t-ingr" aria-controls="p-ingr" aria-selected="false" tabindex="-1">Ingredients & nutrition</button>
+          <button class="tabs__tab" role="tab" id="t-spec" aria-controls="p-spec" aria-selected="false" tabindex="-1">Details</button>
+          <span class="tabs__ink" aria-hidden="true"></span>
+        </div>
+        <div class="tabs__panel prose" role="tabpanel" id="p-desc" aria-labelledby="t-desc"><p>{{ product.description }}</p></div>
+        <div class="tabs__panel" role="tabpanel" id="p-ingr" aria-labelledby="t-ingr" hidden>
+          {% if product.ingredients %}<h3 style="font-size:14px">Ingredients</h3><p class="prose">{{ product.ingredients }}</p>{% else %}<p class="muted">Ingredient information isn't available for this product.</p>{% endif %}
+          {% if product.allergens %}<p><strong>Allergens:</strong> {{ product.allergens }}</p>{% endif %}
+          {% if product.nutriscore %}
+            <p class="row"><strong>Nutri-Score</strong><span class="nutri" aria-label="Nutri-Score {{ product.nutriscore|upper }}">{% for g in 'abcde' %}<span class="{{ g }} {% if g == product.nutriscore %}is-on{% endif %}">{{ g|upper }}</span>{% endfor %}</span></p>
+          {% endif %}
+          {% if product.nutrition_json %}
+          <table class="specs"><caption class="sr-only">Nutrition per 100 g</caption>
+            <thead><tr><th scope="col">Per 100 g / ml</th><th scope="col">Amount</th></tr></thead>
+            <tbody>{% for key, n in product.nutrition_json.items() %}<tr><th scope="row">{{ n.label }}</th><td>{{ n.value }} {{ n.unit }}</td></tr>{% endfor %}</tbody>
+          </table>
+          {% endif %}
+          {% if product.source == 'openfoodfacts' %}<div class="source-note">{{ icon('database') }}<div>Ingredients and nutrition from <a href="https://world.openfoodfacts.org/product/{{ product.off_barcode }}" target="_blank" rel="noopener">Open Food Facts</a> (barcode {{ product.off_barcode }}), synced {{ product.synced_at|dt }}. Data is community-sourced — always check the pack if you have allergies.</div></div>{% endif %}
+        </div>
+        <div class="tabs__panel" role="tabpanel" id="p-spec" aria-labelledby="t-spec" hidden>
+          <table class="specs">
+            <tr><th scope="row">Maker</th><td>{{ product.brand }}</td></tr>
+            <tr><th scope="row">Aisle</th><td><a href="{{ url_for('catalog.listing', slug=product.category.slug) }}">{{ product.category.name }}</a></td></tr>
+            {% if product.size_label %}<tr><th scope="row">Size</th><td>{{ product.size_label }}</td></tr>{% endif %}
+            {% if product.origin %}<tr><th scope="row">Origin</th><td>{{ product.origin }}</td></tr>{% endif %}
+            <tr><th scope="row">SKU</th><td class="mono">{{ product.sku }}</td></tr>
+            {% if product.off_categories %}<tr><th scope="row">Categories</th><td>{{ product.off_categories }}</td></tr>{% endif %}
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="section--tight" id="reviews">
+    <div class="section-head"><h2>Reviews</h2></div>
+    <div class="reviews">
+      <aside class="review-summary">
+        <div class="review-summary__score">{{ product.rating or '—' }}</div>
+        {{ stars(product.rating, None, 'lg') }}
+        <p class="muted" style="margin-top:6px">{{ reviews|length }} verified review{{ '' if reviews|length == 1 else 's' }}</p>
+        <div class="dist">
+          {% for i in range(5, 0, -1) %}
+          <div class="dist__row"><span>{{ i }}★</span><div class="dist__bar"><span style="--pct: {{ (dist[i] / (reviews|length or 1) * 100)|round(1) }}%"></span></div><span>{{ dist[i] }}</span></div>
+          {% endfor %}
+        </div>
+        {% if not current_user.is_authenticated %}
+          <p class="muted" style="font-size:13px"><a href="{{ url_for('auth.login', next=request.path ~ '#reviews') }}">Sign in</a> to review products you've bought.</p>
+        {% elif already_reviewed %}
+          <p class="alert alert--ok" style="margin:0">{{ icon('circle-check') }} Thanks — you've reviewed this product.</p>
+        {% elif current_user.role == 'customer' and not can_review %}
+          <p class="muted" style="font-size:13px">{{ icon('info', 'ic--sm') }} Only customers whose order has been delivered can review this product.</p>
+        {% endif %}
+      </aside>
+      <div>
+        {% if can_review %}
+        <form method="post" action="{{ url_for('catalog.review', slug=product.slug) }}" class="card" id="write-review" style="margin-bottom:10px">
+          {{ review_form.csrf_token }}
+          <h3>Write a review</h3>
+          <fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="field__label">Your rating</legend>
+            <div class="rating-input">{% for v, l in review_form.rating.choices %}<input type="radio" name="rating" id="r{{ v }}" value="{{ v }}" required><label for="r{{ v }}" title="{{ v }} stars">★<span class="sr-only">{{ v }} stars</span></label>{% endfor %}</div>
+          </fieldset>
+          {{ field(review_form.title, "Sum it up in a few words") }}
+          {{ field(review_form.body, "What did you like? How did you use it?") }}
+          <button class="btn btn--dark" type="submit" data-loading-text="Posting…">Post review</button>
+        </form>
+        {% endif %}
+        {% for r in reviews %}
+        <article class="review">
+          <div class="review__head"><span class="avatar avatar--sm">{{ r.user.full_name[:1] }}</span><div><strong>{{ r.user.first_name }} {{ r.user.full_name.split(' ')[-1][:1] }}.</strong> <span class="verified">{{ icon('badge-check', 'ic--sm') }} Verified buyer</span><br><small>{{ r.created_at|dt }}</small></div></div>
+          {{ stars(r.rating) }}
+          <h4>{{ r.title }}</h4>
+          <p>{{ r.body }}</p>
+          {% if r.staff_reply %}<div class="review__reply"><strong>Velora team:</strong> {{ r.staff_reply }}</div>{% endif %}
+        </article>
+        {% else %}
+        <p class="muted">No reviews yet. Buyers can review once their order is delivered.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {% if related %}
+  <section class="section--tight">
+    <div class="section-head"><h2>You may also like</h2><a class="link-arrow" href="{{ url_for('catalog.listing', slug=product.category.slug) }}">More {{ product.category.name }} {{ icon('arrow-right') }}</a></div>
+    <div class="grid-products">{% for p in related %}{{ product_card(p, money, wishlist_ids) }}{% endfor %}</div>
+  </section>
+  {% endif %}
+  {% if recent %}
+  <section class="section--tight">
+    <div class="section-head"><h2>Recently viewed</h2></div>
+    <div class="grid-products">{% for p in recent %}{{ product_card(p, money, wishlist_ids) }}{% endfor %}</div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

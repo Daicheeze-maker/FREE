@@ -1,0 +1,38 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}API health · Admin{% endblock %}
+{% block page_title %}External API health{% endblock %}
+{% block content %}
+<p class="alert alert--info">{{ icon('info') }} <span>Velora uses exactly two external APIs. Both are optional at runtime: the catalog, cart and checkout keep working offline. Statistics below are recorded from real requests made by this server.</span></p>
+<div class="health">
+  {% for key, label, desc, docs in [(OFF, 'Open Food Facts', 'Product search & import: names, images, ingredients, allergens, Nutri-Score and nutrition per 100 g.', 'https://world.openfoodfacts.org/data'), (FX, 'Frankfurter', 'Daily ECB reference exchange rates for display-only price conversion (PHP base).', 'https://frankfurter.dev/')] %}
+  {% set a = apis.get(key) %}
+  <section class="card health-card">
+    <div class="card__head" style="margin:0">
+      <h2>{{ icon('database' if key == OFF else 'coins') }} {{ label }}</h2>
+      {% if not a or (not a.last_success_at and not a.last_error_at) %}<span class="health-card__state"><span class="pulse-dot pulse-dot--unknown"></span> No calls yet</span>
+      {% elif a.healthy %}<span class="health-card__state" style="color:var(--ok)"><span class="pulse-dot"></span> Operational</span>
+      {% else %}<span class="health-card__state" style="color:var(--danger)"><span class="pulse-dot pulse-dot--bad"></span> Last call failed</span>{% endif %}
+    </div>
+    <p class="muted" style="margin:0;font-size:13.5px">{{ desc }} <a href="{{ docs }}" target="_blank" rel="noopener">Docs</a></p>
+    <dl class="kv">
+      <dt>Last success</dt><dd>{{ a.last_success_at|dtt if a else '—' }}</dd>
+      <dt>Latency</dt><dd>{{ (a.last_latency_ms ~ ' ms') if a and a.last_latency_ms is not none else '—' }}</dd>
+      <dt>Successful calls</dt><dd>{{ a.success_count if a else 0 }}</dd>
+      <dt>Failed calls</dt><dd>{{ a.error_count if a else 0 }}</dd>
+      <dt>Last error</dt><dd>{% if a and a.last_error_at %}{{ a.last_error_at|dtt }}<br><span class="mono" style="color:var(--danger)">{{ a.last_error }}</span>{% else %}—{% endif %}</dd>
+    </dl>
+    <form method="post" action="{{ url_for('admin.api_test', name=key) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--dark btn--sm" type="submit" data-loading-text="Testing…">{{ icon('refresh-cw', 'ic--sm') }} {{ 'Refresh rates now' if key == FX else 'Run test search' }}</button></form>
+  </section>
+  {% endfor %}
+</div>
+<section class="card card--flush">
+  <div class="card__head" style="padding:20px 22px 0"><h2>{{ icon('coins') }} Cached exchange rates</h2><span class="muted" style="font-size:12.5px">Base PHP · cache TTL {{ config.FX_CACHE_HOURS }} h · stale rates are still used as a fallback</span></div>
+  {% if rates %}
+  <div class="table-wrap" style="border:0;border-radius:0"><table class="table">
+    <thead><tr><th>Pair</th><th class="num">Rate</th><th>Rate date (ECB)</th><th>Fetched</th></tr></thead>
+    <tbody>{% for r in rates %}<tr><td class="mono">{{ r.base }} → {{ r.target }}</td><td class="num mono">{{ r.rate }}</td><td>{{ r.rate_date or '—' }}</td><td>{{ r.fetched_at|dtt }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted" style="padding:0 22px 22px">No rates cached yet. Pick a non-PHP currency in the storefront, or press “Refresh rates now”.</p>{% endif %}
+</section>
+{% endblock %}

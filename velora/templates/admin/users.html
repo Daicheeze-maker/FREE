@@ -1,0 +1,26 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, pagination_nav, empty %}
+{% block title %}Users · Admin{% endblock %}
+{% block page_title %}Users & roles{% endblock %}
+{% block content %}
+<form class="filters-bar" method="get">
+  <label class="sr-only" for="uq">Search users</label><input id="uq" class="input search-input" type="search" name="q" value="{{ q }}" placeholder="Name or email">
+  <label class="sr-only" for="ur">Role</label><select id="ur" class="input select" name="role"><option value="">All roles</option>{% for r in roles %}<option value="{{ r }}" {% if r == role %}selected{% endif %}>{{ r|title }}</option>{% endfor %}</select>
+  <label class="sr-only" for="us">State</label><select id="us" class="input select" name="state"><option value="">Any state</option><option value="disabled" {% if state == 'disabled' %}selected{% endif %}>Disabled</option><option value="locked" {% if state == 'locked' %}selected{% endif %}>Locked out</option></select>
+  <button class="btn btn--dark btn--sm" type="submit">Filter</button>
+</form>
+{% if pagination.items %}
+<div class="table-wrap"><table class="table">
+  <thead><tr><th>User</th><th>Role</th><th>Status</th><th class="num">Orders</th><th>Joined</th><th>Last sign-in</th><th><span class="sr-only">Actions</span></th></tr></thead>
+  <tbody>{% for u in pagination.items %}<tr>
+    <td><div class="cell-product"><span class="avatar avatar--sm">{{ u.full_name[:1] }}</span><div><a href="{{ url_for('admin.user_detail', user_id=u.id) }}">{{ u.full_name }}</a><small>{{ u.email }}</small></div></div></td>
+    <td><span class="role-tag role-tag--{{ u.role }}">{{ u.role }}</span></td>
+    <td>{% if not u.is_active_account %}<span class="status status--cancelled">Disabled</span>{% elif u.locked_until and u.locked_until > now %}<span class="status status--draft">Locked</span>{% else %}<span class="status status--active">Active</span>{% endif %}</td>
+    <td class="num">{{ order_counts.get(u.id, 0) }}</td>
+    <td>{{ u.created_at|dt }}</td><td>{{ u.last_login_at|dt if u.last_login_at else '—' }}</td>
+    <td><a class="btn btn--ghost btn--sm" href="{{ url_for('admin.user_detail', user_id=u.id) }}">Manage</a></td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{{ pagination_nav(pagination, 'admin.users', request.args.to_dict()|reject_page) }}
+{% else %}{{ empty('user-search', 'No users match', 'Try a different search or filter.') }}{% endif %}
+{% endblock %}

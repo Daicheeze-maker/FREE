@@ -1,0 +1,26 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}Import from Open Food Facts · Seller studio{% endblock %}
+{% block page_title %}Import from Open Food Facts{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted" style="max-width:70ch">Search the open <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> database, then import a product with your own price and stock. Ingredient, allergen and nutrition data are fetched again from the API on import, validated and stored locally — the store keeps working if the API is offline. Imports start as <strong>drafts</strong> unless you choose to publish.</p>
+  <form class="filters-bar" method="get" action="{{ url_for('seller.off_import') }}" data-off-search role="search">
+    <label class="sr-only" for="off-q">Search Open Food Facts</label>
+    <input id="off-q" class="input search-input" type="search" name="q" value="{{ form.q.data or '' }}" placeholder="e.g. dark chocolate, oat milk, 3017624010701" minlength="2" maxlength="100" required style="flex:1">
+    <button class="btn btn--accent" type="submit">{{ icon('search') }} Search</button>
+  </form>
+  {% for e in form.q.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+</section>
+<div data-off-results aria-live="polite">{% include "seller/_off_results.html" %}</div>
+<template id="off-skeleton">
+  <p class="muted">{{ icon('loader') }} Searching Open Food Facts…</p>
+  <div class="off-results">{% for _ in range(6) %}<div class="off-card"><div class="skel" style="aspect-ratio:4/3"></div><div class="off-card__body"><div class="skel skel--line w80"></div><div class="skel skel--line w40"></div><div class="skel skel--line w60"></div></div></div>{% endfor %}</div>
+</template>
+{% if recent %}
+<section class="card">
+  <div class="card__head"><h2>{{ icon('history') }} Recently imported</h2></div>
+  <ul class="list">{% for p in recent %}<li><img class="thumb" src="{{ image_src(p.primary_image) }}" alt=""><div class="list__main"><a href="{{ url_for('seller.product_edit', product_id=p.id) }}"><strong>{{ p.name }}</strong></a><small class="mono">{{ p.off_barcode }}</small></div><span class="status status--{{ p.status }}">{{ p.status }}</span></li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "account/_layout.html" %}
+{% from "_macros.html" import icon, field, confirm_form %}
+{% block page_title %}Addresses{% endblock %}
+{% block heading %}Delivery addresses{% endblock %}
+{% block account %}
+<div class="account-grid">
+  <div>
+    {% if addresses %}
+    <div class="address-grid">
+      {% for a in addresses %}
+      <div class="card address-card {{ 'is-default' if a.is_default }}" data-reveal-item>
+        <div class="card__head"><h3>{{ icon('map-pin') }} {{ a.label }}</h3>{% if a.is_default %}<span class="badge badge--soft">Default</span>{% endif %}</div>
+        <p style="font-size:14px"><strong>{{ a.full_name }}</strong><br>{{ a.phone }}<br>{{ a.one_line() }}</p>
+        <div class="row">
+          <a class="btn btn--ghost btn--sm" href="{{ url_for('account.edit_address', address_id=a.id) }}">{{ icon('pencil', 'ic--sm') }} Edit</a>
+          {% if not a.is_default %}<form method="post" action="{{ url_for('account.default_address', address_id=a.id) }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--ghost btn--sm" type="submit">Set default</button></form>{% endif %}
+          {{ confirm_form(url_for('account.delete_address', address_id=a.id), 'Delete', 'Remove the “' ~ a.label ~ '” address? Past orders keep their delivery details.', 'btn btn--link btn--sm', 'trash-2', 'Delete address?') }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="alert alert--info">{{ icon('info') }} You don't have any saved addresses yet. Add one to speed up checkout.</p>{% endif %}
+  </div>
+  <form method="post" class="card" novalidate>
+    <h2 style="font-size:18px">Add address</h2>
+    {{ form.csrf_token }}
+    {{ field(form.label, "Home, Office…") }}
+    {{ field(form.full_name, "", autocomplete="name") }}
+    {{ field(form.phone, "+63 917 000 0000", autocomplete="tel") }}
+    {{ field(form.line1, "", autocomplete="address-line1") }}
+    {{ field(form.line2, "", autocomplete="address-line2") }}
+    <div class="form-grid">{{ field(form.city, "", autocomplete="address-level2") }}{{ field(form.region, "", autocomplete="address-level1") }}{{ field(form.postal_code, "", autocomplete="postal-code") }}{{ field(form.country, "", autocomplete="country-name") }}</div>
+    {{ field(form.is_default) }}
+    <button class="btn btn--dark btn--block" type="submit">Save address</button>
+  </form>
+</div>
+{% endblock %}

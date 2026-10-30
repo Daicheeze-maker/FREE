@@ -1,0 +1,18 @@
+{% extends "account/_layout.html" %}
+{% from "_macros.html" import icon, field %}
+{% block page_title %}Edit address{% endblock %}
+{% block heading %}Edit address{% endblock %}
+{% block account %}
+<form method="post" class="card" style="max-width:640px" novalidate>
+  {{ form.csrf_token }}
+  <div class="form-grid">
+    {{ field(form.label) }}{{ field(form.full_name, autocomplete="name") }}
+    {{ field(form.phone, autocomplete="tel") }}{{ field(form.postal_code, autocomplete="postal-code") }}
+    {{ field(form.line1, cls="span-2", autocomplete="address-line1") }}{{ field(form.line2, cls="span-2", autocomplete="address-line2") }}
+    {{ field(form.city, autocomplete="address-level2") }}{{ field(form.region, autocomplete="address-level1") }}
+    {{ field(form.country, autocomplete="country-name") }}
+    <div class="span-2">{{ field(form.is_default) }}</div>
+  </div>
+  <div class="row"><button class="btn btn--dark" type="submit">Save changes</button><a class="btn btn--ghost" href="{{ url_for('account.addresses') }}">Cancel</a></div>
+</form>
+{% endblock %}

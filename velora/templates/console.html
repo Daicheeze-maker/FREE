@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block body_class %}console {{ 'console--admin' if request.blueprint == 'admin' else 'console--seller' }}{% endblock %}
+{% block shell %}
+<div class="console-shell">
+  <aside class="sidebar" id="console-nav" data-drawer aria-label="Console navigation">
+    <div class="sidebar__brand">
+      <a href="{{ url_for('main.home') }}" class="logo">velora<span class="logo__dot">.</span></a>
+      <span class="sidebar__tag">{{ 'Admin console' if request.blueprint == 'admin' else 'Seller studio' }}</span>
+      <button class="icon-btn sidebar__close" type="button" data-close-drawer aria-label="Close navigation">{{ icon('x') }}</button>
+    </div>
+    {% macro nav(endpoint, label, icon_name, match=None) -%}
+      {% set active = request.endpoint == endpoint or (match and request.endpoint.startswith(match)) %}
+      <a href="{{ url_for(endpoint) }}" class="side-link {% if active %}is-active{% endif %}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name) }}<span>{{ label }}</span></a>
+    {%- endmacro %}
+    <nav class="sidebar__nav">
+      {% if current_user.role == 'admin' %}
+      <p class="side-label">Administration</p>
+      {{ nav('admin.dashboard', 'Overview', 'gauge') }}
+      {{ nav('admin.users', 'Users & roles', 'users', 'admin.user') }}
+      {{ nav('admin.reports_view', 'Reports', 'chart-column') }}
+      {{ nav('admin.api_health_view', 'API health', 'activity') }}
+      {{ nav('admin.audit_log', 'Audit log', 'scroll-text') }}
+      {{ nav('admin.settings', 'Store settings', 'sliders-horizontal') }}
+      <p class="side-label">Store operations</p>
+      {% else %}
+      <p class="side-label">Studio</p>
+      {% endif %}
+      {{ nav('seller.dashboard', 'Seller dashboard' if current_user.role == 'admin' else 'Dashboard', 'layout-dashboard') }}
+      {{ nav('seller.orders', 'Orders', 'package', 'seller.order') }}
+      {{ nav('seller.products', 'Products', 'boxes', 'seller.product') }}
+      {{ nav('seller.inventory', 'Inventory', 'warehouse') }}
+      {{ nav('seller.categories', 'Categories', 'folder-tree', 'seller.categor') }}
+      {{ nav('seller.discounts', 'Promotions', 'ticket-percent', 'seller.discount') }}
+      {{ nav('seller.reviews', 'Customer feedback', 'message-square-heart', 'seller.review') }}
+      {{ nav('seller.off_import', 'Import · Open Food Facts', 'scan-barcode', 'seller.off') }}
+    </nav>
+    <div class="sidebar__foot">
+      <a href="{{ url_for('main.home') }}" class="side-link">{{ icon('external-link') }}<span>View storefront</span></a>
+      <div class="sidebar__user"><span class="avatar">{{ current_user.full_name[:1] }}</span><div><strong>{{ current_user.full_name }}</strong><span class="role-tag role-tag--{{ current_user.role }}">{{ current_user.role }}</span></div></div>
+      <div class="sidebar__row">
+        <a href="{{ url_for('account.profile') }}" class="icon-btn" aria-label="Profile & password">{{ icon('settings') }}</a>
+        <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode">{{ icon('moon', 'theme-moon') }}{{ icon('sun', 'theme-sun') }}</button>
+        <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="icon-btn" type="submit" aria-label="Sign out">{{ icon('log-out') }}</button></form>
+      </div>
+    </div>
+  </aside>
+  <div class="console-main">
+    <header class="console-top">
+      <button class="icon-btn console-menu" type="button" data-open-drawer="console-nav" aria-label="Open navigation" aria-controls="console-nav" aria-expanded="false">{{ icon('panel-left') }}</button>
+      <div class="console-top__title">
+        {% block crumbs %}{% endblock %}
+        <h1>{% block page_title %}{% endblock %}</h1>
+      </div>
+      <div class="console-top__actions">{% block actions %}{% endblock %}</div>
+    </header>
+    <main id="main" class="console-content" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

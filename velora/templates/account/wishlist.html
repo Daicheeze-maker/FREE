@@ -1,0 +1,11 @@
+{% extends "account/_layout.html" %}
+{% from "_macros.html" import icon, product_card, empty %}
+{% block page_title %}Wishlist{% endblock %}
+{% block heading %}Saved for later{% endblock %}
+{% block account %}
+{% if items %}
+<div class="grid-products" data-wishlist-page>{% for w in items %}{{ product_card(w.product, money, wishlist_ids) }}{% endfor %}</div>
+{% else %}
+{{ empty('heart', 'Nothing saved yet', 'Tap the heart on any product to keep it here for later.', url_for('catalog.listing'), 'Explore the shop') }}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, field %}
+{% block title %}Create account · Velora Market{% endblock %}
+{% block content %}
+<div class="auth">
+  <div class="auth__art">
+    <img src="https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=1100&q=80&auto=format&fit=crop" alt="A colourful breakfast spread" loading="lazy">
+    <p class="auth__quote">Join the<br>harvest club.</p>
+  </div>
+  <div class="auth__panel">
+    <div class="auth__form" data-reveal>
+      <h1>Create account</h1>
+      <p>Already have one? <a href="{{ url_for('auth.login', next=request.args.get('next')) }}">Sign in</a>. Your bag comes with you.</p>
+      <form method="post" novalidate>
+        {{ form.csrf_token }}
+        {{ field(form.full_name, "Maya Santos", autocomplete="name") }}
+        {{ field(form.email, "you@example.com", autocomplete="email") }}
+        {{ field(form.password, "At least 8 characters", hint="Use letters and numbers.", autocomplete="new-password") }}
+        {{ field(form.confirm, "Repeat password", autocomplete="new-password") }}
+        {{ field(form.accept) }}
+        <button class="btn btn--dark btn--lg btn--block" type="submit" data-loading-text="Creating account…">Create account {{ icon('arrow-right') }}</button>
+      </form>
+      <p class="muted" style="font-size:12.5px;margin-top:16px">{{ icon('gift', 'ic--sm') }} New customers get <strong>WELCOME10</strong> — 10% off the first order.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, skeleton_grid %}
+{% block title %}{% if q %}“{{ q }}” · {% endif %}{{ category.name if category else 'Shop all' }} · Velora Market{% endblock %}
+{% block content %}
+<div class="container">
+  <header class="page-head">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="{{ url_for('main.home') }}">Home</a>{{ icon('chevron-right', 'ic--sm') }}
+      <a href="{{ url_for('catalog.listing') }}">Shop</a>
+      {% if category %}{{ icon('chevron-right', 'ic--sm') }}<span>{{ category.name }}</span>{% endif %}
+    </nav>
+    <h1>{% if q %}Results for “{{ q }}”{% elif category %}{{ category.name }}{% else %}Shop all{% endif %}</h1>
+    <p>{{ category.description if category else 'Every product in the market — filter by aisle, maker, price or availability.' }}</p>
+  </header>
+
+  <div class="catalog">
+    <form class="filters" action="{{ url_for('catalog.listing', slug=category.slug) if category else url_for('catalog.listing') }}" method="get" data-filters data-filters-panel aria-label="Filters">
+      <div class="row row--between filter-toggle"><strong>Filters</strong><button type="button" class="icon-btn" data-close-filters aria-label="Close filters">{{ icon('x') }}</button></div>
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <div>
+        <label class="sr-only" for="f-q">Search within results</label>
+        <div class="search search--block">{{ icon('search') }}<input id="f-q" type="search" name="q" value="{{ q }}" placeholder="Search…" maxlength="100"></div>
+      </div>
+      <div>
+        <h3>Aisles</h3>
+        <ul class="filter-cats">
+          <li><a href="{{ url_for('catalog.listing', q=q or None, sort=sort) }}" class="{% if not category %}is-active{% endif %}">{{ icon('layout-grid') }} All products</a></li>
+          {% for c in nav_categories %}<li><a href="{{ url_for('catalog.listing', slug=c.slug, q=q or None, sort=sort) }}" class="{% if category and category.id == c.id %}is-active{% endif %}">{{ icon(c.icon) }} {{ c.name }}</a></li>{% endfor %}
+        </ul>
+      </div>
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend><h3>Maker</h3></legend>
+        <div class="filter-list">
+          {% for b in brands %}<label class="check"><input type="checkbox" name="brand" value="{{ b }}" {% if b in selected_brands %}checked{% endif %}><span>{{ b }}</span></label>{% endfor %}
+        </div>
+      </fieldset>
+      <div>
+        <h3>Price (₱)</h3>
+        <div class="price-range">
+          <label class="sr-only" for="f-min">Minimum price</label><input id="f-min" class="input" type="number" name="min" min="0" step="1" placeholder="Min" value="{{ min_price }}">
+          <label class="sr-only" for="f-max">Maximum price</label><input id="f-max" class="input" type="number" name="max" min="0" step="1" placeholder="Max" value="{{ max_price }}">
+        </div>
+      </div>
+      <div>
+        <h3>Availability</h3>
+        <label class="check"><input type="checkbox" name="availability" value="in_stock" {% if availability == 'in_stock' %}checked{% endif %}><span>In stock only</span></label>
+      </div>
+      <div class="row">
+        <button class="btn btn--dark btn--sm" type="submit">Apply filters</button>
+        {% if active_filters %}<a class="btn btn--link btn--sm" href="{{ url_for('catalog.listing', slug=category.slug) if category else url_for('catalog.listing') }}">Clear all</a>{% endif %}
+      </div>
+    </form>
+
+    <section aria-label="Products">
+      <div class="toolbar">
+        <div class="row">
+          <button type="button" class="btn btn--ghost btn--sm filter-toggle" data-open-filters>{{ icon('sliders-horizontal') }} Filters</button>
+          <span class="toolbar__count" data-results-live aria-live="polite">{{ pagination.total }} product{{ '' if pagination.total == 1 else 's' }}</span>
+        </div>
+        <form class="toolbar__right" method="get" action="">
+          {% for k, vals in args.items() if k != 'sort' %}{% for v in vals %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}{% endfor %}
+          <label for="sort" class="muted" style="font-size:13px">Sort</label>
+          <select id="sort" name="sort" class="input select" data-sort>
+            {% for key, label in sorts.items() %}<option value="{{ key }}" {% if key == sort %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+          <noscript><button class="btn btn--sm" type="submit">Go</button></noscript>
+        </form>
+      </div>
+      <div class="results" data-results>
+        <div class="results__skeleton">{{ skeleton_grid(6) }}</div>
+        <div data-results-body>{% include "catalog/_results.html" %}</div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

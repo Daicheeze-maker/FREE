@@ -1,0 +1,28 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, empty %}
+{% block title %}Inventory · Seller studio{% endblock %}
+{% block page_title %}Inventory{% endblock %}
+{% block actions %}<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.export', kind='products') }}">{{ icon('download') }} Stock CSV</a>{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card__head"><h2>{{ icon('warehouse') }} Stock by category</h2><span class="muted" style="font-size:12.5px">Active products · retail value at current prices</span></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Category</th><th class="num">Products</th><th class="num">Units</th><th class="num">Retail value</th></tr></thead>
+    <tbody>{% for name, count, units, value in by_cat %}<tr><td>{{ name }}</td><td class="num">{{ count }}</td><td class="num">{{ units }}</td><td class="num">{{ fmt_base(value) }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+<section class="card">
+  <div class="card__head"><h2>{{ icon('triangle-alert') }} Low-stock alerts</h2>{% if current_user.role == 'admin' %}<a class="btn btn--link btn--sm" href="{{ url_for('admin.settings') }}">Change threshold</a>{% else %}<span class="muted" style="font-size:12.5px">Threshold is set by an administrator</span>{% endif %}</div>
+  {% if low %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Product</th><th class="num">In stock</th><th class="num">Sold</th><th>Restock</th></tr></thead>
+    <tbody>{% for p in low %}<tr>
+      <td><div class="cell-product"><img src="{{ image_src(p.primary_image) }}" alt=""><div><a href="{{ url_for('seller.product_edit', product_id=p.id) }}">{{ p.name }}</a><small class="mono">{{ p.sku }}</small></div></div></td>
+      <td class="num"><span class="tag {{ 'tag--warn' }}">{{ p.stock }}</span></td>
+      <td class="num">{{ p.sold_count }}</td>
+      <td><form method="post" action="{{ url_for('seller.restock', product_id=p.id) }}" class="row" style="gap:6px;flex-wrap:nowrap"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label class="sr-only" for="add-{{ p.id }}">Units to add</label><input id="add-{{ p.id }}" class="input" style="height:36px;width:90px" type="number" name="add" min="1" max="10000" value="20" required><button class="btn btn--dark btn--sm" type="submit">Add stock</button></form></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}{{ empty('circle-check', 'All stocked up', 'No active product is at or below the low-stock threshold.') }}{% endif %}
+</section>
+{% endblock %}

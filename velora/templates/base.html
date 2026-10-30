@@ -1,0 +1,184 @@
+{% from "_macros.html" import icon %}<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Velora Market — small-batch pantry & considered living{% endblock %}</title>
+  <meta name="description" content="{% block description %}Velora Market: single-origin coffee, bean-to-bar chocolate, pantry staples and wellness goods from independent makers.{% endblock %}">
+  <meta name="theme-color" content="#F5F1EA">
+  <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/inter.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/bricolage.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}" data-placeholder="{{ url_for('static', filename='img/placeholder.svg') }}">
+<a class="skip-link" href="#main">Skip to content</a>
+{% block shell %}
+{% if announcement %}<div class="announce"><div class="container announce__inner">{{ icon('sparkles') }}<span>{{ announcement }}</span></div></div>{% endif %}
+<header class="site-header" data-header>
+  <div class="container header__row">
+    <button class="icon-btn header__menu" type="button" data-open-drawer="mobile-nav" aria-label="Open menu" aria-controls="mobile-nav" aria-expanded="false">{{ icon('menu') }}</button>
+    <nav class="header__nav" aria-label="Primary">
+      <a href="{{ url_for('catalog.listing') }}" class="nav-link {% if request.endpoint == 'catalog.listing' and not request.view_args %}is-active{% endif %}">Shop all</a>
+      <div class="dropdown" data-dropdown>
+        <button class="nav-link dropdown__toggle" type="button" aria-expanded="false" aria-haspopup="true">Aisles {{ icon('chevron-down', 'ic--sm') }}</button>
+        <div class="dropdown__panel dropdown__panel--mega" role="menu">
+          {% for c in nav_categories %}
+          <a role="menuitem" class="mega-item" href="{{ url_for('catalog.listing', slug=c.slug) }}">
+            <span class="mega-item__icon">{{ icon(c.icon) }}</span>
+            <span><strong>{{ c.name }}</strong><small>{{ c.description }}</small></span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      <a href="{{ url_for('catalog.listing', sort='newest') }}" class="nav-link">New <span class="nav-pill">new</span></a>
+      <a href="{{ url_for('catalog.listing', sort='popular') }}" class="nav-link">Bestsellers</a>
+    </nav>
+    <a href="{{ url_for('main.home') }}" class="logo" aria-label="Velora Market home">velora<span class="logo__dot">.</span><small>market</small></a>
+    <div class="header__actions">
+      <form class="search" action="{{ url_for('catalog.listing') }}" method="get" role="search">
+        {{ icon('search') }}
+        <label class="sr-only" for="site-search">Search products</label>
+        <input id="site-search" type="search" name="q" placeholder="Search coffee, honey, matcha…" value="{{ request.args.get('q', '') if request.endpoint == 'catalog.listing' else '' }}" maxlength="100" autocomplete="off">
+      </form>
+      <div class="dropdown" data-dropdown>
+        <button class="icon-btn currency-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Display currency: {{ money.currency }}">
+          <span class="currency-code">{{ money.currency }}</span>
+        </button>
+        <div class="dropdown__panel dropdown__panel--right currency-panel">
+          <form method="post" action="{{ url_for('main.set_currency') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ request.full_path }}">
+            <p class="currency-panel__title">Display prices in</p>
+            <div class="currency-grid">
+              {% for c in currencies %}<button class="currency-opt {% if c == money.currency %}is-active{% endif %}" name="currency" value="{{ c }}" type="submit">{{ c }}</button>{% endfor %}
+            </div>
+            <p class="currency-panel__note">
+              {% if money.converted %}{{ icon('info', 'ic--sm') }} Estimates at 1 PHP = {{ money.quote.rate|round(5) }} {{ money.currency }}, ECB rates via Frankfurter ({{ money.quote.rate_date or 'date n/a' }}{% if money.quote.stale %}, cached{% endif %}). Orders are always charged in PHP.
+              {% elif money.fallback %}{{ icon('wifi-off', 'ic--sm') }} Live rates for {{ money.requested }} are unavailable right now, so prices are shown in PHP.
+              {% else %}Prices are charged in Philippine pesos (PHP). Other currencies are display estimates.{% endif %}
+            </p>
+          </form>
+        </div>
+      </div>
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode">{{ icon('moon', 'theme-moon') }}{{ icon('sun', 'theme-sun') }}</button>
+      {% if current_user.is_authenticated and current_user.role == 'customer' %}
+      <a class="icon-btn hide-sm" href="{{ url_for('account.wishlist') }}" aria-label="Wishlist">{{ icon('heart') }}</a>
+      {% endif %}
+      <div class="dropdown" data-dropdown>
+        <button class="icon-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Account menu">
+          {% if current_user.is_authenticated %}<span class="avatar avatar--sm">{{ current_user.full_name[:1] }}</span>{% else %}{{ icon('user-round') }}{% endif %}
+          {% if current_user.is_authenticated and current_user.role == 'customer' and current_user.unread_notifications %}<span class="dot-badge"></span>{% endif %}
+        </button>
+        <div class="dropdown__panel dropdown__panel--right account-panel" role="menu">
+          {% if current_user.is_authenticated %}
+            <div class="account-panel__head"><strong>{{ current_user.full_name }}</strong><span>{{ current_user.email }}</span><span class="role-tag role-tag--{{ current_user.role }}">{{ current_user.role }}</span></div>
+            {% if current_user.role == 'customer' %}
+              <a role="menuitem" href="{{ url_for('account.dashboard') }}">{{ icon('layout-dashboard') }} My account</a>
+              <a role="menuitem" href="{{ url_for('account.orders') }}">{{ icon('package') }} Orders</a>
+              <a role="menuitem" href="{{ url_for('account.wishlist') }}">{{ icon('heart') }} Wishlist</a>
+              <a role="menuitem" href="{{ url_for('account.notifications') }}">{{ icon('bell') }} Notifications {% if current_user.unread_notifications %}<span class="count-pill">{{ current_user.unread_notifications }}</span>{% endif %}</a>
+            {% elif current_user.role == 'seller' %}
+              <a role="menuitem" href="{{ url_for('seller.dashboard') }}">{{ icon('store') }} Seller studio</a>
+            {% else %}
+              <a role="menuitem" href="{{ url_for('admin.dashboard') }}">{{ icon('shield-check') }} Admin console</a>
+              <a role="menuitem" href="{{ url_for('seller.dashboard') }}">{{ icon('store') }} Seller studio</a>
+            {% endif %}
+            <a role="menuitem" href="{{ url_for('account.profile') }}">{{ icon('settings') }} Profile & password</a>
+            <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button role="menuitem" type="submit">{{ icon('log-out') }} Sign out</button></form>
+          {% else %}
+            <div class="account-panel__head"><strong>Welcome</strong><span>Sign in for order tracking, wishlists and faster checkout.</span></div>
+            <a role="menuitem" href="{{ url_for('auth.login', next=request.path) }}">{{ icon('log-in') }} Sign in</a>
+            <a role="menuitem" href="{{ url_for('auth.register') }}">{{ icon('user-plus') }} Create account</a>
+          {% endif %}
+        </div>
+      </div>
+      <a class="icon-btn cart-btn" href="{{ url_for('shop.cart') }}" data-open-cart aria-label="Bag, {{ cart_count }} items">
+        {{ icon('shopping-bag') }}<span class="cart-count {% if not cart_count %}is-empty{% endif %}" data-cart-count>{{ cart_count }}</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<aside class="drawer drawer--left" id="mobile-nav" aria-label="Menu" aria-hidden="true" data-drawer>
+  <div class="drawer__head"><a href="{{ url_for('main.home') }}" class="logo">velora<span class="logo__dot">.</span></a><button class="icon-btn" type="button" data-close-drawer aria-label="Close menu">{{ icon('x') }}</button></div>
+  <div class="drawer__body mobile-nav">
+    <form action="{{ url_for('catalog.listing') }}" method="get" class="search search--block" role="search">{{ icon('search') }}<label class="sr-only" for="m-search">Search</label><input id="m-search" type="search" name="q" placeholder="Search products" maxlength="100"></form>
+    <a href="{{ url_for('catalog.listing') }}">Shop all {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', sort='newest') }}">New arrivals {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', sort='popular') }}">Bestsellers {{ icon('arrow-right') }}</a>
+    <p class="mobile-nav__label">Aisles</p>
+    {% for c in nav_categories %}<a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ icon(c.icon) }} {{ c.name }}</a>{% endfor %}
+    <p class="mobile-nav__label">Account</p>
+    {% if current_user.is_authenticated %}
+      {% if current_user.role == 'customer' %}<a href="{{ url_for('account.dashboard') }}">{{ icon('layout-dashboard') }} My account</a><a href="{{ url_for('account.wishlist') }}">{{ icon('heart') }} Wishlist</a>
+      {% elif current_user.role == 'seller' %}<a href="{{ url_for('seller.dashboard') }}">{{ icon('store') }} Seller studio</a>
+      {% else %}<a href="{{ url_for('admin.dashboard') }}">{{ icon('shield-check') }} Admin console</a>{% endif %}
+    {% else %}<a href="{{ url_for('auth.login') }}">{{ icon('log-in') }} Sign in</a><a href="{{ url_for('auth.register') }}">{{ icon('user-plus') }} Create account</a>{% endif %}
+  </div>
+</aside>
+
+<main id="main" tabindex="-1">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container footer__grid">
+    <div class="footer__brand">
+      <a href="{{ url_for('main.home') }}" class="logo logo--lg">velora<span class="logo__dot">.</span></a>
+      <p>Small-batch pantry goods and considered objects from independent makers across the Philippines and beyond.</p>
+      <p class="footer__contact">{{ icon('mail') }} <a href="mailto:{{ support_email }}">{{ support_email }}</a><br>{{ icon('clock') }} Mon–Sat, 9:00–18:00 PHT</p>
+    </div>
+    <div><h4>Shop</h4><ul>{% for c in nav_categories %}<li><a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ c.name }}</a></li>{% endfor %}</ul></div>
+    <div><h4>Support</h4><ul>
+      <li><a href="{{ url_for('main.page', slug='contact') }}">Contact us</a></li>
+      <li><a href="{{ url_for('main.page', slug='shipping') }}">Shipping & delivery</a></li>
+      <li><a href="{{ url_for('main.page', slug='returns') }}">Returns & refunds</a></li>
+      <li><a href="{{ url_for('main.page', slug='faq') }}">FAQ</a></li>
+    </ul></div>
+    <div><h4>Company</h4><ul>
+      <li><a href="{{ url_for('main.page', slug='about') }}">Our story</a></li>
+      <li><a href="{{ url_for('main.page', slug='privacy') }}">Privacy policy</a></li>
+      <li><a href="{{ url_for('main.page', slug='terms') }}">Terms of service</a></li>
+    </ul></div>
+  </div>
+  <div class="container footer__base">
+    <span>© {{ 2026 }} Velora Market · demo store, no real payments are processed.</span>
+    <span>Product data partly from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a> (ODbL) · Rates by <a href="https://frankfurter.dev" rel="noopener" target="_blank">Frankfurter</a> · Photos via Unsplash</span>
+  </div>
+</footer>
+
+<aside class="drawer drawer--right cart-drawer" id="cart-drawer" aria-label="Shopping bag" aria-hidden="true" data-drawer data-cart-drawer data-src="{{ url_for('shop.drawer') }}">
+  <div class="drawer__head"><h2>Your bag</h2><button class="icon-btn" type="button" data-close-drawer aria-label="Close bag">{{ icon('x') }}</button></div>
+  <div class="drawer__content" data-cart-drawer-body>
+    <div class="drawer__loading"><div class="skel skel--line w80"></div><div class="skel skel--line w60"></div><div class="skel skel--line w40"></div></div>
+  </div>
+</aside>
+{% endblock %}
+
+<div class="scrim" data-scrim hidden></div>
+
+<div class="modal" id="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text" hidden>
+  <div class="modal__card">
+    <div class="modal__icon">{{ icon('triangle-alert') }}</div>
+    <h2 id="confirm-title">Are you sure?</h2>
+    <p id="confirm-text"></p>
+    <div class="modal__actions"><button type="button" class="btn btn--ghost" data-modal-cancel>Cancel</button><button type="button" class="btn btn--danger" data-modal-ok>Confirm</button></div>
+  </div>
+</div>
+
+<div class="toasts" aria-live="polite" aria-atomic="false" data-toasts>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}<div class="toast toast--{{ cat }}" role="status" data-flash>{{ icon('circle-check' if cat == 'success' else 'circle-alert' if cat == 'error' else 'info') }}<span>{{ msg }}</span><button type="button" class="toast__x" aria-label="Dismiss">×</button></div>{% endfor %}
+  {% endwith %}
+</div>
+
+<script src="{{ url_for('static', filename='vendor/gsap.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/ScrollTrigger.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/lucide.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

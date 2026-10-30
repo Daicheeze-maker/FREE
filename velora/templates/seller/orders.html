@@ -1,0 +1,31 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, status_badge, pagination_nav, empty %}
+{% block title %}Orders · Seller studio{% endblock %}
+{% block page_title %}Orders{% endblock %}
+{% block actions %}<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.export', kind='orders') }}">{{ icon('download') }} Export CSV</a>{% endblock %}
+{% block content %}
+<div class="pill-tabs">
+  <a class="chip {{ 'is-active' if not status }}" href="{{ url_for('seller.orders', q=q or None) }}">All</a>
+  {% for s, n in breakdown %}<a class="chip {{ 'is-active' if status == s }}" href="{{ url_for('seller.orders', status=s, q=q or None) }}">{{ s|title }} <span class="muted">{{ n }}</span></a>{% endfor %}
+</div>
+<form class="filters-bar" method="get">
+  {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+  <label class="sr-only" for="oq">Search orders</label><input id="oq" class="input search-input" type="search" name="q" value="{{ q }}" placeholder="Order number, customer email or name">
+  <button class="btn btn--dark btn--sm" type="submit">Search</button>
+</form>
+{% if pagination.items %}
+<div class="table-wrap"><table class="table">
+  <thead><tr><th>Order</th><th>Placed</th><th>Customer</th><th class="num">Items</th><th>Payment</th><th>Status</th><th class="num">Total</th></tr></thead>
+  <tbody>{% for o in pagination.items %}<tr>
+    <td><a class="mono" href="{{ url_for('seller.order_detail', number=o.number) }}">{{ o.number }}</a></td>
+    <td>{{ o.created_at|dt('%b %d, %H:%M') }}</td>
+    <td>{{ o.ship_name }}<br><small class="muted">{{ o.user.email }}</small></td>
+    <td class="num">{{ o.item_count }}</td>
+    <td>{% if o.payment %}<span class="status status--{{ o.payment.status }}">{{ 'COD' if o.payment.method == 'cod' else 'Demo' }} · {{ o.payment.status }}</span>{% endif %}</td>
+    <td>{{ status_badge(o.status) }}</td>
+    <td class="num"><strong>{{ fmt_base(o.total_minor) }}</strong></td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{{ pagination_nav(pagination, 'seller.orders', request.args.to_dict()|reject_page) }}
+{% else %}{{ empty('package-search', 'No orders match', 'Try another status or search term.') }}{% endif %}
+{% endblock %}

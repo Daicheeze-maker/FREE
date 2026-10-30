@@ -1,0 +1,160 @@
+{% macro icon(name, cls="") -%}
+<i data-lucide="{{ name }}" class="ic {{ cls }}" aria-hidden="true"></i>
+{%- endmacro %}
+
+{% macro stars(rating, count=None, size="sm") -%}
+<span class="stars stars--{{ size }}" {% if rating %}aria-label="Rated {{ rating }} out of 5{% if count is not none %} from {{ count }} reviews{% endif %}"{% else %}aria-label="No reviews yet"{% endif %}>
+  <span class="stars__track" aria-hidden="true">★★★★★<span class="stars__fill" style="width: {{ ((rating or 0) / 5 * 100)|round(1) }}%">★★★★★</span></span>
+  {% if count is not none %}<span class="stars__count">{% if rating %}{{ rating }} · {% endif %}{{ count }}</span>{% endif %}
+</span>
+{%- endmacro %}
+
+{% macro price(product, money, cls="") -%}
+<span class="price {{ cls }}">
+  <span class="price__now">{{ money(product.price_minor) }}</span>
+  {% if product.compare_at_minor %}<s class="price__was">{{ money(product.compare_at_minor) }}</s>{% endif %}
+</span>
+{%- endmacro %}
+
+{% macro product_card(p, money, wishlist_ids, eager=False) -%}
+{% set img = p.primary_image %}
+<article class="pcard" data-reveal-item>
+  <div class="pcard__media">
+    <a href="{{ url_for('catalog.detail', slug=p.slug) }}" class="pcard__link" tabindex="-1" aria-hidden="true">
+      <img src="{{ image_src(img) }}" alt="{{ img.alt if img else p.name }}" loading="{{ 'eager' if eager else 'lazy' }}" decoding="async" width="600" height="750">
+    </a>
+    <div class="pcard__badges">
+      {% if p.stock_state == 'out' %}<span class="badge badge--muted">Sold out</span>
+      {% elif p.compare_at_minor %}<span class="badge badge--saffron">−{{ ((1 - p.price_minor / p.compare_at_minor) * 100)|round|int }}%</span>
+      {% elif p.is_new %}<span class="badge badge--accent">New</span>{% endif %}
+      {% if p.stock_state == 'low' %}<span class="badge badge--line">{{ p.stock_label }}</span>{% endif %}
+    </div>
+    <form method="post" action="{{ url_for('account.toggle_wishlist', product_id=p.id) }}" class="pcard__wish" data-wishlist>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="wish-btn {% if p.id in wishlist_ids %}is-saved{% endif %}" aria-pressed="{{ 'true' if p.id in wishlist_ids else 'false' }}" aria-label="Save {{ p.name }} to wishlist">
+        {{ icon('heart') }}
+      </button>
+    </form>
+    {% if p.in_stock %}
+    <form method="post" action="{{ url_for('shop.add', product_id=p.id) }}" class="pcard__quick" data-add-to-cart>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="quantity" value="1">
+      <button type="submit" class="btn btn--dark btn--sm btn--block" data-loading-text="Adding…">{{ icon('shopping-bag') }} Add to bag</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="pcard__body">
+    <p class="pcard__brand">{{ p.brand }}</p>
+    <h3 class="pcard__name"><a href="{{ url_for('catalog.detail', slug=p.slug) }}">{{ p.name }}</a></h3>
+    <div class="pcard__meta">
+      {{ price(p, money) }}
+      {% set r = p.rating %}{% if r %}<span class="pcard__rating">{{ icon('star', 'ic--fill') }} {{ r }}</span>{% endif %}
+    </div>
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro skeleton_grid(n=8) -%}
+<div class="grid-products" aria-hidden="true">
+  {% for _ in range(n) %}<div class="skel-card"><div class="skel skel--media"></div><div class="skel skel--line w40"></div><div class="skel skel--line w80"></div><div class="skel skel--line w30"></div></div>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro pagination_nav(pagination, endpoint, args={}) -%}
+{% if pagination.pages > 1 %}
+<nav class="pager" aria-label="Pagination">
+  {% if pagination.has_prev %}<a class="pager__btn" href="{{ url_for(endpoint, page=pagination.prev_num, **args) }}" rel="prev">{{ icon('arrow-left') }}<span class="sr-only">Previous</span></a>{% endif %}
+  {% for n in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+    {% if n %}
+      {% if n == pagination.page %}<span class="pager__num is-current" aria-current="page">{{ n }}</span>
+      {% else %}<a class="pager__num" href="{{ url_for(endpoint, page=n, **args) }}">{{ n }}</a>{% endif %}
+    {% else %}<span class="pager__gap">…</span>{% endif %}
+  {% endfor %}
+  {% if pagination.has_next %}<a class="pager__btn" href="{{ url_for(endpoint, page=pagination.next_num, **args) }}" rel="next">{{ icon('arrow-right') }}<span class="sr-only">Next</span></a>{% endif %}
+</nav>
+{% endif %}
+{%- endmacro %}
+
+{% macro field(f, placeholder="", type=None, hint=None, cls="", autocomplete=None) -%}
+<div class="field {{ cls }} {% if f.errors %}has-error{% endif %}">
+  {% if f.type == 'BooleanField' %}
+    <label class="check">{{ f(**{'aria-describedby': f.id ~ '-err' if f.errors else None}) }}<span>{{ f.label.text }}</span></label>
+  {% else %}
+    {{ f.label(class="field__label") }}
+    {% set attrs = {'class': 'input', 'placeholder': placeholder} %}
+    {% if f.flags.required %}{% set _ = attrs.update({'required': True}) %}{% endif %}
+    {% if autocomplete %}{% set _ = attrs.update({'autocomplete': autocomplete}) %}{% endif %}
+    {% if f.errors %}{% set _ = attrs.update({'aria-invalid': 'true', 'aria-describedby': f.id ~ '-err'}) %}{% endif %}
+    {% if f.type == 'SelectField' %}{% set _ = attrs.update({'class': 'input select'}) %}{% endif %}
+    {% if f.type == 'TextAreaField' %}{% set _ = attrs.update({'rows': 4}) %}{% endif %}
+    {% if type %}{% set _ = attrs.update({'type': type}) %}{% endif %}
+    {{ f(**attrs) }}
+  {% endif %}
+  {% if hint and not f.errors %}<p class="field__hint">{{ hint }}</p>{% endif %}
+  {% for e in f.errors %}<p class="field__error" id="{{ f.id }}-err">{{ icon('circle-alert') }} {{ e }}</p>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro status_badge(status) -%}
+<span class="status status--{{ status }}"><span class="status__dot"></span>{{ status|title }}</span>
+{%- endmacro %}
+
+{% macro order_tracker(order, flow) -%}
+{% set idx = flow.index(order.status) if order.status in flow else -1 %}
+{% if order.status == 'cancelled' %}
+<div class="tracker tracker--cancelled">
+  <div class="tracker__cancel">{{ icon('circle-x') }}<div><strong>Order cancelled</strong><p>{{ order.cancelled_at|dtt }}{% if order.cancel_reason %} · {{ order.cancel_reason }}{% endif %}</p></div></div>
+</div>
+{% else %}
+{% set labels = {'pending': ('Placed', 'receipt'), 'confirmed': ('Confirmed', 'badge-check'), 'processing': ('Packing', 'package'), 'shipped': ('On the way', 'truck'), 'delivered': ('Delivered', 'house')} %}
+{% set stamps = {'pending': order.created_at, 'confirmed': order.confirmed_at, 'processing': None, 'shipped': order.shipped_at, 'delivered': order.delivered_at} %}
+<ol class="tracker" data-tracker data-step="{{ idx }}" style="--progress: {{ (idx / (flow|length - 1) * 100)|round(1) }}%">
+  <div class="tracker__rail" aria-hidden="true"><div class="tracker__fill"></div></div>
+  {% for s in flow %}
+  <li class="tracker__step {% if loop.index0 < idx %}is-done{% elif loop.index0 == idx %}is-current{% endif %}" {% if loop.index0 == idx %}aria-current="step"{% endif %}>
+    <span class="tracker__dot">{{ icon(labels[s][1]) }}</span>
+    <span class="tracker__label">{{ labels[s][0] }}</span>
+    <span class="tracker__time">{% if stamps[s] and loop.index0 <= idx %}{{ stamps[s]|dt('%b %d') }}{% endif %}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+{%- endmacro %}
+
+{% macro empty(icon_name, title, text, cta_url=None, cta_label=None) -%}
+<div class="empty" data-empty>
+  <div class="empty__art">{{ icon(icon_name) }}</div>
+  <h3>{{ title }}</h3>
+  <p>{{ text }}</p>
+  {% if cta_url %}<a class="btn btn--dark" href="{{ cta_url }}">{{ cta_label }} {{ icon('arrow-right') }}</a>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro confirm_form(action, label, message, btn_class="btn btn--ghost btn--sm", icon_name=None, title="Are you sure?", danger=True) -%}
+<form method="post" action="{{ action }}" class="inline-form" data-confirm="{{ message }}" data-confirm-title="{{ title }}" {% if danger %}data-confirm-danger{% endif %}>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="{{ btn_class }}">{% if icon_name %}{{ icon(icon_name) }}{% endif %}{{ label }}</button>
+</form>
+{%- endmacro %}
+
+{% macro stat(label, value, sub=None, icon_name=None, tone="") -%}
+<div class="stat {{ tone }}" data-reveal-item>
+  <div class="stat__top"><span class="stat__label">{{ label }}</span>{% if icon_name %}<span class="stat__icon">{{ icon(icon_name) }}</span>{% endif %}</div>
+  <div class="stat__value">{{ value }}</div>
+  {% if sub %}<div class="stat__sub">{{ sub }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro bar_chart(series, money, height=180, label="Revenue") -%}
+<div class="chart" role="img" aria-label="{{ label }} by day">
+  <div class="chart__bars" style="--h: {{ height }}px">
+    {% for s in series %}
+    <div class="chart__col" title="{{ s.label }} · {{ money(s.value) }} · {{ s.orders }} orders">
+      <div class="chart__bar" style="--pct: {{ s.pct }}%" data-chart-bar></div>
+      <span class="chart__x">{% if loop.first or loop.last or loop.index0 % ((series|length // 7) or 1) == 0 %}{{ s.short }}{% endif %}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<table class="sr-only"><caption>{{ label }} by day</caption><tr><th>Day</th><th>{{ label }}</th><th>Orders</th></tr>{% for s in series %}<tr><td>{{ s.label }}</td><td>{{ money(s.value) }}</td><td>{{ s.orders }}</td></tr>{% endfor %}</table>
+{%- endmacro %}

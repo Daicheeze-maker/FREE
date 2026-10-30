@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ title }} · Velora Market{% endblock %}
+{% block content %}
+<div class="container">
+  <header class="page-head">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="{{ url_for('main.home') }}">Home</a>{{ icon('chevron-right', 'ic--sm') }}<span>{{ title }}</span></nav>
+    <h1>{{ title }}</h1>
+  </header>
+  <div class="cart-layout">
+    <article class="prose card">
+      {% if slug == 'about' %}
+        <p>Velora Market started as a weekend stall selling coffee we roasted in a borrowed oven. Today we work with more than twenty independent makers — roasters, beekeepers, bakers and potters — and we still taste every batch before it reaches you.</p>
+        <h2>What we stand for</h2>
+        <ul><li>Small batches, restocked weekly rather than warehoused for months.</li><li>Fair, published prices to our makers.</li><li>Honest labels: real ingredients, real origins, real reviews from real buyers.</li></ul>
+      {% elif slug == 'shipping' %}
+        <p>We deliver across the Philippines. Metro Manila orders placed before 2pm usually arrive within 48 hours; provincial deliveries take 3–7 business days.</p>
+        <h2>Rates</h2>
+        <p>A flat fee of {{ fmt_base(15000) }} applies, and delivery is free on orders over {{ fmt_base(free_ship_minor) }} after discounts. (These values are configurable by store administrators.)</p>
+        <h2>Tracking</h2><p>Every order has a live tracker under <em>My account → Orders</em>.</p>
+      {% elif slug == 'returns' %}
+        <p>Food items can't be returned for hygiene reasons, but if anything arrives damaged or not as described we'll replace or refund it — just contact us within 7 days of delivery with a photo.</p>
+        <p>Home goods can be returned unused within 30 days. Orders can be cancelled from your account while they're still <strong>Pending</strong> or <strong>Confirmed</strong>.</p>
+      {% elif slug == 'privacy' %}
+        <p>We collect only what's needed to fulfil your orders: your name, email, delivery addresses and order history. Passwords are stored as salted hashes, never in plain text.</p>
+        <p>This is a demonstration store: payments are simulated and we never collect card numbers, CVVs or bank credentials. Newsletter subscribers can ask to be removed at any time.</p>
+      {% elif slug == 'terms' %}
+        <p>Velora Market is a demonstration e-commerce application. No real goods are sold and no money changes hands. Prices shown in currencies other than PHP are estimates based on published reference rates and are not the amount charged.</p>
+      {% elif slug == 'faq' %}
+        <h2>Is payment real?</h2><p>No — checkout uses a clearly labelled demo payment that simulates approval or decline. Nothing is charged.</p>
+        <h2>Why are some prices marked “≈”?</h2><p>If you pick a display currency other than PHP we convert using daily reference rates from the European Central Bank via the Frankfurter API. You're always charged in PHP.</p>
+        <h2>Where does nutrition data come from?</h2><p>Some products are enriched with data from Open Food Facts, a free, collaborative food products database.</p>
+      {% else %}
+        <p>We're here Monday to Saturday, 9:00–18:00 Philippine time.</p>
+        <p>{{ icon('mail') }} <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+        <p>{{ icon('map-pin') }} 12 Kalayaan Ave, Quezon City, Metro Manila (studio pickup by appointment)</p>
+      {% endif %}
+    </article>
+    <aside class="card">
+      <h3>Help centre</h3>
+      <ul class="list">{% for s, t in pages.items() %}<li><a href="{{ url_for('main.page', slug=s) }}" {% if s == slug %}aria-current="page" style="font-weight:700"{% endif %}>{{ t }}</a></li>{% endfor %}</ul>
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "account/_layout.html" %}
+{% from "_macros.html" import icon, status_badge, empty %}
+{% block page_title %}Orders{% endblock %}
+{% block heading %}Your orders{% endblock %}
+{% block account %}
+<div class="pill-tabs" style="margin-bottom:20px">
+  <a class="chip {{ 'is-active' if not status }}" href="{{ url_for('account.orders') }}">All</a>
+  {% for s in statuses %}<a class="chip {{ 'is-active' if status == s }}" href="{{ url_for('account.orders', status=s) }}">{{ s|title }}</a>{% endfor %}
+</div>
+{% if orders %}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Order</th><th>Placed</th><th>Items</th><th>Status</th><th class="num">Total</th><th><span class="sr-only">Actions</span></th></tr></thead>
+    <tbody>
+      {% for o in orders %}
+      <tr data-reveal-item>
+        <td><a href="{{ url_for('account.order_detail', number=o.number) }}" class="mono">{{ o.number }}</a></td>
+        <td>{{ o.created_at|dt }}</td>
+        <td>{{ o.items|map(attribute='product_name')|first|truncate(28) }}{% if o.items|length > 1 %} <span class="muted">+{{ o.items|length - 1 }}</span>{% endif %}</td>
+        <td>{{ status_badge(o.status) }}</td>
+        <td class="num"><strong>{{ fmt_base(o.total_minor) }}</strong></td>
+        <td><a class="btn btn--ghost btn--sm" href="{{ url_for('account.order_detail', number=o.number) }}">Track</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{{ empty('package-open', 'No orders here', 'When you place an order it will show up here with live tracking.', url_for('catalog.listing'), 'Start shopping') }}
+{% endif %}
+{% endblock %}

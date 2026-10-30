@@ -1,0 +1,25 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, pagination_nav, empty %}
+{% block title %}Audit log · Admin{% endblock %}
+{% block page_title %}Audit log{% endblock %}
+{% block content %}
+<form class="filters-bar" method="get">
+  <label class="sr-only" for="aa">Action</label>
+  <select id="aa" class="input select" name="action"><option value="">All actions</option>{% for a in actions %}<option value="{{ a }}" {% if a == action %}selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+  <button class="btn btn--dark btn--sm" type="submit">Filter</button>
+</form>
+{% if pagination.items %}
+<div class="table-wrap"><table class="table">
+  <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th><th>IP</th></tr></thead>
+  <tbody>{% for e in pagination.items %}<tr>
+    <td style="white-space:nowrap">{{ e.created_at|dtt }}</td>
+    <td>{{ e.actor.email if e.actor else 'system' }}</td>
+    <td><span class="tag mono">{{ e.action }}</span></td>
+    <td class="mono">{{ e.target_type or '' }}{% if e.target_id %} #{{ e.target_id }}{% endif %}</td>
+    <td>{{ e.details }}</td>
+    <td class="mono">{{ e.ip_address }}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{{ pagination_nav(pagination, 'admin.audit_log', request.args.to_dict()|reject_page) }}
+{% else %}{{ empty('scroll-text', 'No entries', 'Sensitive actions such as role changes, exports and price edits appear here.') }}{% endif %}
+{% endblock %}

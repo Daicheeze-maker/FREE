@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, empty %}
+{% block title %}Your bag · Velora Market{% endblock %}
+{% block content %}
+<div class="container">
+  <header class="page-head"><h1>Your bag</h1>{% if lines %}<p>{{ lines|sum(attribute='quantity') }} item{{ '' if lines|sum(attribute='quantity') == 1 else 's' }} · Reserved for you until checkout. Stock is re-checked when you place your order.</p>{% endif %}</header>
+  {% if lines %}
+  <div class="cart-layout">
+    <div>
+      <table class="cart-table">
+        <thead class="sr-only"><tr><th>Product</th><th>Quantity</th><th>Total</th></tr></thead>
+        <tbody>
+        {% for l in lines %}{% set p = l.product %}
+        <tr data-reveal-item>
+          <td>
+            <div class="cart-item">
+              <img src="{{ image_src(p.primary_image) }}" alt="">
+              <div>
+                <p class="pcard__brand">{{ p.brand }}</p>
+                <a href="{{ url_for('catalog.detail', slug=p.slug) }}" style="font-weight:600;text-decoration:none">{{ p.name }}</a>
+                <div class="muted" style="font-size:13px">{{ money(p.price_minor) }} each{% if p.size_label %} · {{ p.size_label }}{% endif %}</div>
+                {% if l.problem %}<div class="cart-line__problem">{{ icon('triangle-alert', 'ic--sm') }} {{ l.problem }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('shop.update', product_id=p.id) }}" class="qty" data-autosubmit>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="button" data-qty-step="-1" aria-label="Decrease quantity of {{ p.name }}">{{ icon('minus', 'ic--sm') }}</button>
+              <label class="sr-only" for="q-{{ p.id }}">Quantity of {{ p.name }}</label>
+              <input id="q-{{ p.id }}" type="number" name="quantity" value="{{ l.quantity }}" min="0" max="{{ [p.stock, 20]|min }}" inputmode="numeric">
+              <button type="button" data-qty-step="1" aria-label="Increase quantity of {{ p.name }}">{{ icon('plus', 'ic--sm') }}</button>
+              <noscript><button type="submit" class="btn btn--sm">Update</button></noscript>
+            </form>
+          </td>
+          <td class="num" style="text-align:right">
+            <strong>{{ money(l.line_total_minor) }}</strong><br>
+            <form method="post" action="{{ url_for('shop.remove', product_id=p.id) }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--link btn--sm" type="submit">{{ icon('trash-2', 'ic--sm') }} Remove</button></form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <a class="link-arrow" href="{{ url_for('catalog.listing') }}" style="margin-top:20px">{{ icon('arrow-left') }} Continue shopping</a>
+    </div>
+    {% include "shop/_summary.html" %}
+  </div>
+  {% else %}
+  {{ empty('shopping-bag', 'Your bag is empty', "Looks like you haven't added anything yet. Our bestsellers are a good place to start.", url_for('catalog.listing', sort='popular'), 'Shop bestsellers') }}
+  {% endif %}
+</div>
+{% endblock %}

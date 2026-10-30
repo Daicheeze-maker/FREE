@@ -1,0 +1,36 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, stars, empty %}
+{% block title %}Customer feedback · Seller studio{% endblock %}
+{% block page_title %}Customer feedback{% endblock %}
+{% block content %}
+<div class="row row--between">
+  <div class="pill-tabs">
+    <a class="chip {{ 'is-active' if not rating }}" href="{{ url_for('seller.reviews') }}">All</a>
+    {% for i in range(5, 0, -1) %}<a class="chip {{ 'is-active' if rating == i }}" href="{{ url_for('seller.reviews', rating=i) }}">{{ i }}★</a>{% endfor %}
+  </div>
+  <span class="muted">Average visible rating <strong>{{ avg }}</strong> / 5</span>
+</div>
+{% if reviews %}
+<div class="stack">
+  {% for r in reviews %}
+  <article class="card" {% if r.is_hidden %}style="opacity:.65"{% endif %}>
+    <div class="card__head">
+      <div>{{ stars(r.rating) }} <strong style="margin-left:6px">{{ r.title }}</strong>{% if r.is_hidden %} <span class="tag tag--warn">Hidden</span>{% endif %}<br>
+      <small class="muted">{{ r.user.full_name }} ({{ r.user.email }}) on <a href="{{ url_for('catalog.detail', slug=r.product.slug) }}">{{ r.product.name }}</a> · {{ r.created_at|dt }}</small></div>
+      <form method="post" action="{{ url_for('seller.review_toggle', review_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--ghost btn--sm" type="submit">{{ icon('eye' if r.is_hidden else 'eye-off', 'ic--sm') }} {{ 'Show' if r.is_hidden else 'Hide' }}</button></form>
+    </div>
+    <p>{{ r.body }}</p>
+    <details class="disclosure" {% if r.staff_reply %}open{% endif %}>
+      <summary>{{ icon('reply', 'ic--sm') }} {{ 'Edit public reply' if r.staff_reply else 'Reply publicly' }}</summary>
+      <form method="post" action="{{ url_for('seller.review_reply', review_id=r.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="sr-only" for="reply-{{ r.id }}">Reply</label>
+        <textarea id="reply-{{ r.id }}" class="input" name="reply" rows="3" maxlength="1000">{{ r.staff_reply or '' }}</textarea>
+        <button class="btn btn--dark btn--sm" type="submit" style="margin-top:10px">Save reply</button>
+      </form>
+    </details>
+  </article>
+  {% endfor %}
+</div>
+{% else %}{{ empty('message-square', 'No reviews', 'Reviews from verified buyers will appear here.') }}{% endif %}
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{% block page_title %}My account{% endblock %} · Velora Market{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-head">
+    <div>
+      <p class="eyebrow">{{ icon('user-round') }} Customer account</p>
+      <h1>{% block heading %}Hi, {{ current_user.first_name }}{% endblock %}</h1>
+    </div>
+    {% block head_actions %}{% endblock %}
+  </div>
+  {% set ep = request.endpoint %}
+  <nav class="subnav" aria-label="Account">
+    <a href="{{ url_for('account.dashboard') }}" class="{{ 'is-active' if ep == 'account.dashboard' }}">{{ icon('layout-dashboard', 'ic--sm') }} Overview</a>
+    <a href="{{ url_for('account.orders') }}" class="{{ 'is-active' if ep in ('account.orders', 'account.order_detail') }}">{{ icon('package', 'ic--sm') }} Orders</a>
+    <a href="{{ url_for('account.wishlist') }}" class="{{ 'is-active' if ep == 'account.wishlist' }}">{{ icon('heart', 'ic--sm') }} Wishlist</a>
+    <a href="{{ url_for('account.addresses') }}" class="{{ 'is-active' if ep in ('account.addresses', 'account.edit_address') }}">{{ icon('map-pin', 'ic--sm') }} Addresses</a>
+    <a href="{{ url_for('account.notifications') }}" class="{{ 'is-active' if ep == 'account.notifications' }}">{{ icon('bell', 'ic--sm') }} Notifications {% if current_user.unread_notifications %}<span class="count-pill">{{ current_user.unread_notifications }}</span>{% endif %}</a>
+    <a href="{{ url_for('account.profile') }}" class="{{ 'is-active' if ep == 'account.profile' }}">{{ icon('settings', 'ic--sm') }} Profile & security</a>
+  </nav>
+  <div style="padding-bottom:80px">{% block account %}{% endblock %}</div>
+</div>
+{% endblock %}

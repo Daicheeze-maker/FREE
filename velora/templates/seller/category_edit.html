@@ -1,0 +1,12 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, field %}
+{% block title %}Edit category · Seller studio{% endblock %}
+{% block crumbs %}<nav class="crumbs"><a href="{{ url_for('seller.categories') }}">Categories</a>{{ icon('chevron-right', 'ic--sm') }}<span>Edit</span></nav>{% endblock %}
+{% block page_title %}{{ category.name }}{% endblock %}
+{% block content %}
+<form method="post" class="card" style="max-width:560px" novalidate>
+  {{ form.csrf_token }}
+  {{ field(form.name) }}{{ field(form.description) }}{{ field(form.icon) }}{{ field(form.position, type="number") }}
+  <div class="row"><button class="btn btn--accent" type="submit">Save</button><a class="btn btn--ghost" href="{{ url_for('seller.categories') }}">Cancel</a></div>
+</form>
+{% endblock %}

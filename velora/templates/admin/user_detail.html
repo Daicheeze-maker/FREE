@@ -1,0 +1,40 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, field, status_badge %}
+{% block title %}{{ user.full_name }} · Users{% endblock %}
+{% block crumbs %}<nav class="crumbs"><a href="{{ url_for('admin.users') }}">Users</a>{{ icon('chevron-right', 'ic--sm') }}<span>{{ user.email }}</span></nav>{% endblock %}
+{% block page_title %}{{ user.full_name }}{% endblock %}
+{% block actions %}<span class="role-tag role-tag--{{ user.role }}">{{ user.role }}</span>{% endblock %}
+{% block content %}
+<div class="dash-grid">
+  <div>
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('id-card') }} Account</h2>
+      <dl class="kv">
+        <dt>Email</dt><dd>{{ user.email }}</dd><dt>Phone</dt><dd>{{ user.phone or '—' }}</dd>
+        <dt>Joined</dt><dd>{{ user.created_at|dtt }}</dd><dt>Last sign-in</dt><dd>{{ user.last_login_at|dtt }}</dd>
+        <dt>Failed sign-ins</dt><dd>{{ user.failed_login_count }}{% if user.locked_until and user.locked_until > now %} · <strong>locked until {{ user.locked_until|dtt }}</strong>{% endif %}</dd>
+      </dl>
+      {% if user.locked_until and user.locked_until > now %}
+      <form method="post" action="{{ url_for('admin.user_unlock', user_id=user.id) }}" style="margin-top:14px"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--ghost btn--sm" type="submit">{{ icon('lock-open', 'ic--sm') }} Clear login lock</button></form>
+      {% endif %}
+    </section>
+    <section class="card card--flush">
+      <div class="card__head" style="padding:20px 22px 0"><h2>{{ icon('receipt') }} Recent orders</h2></div>
+      {% if orders %}<div class="table-wrap" style="border:0;border-radius:0"><table class="table"><tbody>{% for o in orders %}<tr><td><a class="mono" href="{{ url_for('seller.order_detail', number=o.number) }}">{{ o.number }}</a></td><td>{{ o.created_at|dt }}</td><td>{{ status_badge(o.status) }}</td><td class="num">{{ fmt_base(o.total_minor) }}</td></tr>{% endfor %}</tbody></table></div>
+      {% else %}<p class="muted" style="padding:0 22px 22px">No orders.</p>{% endif %}
+    </section>
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('scroll-text') }} Audit trail</h2>
+      <ul class="feed">{% for e in logs %}<li><span class="feed__icon">{{ icon('shield') }}</span><div><strong class="mono" style="font-size:12.5px">{{ e.action }}</strong> {{ e.details }}<small>by {{ e.actor.email if e.actor else 'system' }} · {{ e.created_at|dtt }}</small></div></li>{% else %}<li><span></span><span class="muted">No audited events.</span></li>{% endfor %}</ul>
+    </section>
+  </div>
+  <form method="post" class="card" novalidate data-confirm="Apply these role / status changes to {{ user.email }}? This is recorded in the audit log." data-confirm-title="Change account access?">
+    <h2 style="font-size:17px">{{ icon('user-cog') }} Access</h2>
+    {{ form.csrf_token }}
+    {{ field(form.role, hint="Customers shop; sellers manage catalog & fulfilment; admins manage everything.") }}
+    {{ field(form.is_active_account) }}
+    <p class="field__hint" style="margin-bottom:14px">Disabling signs the user out on their next request and blocks sign-in. You can't demote or disable yourself, and at least one active admin must remain.</p>
+    <button class="btn btn--accent btn--block" type="submit">Save access</button>
+  </form>
+</div>
+{% endblock %}

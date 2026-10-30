@@ -1,0 +1,86 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, field, confirm_form, status_badge %}
+{% block title %}{{ product.name if product else 'New product' }} · Seller studio{% endblock %}
+{% block crumbs %}<nav class="crumbs"><a href="{{ url_for('seller.products') }}">Products</a>{{ icon('chevron-right', 'ic--sm') }}<span>{{ 'Edit' if product else 'New' }}</span></nav>{% endblock %}
+{% block page_title %}{{ product.name if product else 'New product' }}{% endblock %}
+{% block actions %}
+{% if product %}
+  {{ status_badge(product.status) }}
+  <a class="btn btn--ghost btn--sm" href="{{ url_for('catalog.detail', slug=product.slug) }}" target="_blank" rel="noopener">{{ icon('external-link') }} View in store</a>
+{% endif %}
+{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="dash-grid" novalidate>
+  {{ form.csrf_token }}
+  <div>
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('file-text') }} Details</h2>
+      <div class="form-grid">
+        {{ field(form.name, cls="span-2") }}
+        {{ field(form.brand) }}{{ field(form.category_id) }}
+        {{ field(form.short_description, "One line shown on product cards", cls="span-2") }}
+        {{ field(form.description, cls="span-2") }}
+        {{ field(form.size_label, "250 g, 6 pack…") }}{{ field(form.origin, "Region, country") }}
+        {{ field(form.ingredients, cls="span-2") }}
+      </div>
+    </section>
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('images') }} Images</h2>
+      {% if product and product.images %}
+      <div class="img-grid" style="margin-bottom:18px">
+        {% for img in product.images %}
+        <div class="img-tile">
+          {% if loop.first %}<span class="badge badge--accent">Cover</span>{% endif %}
+          <img src="{{ image_src(img) }}" alt="{{ img.alt }}">
+          <div class="img-tile__bar">
+            {% if not loop.first %}<button class="btn btn--link btn--sm" type="submit" form="primary-{{ img.id }}">Make cover</button>{% else %}<span></span>{% endif %}
+            <button class="btn btn--link btn--sm" type="submit" form="del-{{ img.id }}" aria-label="Remove image">{{ icon('trash-2', 'ic--sm') }}</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="form-grid">
+        <div class="field {% if form.image.errors %}has-error{% endif %}">
+          {{ form.image.label(class="field__label") }}
+          {{ form.image(class="input", accept="image/jpeg,image/png,image/webp") }}
+          {% for e in form.image.errors %}<p class="field__error">{{ icon('circle-alert') }} {{ e }}</p>{% endfor %}
+          <p class="field__hint">Validated, re-encoded to WebP and stored with a random filename.</p>
+        </div>
+        {{ field(form.image_url, "https://…") }}
+      </div>
+    </section>
+  </div>
+  <div>
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('tag') }} Pricing & stock</h2>
+      {{ field(form.price, "0.00") }}
+      {{ field(form.compare_at, "Optional, for sale badges") }}
+      {{ field(form.stock, type="number") }}
+      {{ field(form.status) }}
+      {{ field(form.is_featured) }}
+      <button class="btn btn--accent btn--block btn--lg" type="submit" data-loading-text="Saving…">{{ icon('save') }} {{ 'Save changes' if product else 'Create product' }}</button>
+    </section>
+    {% if product %}
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('info') }} Record</h2>
+      <dl class="kv" style="grid-template-columns: 110px 1fr">
+        <dt>SKU</dt><dd class="mono">{{ product.sku }}</dd>
+        <dt>Units sold</dt><dd>{{ product.sold_count }}</dd>
+        <dt>Created</dt><dd>{{ product.created_at|dt }}</dd>
+        <dt>Source</dt><dd>{{ 'Open Food Facts' if product.source == 'openfoodfacts' else 'Manual' }}</dd>
+        {% if product.off_barcode %}<dt>Barcode</dt><dd class="mono">{{ product.off_barcode }}</dd><dt>Last sync</dt><dd>{{ product.synced_at|dtt }}</dd>{% endif %}
+      </dl>
+      {% if product.off_barcode %}<button class="btn btn--ghost btn--sm btn--block" style="margin-top:14px" type="submit" form="resync">{{ icon('refresh-cw') }} Refresh from Open Food Facts</button>{% endif %}
+    </section>
+    {% endif %}
+  </div>
+</form>
+{% if product %}
+  {% for img in product.images %}
+  <form id="del-{{ img.id }}" method="post" action="{{ url_for('seller.image_delete', product_id=product.id, image_id=img.id) }}" data-confirm="Remove this image from {{ product.name }}?" data-confirm-title="Remove image?" data-confirm-danger hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+  <form id="primary-{{ img.id }}" method="post" action="{{ url_for('seller.image_primary', product_id=product.id, image_id=img.id) }}" hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
+  {% endfor %}
+  {% if product.off_barcode %}<form id="resync" method="post" action="{{ url_for('seller.off_resync', product_id=product.id) }}" hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>{% endif %}
+{% endif %}
+{% endblock %}

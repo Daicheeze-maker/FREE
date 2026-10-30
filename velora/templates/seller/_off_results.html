@@ -1,0 +1,50 @@
+{% from "_macros.html" import icon, empty %}
+{% if error %}
+<div class="alert alert--error">{{ icon('wifi-off') }}<div><strong>Couldn't reach Open Food Facts.</strong><br>{{ error }} Check the VM's internet access (NAT), or try again shortly.{% if current_user.role == 'admin' %} See <a href="{{ url_for('admin.api_health_view') }}">API health</a>.{% endif %}</div></div>
+{% elif searched and not results %}
+{{ empty('search-x', 'No products found', 'Open Food Facts had no matches with a usable name. Try a brand, a simpler term or a barcode.') }}
+{% elif results %}
+<p class="muted" style="margin:0 0 14px">{{ '{:,}'.format(count) }} matches on Open Food Facts · showing page {{ page }}</p>
+<div class="off-results">
+  {% for r in results %}
+  <article class="off-card">
+    <div class="off-card__img">{% if r.image_url %}<img src="{{ r.image_url }}" alt="{{ r.name }}" loading="lazy">{% else %}<div class="off-card__noimg">{{ icon('image-off') }}No image available</div>{% endif %}</div>
+    <div class="off-card__body">
+      <h3>{{ r.name }}</h3>
+      <span class="muted">{{ r.brand or 'Unknown brand' }}{% if r.quantity %} · {{ r.quantity }}{% endif %} · <span class="mono">{{ r.barcode }}</span></span>
+      <div class="tags">
+        {% if r.nutriscore %}<span class="tag">Nutri-Score {{ r.nutriscore|upper }}</span>{% endif %}
+        <span class="tag {{ 'tag--ok' if r.ingredients else 'tag--warn' }}">{{ 'Ingredients' if r.ingredients else 'No ingredients' }}</span>
+        <span class="tag {{ 'tag--ok' if r.nutrition else 'tag--warn' }}">{{ (r.nutrition|length ~ ' nutrients') if r.nutrition else 'No nutrition' }}</span>
+      </div>
+      {% if r.categories %}<span class="muted">{{ r.categories|truncate(90) }}</span>{% endif %}
+      {% if r.ingredients %}<details><summary class="muted" style="cursor:pointer">Ingredients</summary><p style="margin:6px 0 0">{{ r.ingredients|truncate(400) }}</p></details>{% endif %}
+    </div>
+    {% if r.barcode in imported %}
+      <div class="off-card__done" style="padding:14px 16px;border-top:1px solid var(--line)"><a class="btn btn--ghost btn--sm" href="{{ url_for('seller.product_edit', product_id=imported[r.barcode].id) }}">{{ icon('check', 'ic--sm') }} Already imported — edit</a></div>
+    {% else %}
+    <form method="post" action="{{ url_for('seller.off_import_post') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="barcode" value="{{ r.barcode }}">
+      <input type="hidden" name="q" value="{{ request.args.get('q', '') }}">
+      <div class="row">
+        <label class="sr-only" for="cat-{{ r.barcode }}">Category</label>
+        <select id="cat-{{ r.barcode }}" name="category_id" class="input select" required>{% for v, l in import_form.category_id.choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+      </div>
+      <div class="row">
+        <label class="sr-only" for="price-{{ r.barcode }}">Price in PHP</label><input id="price-{{ r.barcode }}" class="input" name="price" placeholder="Price ₱" inputmode="decimal" required>
+        <label class="sr-only" for="stock-{{ r.barcode }}">Stock</label><input id="stock-{{ r.barcode }}" class="input" name="stock" type="number" min="0" value="10" required style="width:90px">
+      </div>
+      <div class="row row--between"><label class="check" style="font-size:13px"><input type="checkbox" name="publish" value="y"> Publish now</label><button class="btn btn--dark btn--sm" type="submit" data-loading-text="Importing…">{{ icon('download', 'ic--sm') }} Import</button></div>
+    </form>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+<div class="row" style="justify-content:center;margin-top:20px">
+  {% if page > 1 %}<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.off_import', q=request.args.get('q'), page=page - 1) }}">{{ icon('arrow-left') }} Previous</a>{% endif %}
+  {% if count > page * 24 %}<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.off_import', q=request.args.get('q'), page=page + 1) }}">Next {{ icon('arrow-right') }}</a>{% endif %}
+</div>
+{% else %}
+<div class="card" style="text-align:center"><p class="muted" style="margin:0">{{ icon('scan-barcode') }} Search by name, brand or barcode to get started.</p></div>
+{% endif %}

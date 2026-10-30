@@ -1,0 +1,65 @@
+{% extends "account/_layout.html" %}
+{% from "_macros.html" import icon, status_badge, order_tracker, field %}
+{% block page_title %}Order {{ order.number }}{% endblock %}
+{% block heading %}Order <span class="mono" style="font-size:.7em">{{ order.number }}</span>{% endblock %}
+{% block head_actions %}{{ status_badge(order.status) }}{% endblock %}
+{% block account %}
+<div class="account-grid">
+  <div>
+    <section class="card" data-reveal>
+      <div class="card__head"><h2>{{ icon('radar') }} Order progress</h2><span class="muted" style="font-size:13px">Placed {{ order.created_at|dtt }}</span></div>
+      {{ order_tracker(order, flow) }}
+    </section>
+    <section class="card" data-reveal>
+      <div class="card__head"><h2>{{ icon('shopping-basket') }} Items</h2></div>
+      <ul class="list">
+        {% for it in order.items %}
+        <li>
+          <img class="thumb" src="{{ it.image_url or url_for('static', filename='img/placeholder.svg') }}" alt="">
+          <div class="list__main">
+            {% if it.product and it.product.status == 'active' %}<a href="{{ url_for('catalog.detail', slug=it.product.slug) }}"><strong>{{ it.product_name }}</strong></a>{% else %}<strong>{{ it.product_name }}</strong>{% endif %}
+            <small>{{ it.product_brand }} · {{ it.quantity }} × {{ fmt_base(it.unit_price_minor) }}{% if it.discount_minor %} · −{{ fmt_base(it.discount_minor) }} discount{% endif %}</small>
+          </div>
+          {% if order.status == 'delivered' and it.product_id and it.product and it.product.status == 'active' %}
+            {% if it.product_id in reviewed %}<span class="tag tag--ok">Reviewed</span>
+            {% else %}<a class="btn btn--sm btn--ghost" href="{{ url_for('catalog.detail', slug=it.product.slug) }}#write-review">{{ icon('star', 'ic--sm') }} Review</a>{% endif %}
+          {% endif %}
+          <strong>{{ fmt_base(it.line_total_minor) }}</strong>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+  <div>
+    <section class="card" data-reveal>
+      <div class="card__head"><h2>{{ icon('receipt') }} Payment</h2>{% if order.payment %}<span class="status status--{{ order.payment.status }}">{{ order.payment.status|title }}</span>{% endif %}</div>
+      <dl class="kv">
+        <dt>Subtotal</dt><dd>{{ fmt_base(order.subtotal_minor) }}</dd>
+        {% if order.discount_minor %}<dt>Discount</dt><dd>−{{ fmt_base(order.discount_minor) }} ({{ order.discount_code }})</dd>{% endif %}
+        <dt>Delivery</dt><dd>{{ fmt_base(order.shipping_minor) if order.shipping_minor else 'Free' }}</dd>
+        <dt><strong>Total</strong></dt><dd><strong>{{ fmt_base(order.total_minor) }}</strong></dd>
+        {% if order.payment %}<dt>Method</dt><dd>{{ {'demo_approve': 'Demo payment', 'cod': 'Cash on delivery'}.get(order.payment.method, order.payment.method) }}</dd><dt>Reference</dt><dd class="mono">{{ order.payment.reference }}</dd>{% endif %}
+      </dl>
+      <p class="fx-note">{{ icon('flask-conical', 'ic--sm') }} Simulated payment — no real money moved.</p>
+    </section>
+    <section class="card" data-reveal>
+      <div class="card__head"><h2>{{ icon('map-pin') }} Delivery</h2></div>
+      <p style="margin:0"><strong>{{ order.ship_name }}</strong><br>{{ order.ship_phone }}<br>{{ order.ship_address }}</p>
+      {% if order.notes %}<p class="muted" style="margin-top:10px">Note: {{ order.notes }}</p>{% endif %}
+    </section>
+    {% if order.customer_can_cancel %}
+    <section class="card" data-reveal>
+      <div class="card__head"><h2>{{ icon('circle-x') }} Cancel order</h2></div>
+      <p class="muted" style="font-size:13.5px">You can cancel while the order is pending or confirmed. Stock is released and any demo payment is refunded.</p>
+      <form method="post" action="{{ url_for('account.cancel_order', number=order.number) }}" data-confirm="Cancel order {{ order.number }}? This can't be undone." data-confirm-title="Cancel this order?" data-confirm-danger>
+        {{ cancel_form.csrf_token }}
+        {{ field(cancel_form.reason, "e.g. Ordered the wrong size") }}
+        <button class="btn btn--danger btn--block" type="submit">Cancel order</button>
+      </form>
+    </section>
+    {% elif order.status not in ('cancelled', 'delivered') %}
+    <p class="alert alert--info">{{ icon('info') }} This order is already {{ order.status }}, so it can no longer be cancelled online. <a href="{{ url_for('main.page', slug='contact') }}">Contact us</a> if something's wrong.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

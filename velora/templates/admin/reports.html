@@ -1,0 +1,38 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, stat, bar_chart, status_badge %}
+{% block title %}Reports · Admin{% endblock %}
+{% block page_title %}Sales & inventory reports{% endblock %}
+{% block actions %}
+<div class="pill-tabs">{% for d in (7, 30, 90) %}<a class="chip {{ 'is-active' if d == days }}" href="{{ url_for('admin.reports_view', days=d) }}">{{ d }} days</a>{% endfor %}</div>
+<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.export', kind='orders') }}">{{ icon('download') }} Orders CSV</a>
+<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.export', kind='products') }}">{{ icon('download') }} Products CSV</a>
+{% endblock %}
+{% block content %}
+<div class="stats">
+  {{ stat('Revenue', fmt_base(revenue), 'Last ' ~ days ~ ' days, excl. cancelled', 'banknote', 'stat--dark') }}
+  {{ stat('Orders', orders, 'Last ' ~ days ~ ' days', 'shopping-cart') }}
+  {{ stat('Avg. order value', fmt_base(revenue // orders if orders else 0), None, 'calculator') }}
+  {{ stat('Low-stock SKUs', low|length, 'Need attention', 'triangle-alert', 'stat--warn' if low else '') }}
+</div>
+<section class="card"><div class="card__head"><h2>{{ icon('chart-column') }} Daily revenue</h2></div>{{ bar_chart(series, fmt_base, 220) }}</section>
+<div class="dash-grid dash-grid--even">
+  <section class="card card--flush">
+    <div class="card__head" style="padding:20px 22px 0"><h2>{{ icon('trophy') }} Top products (all time)</h2></div>
+    <div class="table-wrap" style="border:0;border-radius:0"><table class="table">
+      <thead><tr><th>#</th><th>Product</th><th class="num">Units</th><th class="num">Revenue</th></tr></thead>
+      <tbody>{% for t in top %}<tr><td>{{ loop.index }}</td><td>{{ t.product_name }}</td><td class="num">{{ t.units }}</td><td class="num">{{ fmt_base(t.revenue) }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+  <section class="card card--flush">
+    <div class="card__head" style="padding:20px 22px 0"><h2>{{ icon('warehouse') }} Inventory by category</h2></div>
+    <div class="table-wrap" style="border:0;border-radius:0"><table class="table">
+      <thead><tr><th>Category</th><th class="num">SKUs</th><th class="num">Units</th><th class="num">Retail value</th></tr></thead>
+      <tbody>{% for name, count, units, value in by_cat %}<tr><td>{{ name }}</td><td class="num">{{ count }}</td><td class="num">{{ units }}</td><td class="num">{{ fmt_base(value) }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+<section class="card">
+  <div class="card__head"><h2>{{ icon('list-checks') }} Orders by status (all time)</h2></div>
+  <div class="pill-tabs">{% for s, n in breakdown %}<a href="{{ url_for('seller.orders', status=s) }}" style="text-decoration:none">{{ status_badge(s) }} <strong>{{ n }}</strong></a>{% endfor %}</div>
+</section>
+{% endblock %}

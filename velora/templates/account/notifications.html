@@ -1,0 +1,26 @@
+{% extends "account/_layout.html" %}
+{% from "_macros.html" import icon, empty %}
+{% block page_title %}Notifications{% endblock %}
+{% block heading %}Notifications{% endblock %}
+{% block head_actions %}
+{% if notes|selectattr('is_read', 'equalto', false)|list %}
+<form method="post" action="{{ url_for('account.read_notifications') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--ghost" type="submit">{{ icon('check-check') }} Mark all read</button></form>
+{% endif %}
+{% endblock %}
+{% block account %}
+{% if notes %}
+<div class="card">
+  <ul class="list">
+    {% for n in notes %}
+    <li class="{{ 'note-unread' if not n.is_read }}" data-reveal-item>
+      <span class="note-icon">{{ icon(n.icon) }}</span>
+      <div class="list__main"><a href="{{ url_for('account.open_notification', note_id=n.id) }}"><strong>{{ n.title }}</strong></a><span>{{ n.body }}</span><br><small>{{ n.created_at|dtt }}</small></div>
+      {% if not n.is_read %}<span class="unread-dot" aria-label="Unread"></span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% else %}
+{{ empty('bell-off', "You're all caught up", 'Order updates and offers will appear here.') }}
+{% endif %}
+{% endblock %}

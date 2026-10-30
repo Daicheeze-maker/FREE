@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, order_tracker %}
+{% block title %}Order {{ order.number }} confirmed · Velora Market{% endblock %}
+{% block content %}
+<div class="container" style="max-width:880px">
+  <div class="confirm-hero">
+    <svg class="check-anim" viewBox="0 0 92 92" aria-hidden="true"><circle cx="46" cy="46" r="44"/><path d="M28 47l12 12 24-26"/></svg>
+    <p class="eyebrow" style="justify-content:center">Order {{ order.number }}</p>
+    <h1 class="display" style="font-size:clamp(40px,6vw,72px)">Thank you, {{ current_user.first_name }}!</h1>
+    <p class="muted">
+      {% if order.status == 'confirmed' %}Your demo payment was approved and your order is confirmed.
+      {% else %}Your order is placed — you'll pay the courier on delivery.{% endif %}
+      We've added a notification to your account.
+    </p>
+  </div>
+  <div class="card" data-reveal>{{ order_tracker(order, ['pending', 'confirmed', 'processing', 'shipped', 'delivered']) }}</div>
+  <div class="card" data-reveal>
+    <div class="card__head"><h2>{{ icon('receipt') }} Summary</h2><span class="status status--{{ order.payment.status }}">{{ icon('flask-conical', 'ic--sm') }} {{ order.payment.status|title }} · {{ order.payment.reference }}</span></div>
+    <ul class="mini-lines">{% for it in order.items %}<li><img src="{{ it.image_url or url_for('static', filename='img/placeholder.svg') }}" alt=""><span><strong>{{ it.product_name }}</strong><span class="muted">Qty {{ it.quantity }} × {{ fmt_base(it.unit_price_minor) }}</span></span><span>{{ fmt_base(it.unit_price_minor * it.quantity) }}</span></li>{% endfor %}</ul>
+    <dl class="kv">
+      <dt>Subtotal</dt><dd>{{ fmt_base(order.subtotal_minor) }}</dd>
+      {% if order.discount_minor %}<dt>Discount ({{ order.discount_code }})</dt><dd>−{{ fmt_base(order.discount_minor) }}</dd>{% endif %}
+      <dt>Delivery</dt><dd>{{ fmt_base(order.shipping_minor) if order.shipping_minor else 'Free' }}</dd>
+      <dt><strong>Total charged</strong></dt><dd><strong>{{ fmt_base(order.total_minor) }}</strong> (PHP, simulated)</dd>
+      <dt>Deliver to</dt><dd>{{ order.ship_name }} · {{ order.ship_phone }}<br>{{ order.ship_address }}</dd>
+    </dl>
+  </div>
+  <div class="row" style="justify-content:center;margin:30px 0 60px">
+    <a class="btn btn--dark" href="{{ url_for('account.order_detail', number=order.number) }}">{{ icon('package-search') }} Track this order</a>
+    <a class="btn btn--ghost" href="{{ url_for('catalog.listing') }}">Keep shopping</a>
+  </div>
+</div>
+{% endblock %}

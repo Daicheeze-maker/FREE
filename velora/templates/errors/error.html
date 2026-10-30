@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ title }} · Velora Market{% endblock %}
+{% block content %}
+<div class="container error-page">
+  <div class="error-page__code">{{ code }}</div>
+  <h1>{{ title }}</h1>
+  <p>{{ message }}</p>
+  <div class="row" style="justify-content:center;margin-top:24px">
+    <a href="{{ url_for('main.home') }}" class="btn btn--dark">{{ icon('house') }} Back home</a>
+    <a href="{{ url_for('catalog.listing') }}" class="btn btn--ghost">Browse the shop</a>
+  </div>
+</div>
+{% endblock %}

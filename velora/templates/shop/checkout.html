@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, field %}
+{% block title %}Checkout · Velora Market{% endblock %}
+{% block content %}
+<div class="container">
+  <header class="page-head"><h1>Checkout</h1></header>
+  {% set has_addr = addresses|length > 0 %}
+  <ol class="steps" data-steps style="--progress: {{ 66.6 if has_addr else 33.3 }}%" aria-label="Checkout progress">
+    <div class="steps__rail" aria-hidden="true"><div class="steps__fill"></div></div>
+    <li class="is-done"><span class="steps__dot">{{ icon('check') }}</span><span>Bag</span></li>
+    <li class="{{ 'is-done' if has_addr else 'is-current' }}" {% if not has_addr %}aria-current="step"{% endif %}><span class="steps__dot">{{ icon('check' if has_addr else 'map-pin') }}</span><span>Delivery</span></li>
+    <li class="{{ 'is-current' if has_addr else '' }}" {% if has_addr %}aria-current="step"{% endif %}><span class="steps__dot">{{ icon('credit-card') }}</span><span>Payment</span></li>
+    <li><span class="steps__dot">{{ icon('package-check') }}</span><span>Confirmed</span></li>
+  </ol>
+
+  <div class="cart-layout">
+    <div>
+      <form method="post" id="checkout-form" action="{{ url_for('shop.checkout') }}" novalidate>
+        {{ form.csrf_token }}{{ form.checkout_token }}
+        <section class="card" data-reveal>
+          <div class="card__head"><h2>{{ icon('map-pin') }} Delivery address</h2><a class="btn btn--link btn--sm" href="{{ url_for('account.addresses') }}">Manage</a></div>
+          {% if addresses %}
+          <div class="choice-grid" role="radiogroup" aria-label="Delivery address">
+            {% for a in addresses %}
+            <label class="choice">
+              <input type="radio" name="address_id" value="{{ a.id }}" {% if form.address_id.data == a.id %}checked{% endif %} required>
+              <span class="choice__card"><strong>{{ a.label }}{% if a.is_default %} · Default{% endif %}</strong>{{ a.full_name }} · {{ a.phone }}<br>{{ a.one_line() }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% for e in form.address_id.errors %}<p class="field__error">{{ icon('circle-alert') }} {{ e }}</p>{% endfor %}
+          {% else %}
+          <p class="alert alert--info">{{ icon('info') }} Add a delivery address below to continue.</p>
+          {% endif %}
+        </section>
+
+        <section class="card" data-reveal>
+          <div class="card__head"><h2>{{ icon('credit-card') }} Payment</h2><span class="demo-flag">{{ icon('flask-conical', 'ic--sm') }} Demo mode</span></div>
+          <p class="alert alert--warn">{{ icon('shield-alert') }} <span>This is a <strong>simulated payment</strong>. No card details are requested and no money is charged. Choose an outcome to see how the store handles it.</span></p>
+          <div class="choice-grid" role="radiogroup" aria-label="Payment method">
+            {% set descs = {'demo_approve': ('Simulate a successful payment', 'Order is confirmed immediately.'), 'demo_decline': ('Simulate a declined payment', 'See how a failed payment is handled — nothing is ordered.'), 'cod': ('Cash on delivery', 'Pay the courier; order starts as Pending.')} %}
+            {% for value, label in form.payment_method.choices %}
+            <label class="choice">
+              <input type="radio" name="payment_method" value="{{ value }}" {% if form.payment_method.data == value %}checked{% endif %} required>
+              <span class="choice__card"><strong>{{ descs[value][0] if value in descs else label }}</strong>{{ descs[value][1] if value in descs else '' }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% for e in form.payment_method.errors %}<p class="field__error">{{ icon('circle-alert') }} {{ e }}</p>{% endfor %}
+          <div style="margin-top:18px">{{ field(form.notes, "Gate code, landmark, preferred time…") }}</div>
+        </section>
+      </form>
+
+      <details class="disclosure card" {% if not addresses %}open{% endif %}>
+        <summary>{{ icon('plus') }} Add a new address</summary>
+        <form method="post" action="{{ url_for('shop.checkout_address') }}" class="form-grid">
+          {{ address_form.csrf_token }}
+          {{ field(address_form.label, "Home, Office…") }}
+          {{ field(address_form.full_name, "Who will receive it?", autocomplete="name") }}
+          {{ field(address_form.phone, "+63 917 000 0000", autocomplete="tel") }}
+          {{ field(address_form.postal_code, "1101", autocomplete="postal-code") }}
+          {{ field(address_form.line1, "House no., street, barangay", cls="span-2", autocomplete="address-line1") }}
+          {{ field(address_form.line2, "", cls="span-2", autocomplete="address-line2") }}
+          {{ field(address_form.city, "Quezon City", autocomplete="address-level2") }}
+          {{ field(address_form.region, "Metro Manila", autocomplete="address-level1") }}
+          {{ field(address_form.country, "", autocomplete="country-name") }}
+          <div class="span-2">{{ field(address_form.is_default) }}</div>
+          <div class="span-2"><button class="btn btn--dark" type="submit">Save address</button></div>
+        </form>
+      </details>
+    </div>
+
+    <div>
+      {% set checkout_lines = lines %}{% set back = 'checkout' %}
+      {% include "shop/_summary.html" %}
+      <button type="submit" form="checkout-form" class="btn btn--accent btn--lg btn--block" style="margin-top:14px" data-loading-text="Placing order…" {% if not addresses %}disabled{% endif %}>{{ icon('lock') }} Place order · {{ money(totals.total_minor) }}</button>
+      <p class="muted" style="font-size:12px;text-align:center;margin-top:10px">By placing this order you agree to our <a href="{{ url_for('main.page', slug='terms') }}">terms</a>.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

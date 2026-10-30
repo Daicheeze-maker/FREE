@@ -1,0 +1,44 @@
+{% from "_macros.html" import icon %}
+<aside class="card summary" aria-label="Order summary">
+  <h2 style="font-size:18px">Order summary</h2>
+  {% if checkout_lines is defined %}
+  <ul class="mini-lines">
+    {% for l in checkout_lines %}<li><img src="{{ image_src(l.product.primary_image) }}" alt=""><span><strong>{{ l.product.name }}</strong><span class="muted">Qty {{ l.quantity }}</span></span><span>{{ money(l.line_total_minor) }}</span></li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% set left = totals.to_free_shipping_minor %}
+  <div class="ship-meter" style="margin-bottom:16px">
+    {% if left > 0 %}{{ icon('truck', 'ic--sm') }} Add <strong>{{ money(left) }}</strong> for free delivery{% else %}{{ icon('party-popper', 'ic--sm') }} <strong>Free delivery unlocked</strong>{% endif %}
+    <div class="ship-meter__bar"><div class="ship-meter__fill" style="--pct: {{ [100, ((totals.subtotal_minor - totals.discount_minor) / (totals.free_shipping_threshold_minor or 1) * 100)]|min|round(1) }}%"></div></div>
+  </div>
+  {% if totals.discount %}
+    <div class="applied-code"><span>{{ icon('ticket-percent', 'ic--sm') }} <strong>{{ totals.discount.code }}</strong> · {{ totals.discount.description }}</span>
+      <form method="post" action="{{ url_for('shop.apply_discount') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="remove"><input type="hidden" name="back" value="{{ back|default('cart') }}"><button class="btn btn--link btn--sm" type="submit">Remove</button></form>
+    </div>
+  {% else %}
+    <form method="post" action="{{ url_for('shop.apply_discount') }}" class="code-form">
+      {{ discount_form.csrf_token }}
+      <input type="hidden" name="back" value="{{ back|default('cart') }}">
+      <label class="sr-only" for="code">Discount code</label>
+      <input id="code" name="code" class="input" placeholder="Discount code" maxlength="40" required autocomplete="off">
+      <button class="btn btn--ghost" type="submit">Apply</button>
+    </form>
+  {% endif %}
+  <dl>
+    <dt>Subtotal</dt><dd>{{ money(totals.subtotal_minor) }}</dd>
+    {% if totals.discount_minor %}<dt>Discount</dt><dd class="discount">−{{ money(totals.discount_minor) }}</dd>{% endif %}
+    <dt>Delivery</dt><dd>{{ 'Free' if not totals.shipping_minor else money(totals.shipping_minor) }}</dd>
+    <dt class="total">Total</dt><dd class="total">{{ money(totals.total_minor) }}</dd>
+  </dl>
+  {% if money.converted %}<p class="fx-note">{{ icon('info', 'ic--sm') }} Shown in {{ money.currency }} for reference only. You'll be charged <strong>{{ money.base_fmt(totals.total_minor) }}</strong> (PHP).</p>{% endif %}
+  {% block summary_cta %}
+  {% if checkout_lines is not defined %}
+    {% if current_user.is_authenticated and current_user.role != 'customer' %}
+      <p class="alert alert--info">{{ icon('info') }} Staff accounts can't place orders. Sign in as a customer to check out.</p>
+    {% else %}
+      <a class="btn btn--dark btn--lg btn--block" href="{{ url_for('shop.checkout') }}">{{ 'Checkout securely' if current_user.is_authenticated else 'Sign in to checkout' }} {{ icon('arrow-right') }}</a>
+    {% endif %}
+  {% endif %}
+  {% endblock %}
+  <div class="trust"><span>{{ icon('lock', 'ic--sm') }} Server-verified prices, stock and totals</span><span>{{ icon('flask-conical', 'ic--sm') }} Demo store — no real payments are taken</span></div>
+</aside>

@@ -1,0 +1,24 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, empty %}
+{% block title %}Promotions · Seller studio{% endblock %}
+{% block page_title %}Promotions & discount codes{% endblock %}
+{% block actions %}<a class="btn btn--accent btn--sm" href="{{ url_for('seller.discount_form') }}">{{ icon('plus') }} New code</a>{% endblock %}
+{% block content %}
+{% if discounts %}
+<div class="table-wrap"><table class="table">
+  <thead><tr><th>Code</th><th>Offer</th><th>Minimum</th><th>Usage</th><th>Window</th><th>State</th><th><span class="sr-only">Actions</span></th></tr></thead>
+  <tbody>{% for d in discounts %}
+  {% set expired = d.ends_at and d.ends_at < now %}{% set exhausted = d.max_uses is not none and d.used_count >= d.max_uses %}
+  <tr>
+    <td><a class="mono" href="{{ url_for('seller.discount_form', discount_id=d.id) }}">{{ d.code }}</a><br><small class="muted">{{ d.description }}</small></td>
+    <td>{{ (d.value ~ '% off') if d.kind == 'percent' else (fmt_base(d.value) ~ ' off') }}</td>
+    <td>{{ fmt_base(d.min_subtotal_minor) if d.min_subtotal_minor else '—' }}</td>
+    <td>{{ d.used_count }}{% if d.max_uses %} / {{ d.max_uses }}<div class="meter" style="margin-top:6px;width:90px"><span style="--pct: {{ [100, d.used_count / d.max_uses * 100]|min|round(1) }}%"></span></div>{% endif %}</td>
+    <td style="font-size:13px">{{ d.starts_at|dt if d.starts_at else 'Now' }} → {{ d.ends_at|dt if d.ends_at else 'No end' }}</td>
+    <td>{% if expired %}<span class="status status--archived">Expired</span>{% elif exhausted %}<span class="status status--archived">Used up</span>{% elif d.is_active %}<span class="status status--active">Active</span>{% else %}<span class="status status--draft">Paused</span>{% endif %}</td>
+    <td style="white-space:nowrap"><a class="btn btn--ghost btn--sm" href="{{ url_for('seller.discount_form', discount_id=d.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('seller.discount_toggle', discount_id=d.id) }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--link btn--sm" type="submit">{{ 'Pause' if d.is_active else 'Activate' }}</button></form></td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% else %}{{ empty('ticket-percent', 'No discount codes', 'Create a code to run a promotion.', url_for('seller.discount_form'), 'New code') }}{% endif %}
+{% endblock %}

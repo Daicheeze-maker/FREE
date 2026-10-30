@@ -1,0 +1,19 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, field %}
+{% block title %}{{ discount.code if discount else 'New code' }} · Promotions{% endblock %}
+{% block crumbs %}<nav class="crumbs"><a href="{{ url_for('seller.discounts') }}">Promotions</a>{{ icon('chevron-right', 'ic--sm') }}<span>{{ 'Edit' if discount else 'New' }}</span></nav>{% endblock %}
+{% block page_title %}{{ discount.code if discount else 'New discount code' }}{% endblock %}
+{% block content %}
+<form method="post" class="card" style="max-width:720px" novalidate>
+  {{ form.csrf_token }}
+  <div class="form-grid">
+    {{ field(form.code, "SPRING20") }}{{ field(form.description, "Shown to customers") }}
+    {{ field(form.kind) }}{{ field(form.value, "10 for 10%, or 150.00 for ₱150", hint="Percent: 1–90. Fixed: amount in PHP.") }}
+    {{ field(form.min_subtotal, "0.00") }}{{ field(form.max_uses, type="number") }}
+    {{ field(form.starts_at, type="datetime-local") }}{{ field(form.ends_at, type="datetime-local") }}
+    <div class="span-2">{{ field(form.is_active) }}</div>
+  </div>
+  {% if discount %}<p class="field__hint">Used {{ discount.used_count }} time(s). Usage is counted atomically at checkout.</p>{% endif %}
+  <div class="row"><button class="btn btn--accent" type="submit">Save code</button><a class="btn btn--ghost" href="{{ url_for('seller.discounts') }}">Cancel</a></div>
+</form>
+{% endblock %}

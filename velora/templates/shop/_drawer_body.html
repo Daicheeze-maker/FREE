@@ -1,0 +1,41 @@
+{% from "_macros.html" import icon, empty %}
+{% if lines %}
+<ul class="cart-lines">
+  {% for l in lines %}{% set p = l.product %}
+  <li class="cart-line">
+    <img src="{{ image_src(p.primary_image) }}" alt="">
+    <div>
+      <a class="cart-line__name" href="{{ url_for('catalog.detail', slug=p.slug) }}">{{ p.name }}</a>
+      <span class="cart-line__meta">{{ p.brand }}{% if p.size_label %} · {{ p.size_label }}{% endif %}</span>
+      {% if l.problem %}<div class="cart-line__problem">{{ l.problem }}</div>{% endif %}
+      <div class="cart-line__actions">
+        <form method="post" action="{{ url_for('shop.update', product_id=p.id) }}" data-cart-ajax class="qty">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" name="quantity" value="{{ l.quantity - 1 }}" aria-label="Decrease {{ p.name }}">{{ icon('minus', 'ic--sm') }}</button>
+          <input type="number" value="{{ l.quantity }}" readonly aria-label="Quantity of {{ p.name }}" tabindex="-1">
+          <button type="submit" name="quantity" value="{{ l.quantity + 1 }}" aria-label="Increase {{ p.name }}" {% if l.quantity >= p.stock %}disabled{% endif %}>{{ icon('plus', 'ic--sm') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('shop.remove', product_id=p.id) }}" data-cart-ajax>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn--link btn--sm" aria-label="Remove {{ p.name }}">Remove</button>
+        </form>
+      </div>
+    </div>
+    <span class="cart-line__price">{{ money(l.line_total_minor) }}</span>
+  </li>
+  {% endfor %}
+</ul>
+<div class="drawer__foot">
+  {% set left = totals.to_free_shipping_minor %}
+  <div class="ship-meter">
+    {% if left > 0 %}{{ icon('truck', 'ic--sm') }} You're <strong>{{ money(left) }}</strong> away from free delivery{% else %}{{ icon('party-popper', 'ic--sm') }} <strong>You've unlocked free delivery</strong>{% endif %}
+    <div class="ship-meter__bar"><div class="ship-meter__fill" style="--pct: {{ [100, ((totals.subtotal_minor - totals.discount_minor) / (totals.free_shipping_threshold_minor or 1) * 100)]|min|round(1) }}%"></div></div>
+  </div>
+  <div class="row row--between"><span>Subtotal</span><strong>{{ money(totals.subtotal_minor) }}</strong></div>
+  <p class="drawer-note">Shipping & discounts calculated at checkout.{% if money.converted %} Charged in PHP ({{ money.base_fmt(totals.subtotal_minor) }}).{% endif %}</p>
+  <a class="btn btn--dark btn--lg btn--block" href="{{ url_for('shop.checkout') }}">Checkout {{ icon('arrow-right') }}</a>
+  <a class="btn btn--ghost btn--block" href="{{ url_for('shop.cart') }}">View bag</a>
+</div>
+{% else %}
+{{ empty('shopping-bag', 'Your bag is empty', 'Fill it with something good — fresh roasts land every Tuesday.', url_for('catalog.listing'), 'Start shopping') }}
+{% endif %}

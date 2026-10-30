@@ -1,0 +1,26 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, field %}
+{% block title %}Store settings · Admin{% endblock %}
+{% block page_title %}Store settings{% endblock %}
+{% block content %}
+<form method="post" class="dash-grid" novalidate>
+  {{ form.csrf_token }}
+  <section class="card">
+    <h2 style="font-size:17px">{{ icon('truck') }} Shipping rules</h2>
+    <div class="form-grid">
+      {{ field(form.shipping_flat, hint="Charged when the discounted subtotal is under the threshold.") }}
+      {{ field(form.free_shipping_threshold) }}
+    </div>
+    <h2 style="font-size:17px;margin-top:10px">{{ icon('warehouse') }} Inventory</h2>
+    {{ field(form.low_stock_threshold, type="number", hint="Products at or below this stock level raise alerts.") }}
+    <h2 style="font-size:17px;margin-top:10px">{{ icon('megaphone') }} Storefront</h2>
+    {{ field(form.store_announcement) }}
+    {{ field(form.support_email) }}
+  </section>
+  <section class="card">
+    <h2 style="font-size:17px">{{ icon('info') }} Notes</h2>
+    <p class="muted" style="font-size:13.5px">All money values are stored as integer centavos in PHP. Display currencies are estimates only. Changes are recorded in the audit log.</p>
+    <button class="btn btn--accent btn--block" type="submit">{{ icon('save') }} Save settings</button>
+  </section>
+</form>
+{% endblock %}

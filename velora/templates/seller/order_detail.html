@@ -1,0 +1,58 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, status_badge, order_tracker, field %}
+{% block title %}{{ order.number }} · Orders{% endblock %}
+{% block crumbs %}<nav class="crumbs"><a href="{{ url_for('seller.orders') }}">Orders</a>{{ icon('chevron-right', 'ic--sm') }}<span>{{ order.number }}</span></nav>{% endblock %}
+{% block page_title %}<span class="mono">{{ order.number }}</span>{% endblock %}
+{% block actions %}{{ status_badge(order.status) }}{% endblock %}
+{% block content %}
+<section class="card">{{ order_tracker(order, flow) }}</section>
+<div class="dash-grid">
+  <div>
+    <section class="card card--flush">
+      <div class="card__head" style="padding:20px 22px 0"><h2>{{ icon('shopping-basket') }} Items</h2><span class="muted">Prices are snapshots from checkout</span></div>
+      <div class="table-wrap" style="border:0;border-radius:0"><table class="table">
+        <thead><tr><th>Product</th><th class="num">Unit</th><th class="num">Qty</th><th class="num">Discount</th><th class="num">Line total</th></tr></thead>
+        <tbody>{% for it in order.items %}<tr>
+          <td><div class="cell-product"><img src="{{ it.image_url or url_for('static', filename='img/placeholder.svg') }}" alt=""><div>{% if it.product_id %}<a href="{{ url_for('seller.product_edit', product_id=it.product_id) }}">{{ it.product_name }}</a>{% else %}{{ it.product_name }}{% endif %}<small class="mono">{{ it.product_sku }}</small></div></div></td>
+          <td class="num">{{ fmt_base(it.unit_price_minor) }}</td><td class="num">{{ it.quantity }}</td>
+          <td class="num">{{ ('−' ~ fmt_base(it.discount_minor)) if it.discount_minor else '—' }}</td><td class="num"><strong>{{ fmt_base(it.line_total_minor) }}</strong></td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+      <dl class="kv" style="padding:18px 22px">
+        <dt>Subtotal</dt><dd>{{ fmt_base(order.subtotal_minor) }}</dd>
+        {% if order.discount_minor %}<dt>Discount</dt><dd>−{{ fmt_base(order.discount_minor) }} · {{ order.discount_code }}</dd>{% endif %}
+        <dt>Shipping</dt><dd>{{ fmt_base(order.shipping_minor) }}</dd>
+        <dt><strong>Total</strong></dt><dd><strong>{{ fmt_base(order.total_minor) }}</strong></dd>
+      </dl>
+    </section>
+  </div>
+  <div>
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('workflow') }} Update status</h2>
+      {% if form.status.choices %}
+      <form method="post" novalidate {% if 'cancelled' in form.status.choices|map('first') %}data-confirm-title="Update order status?" data-confirm="Change {{ order.number }} to the selected status? Cancelling restocks items and refunds demo payments."{% endif %}>
+        {{ form.csrf_token }}
+        {{ field(form.status) }}
+        {{ field(form.reason, "Shown to the customer if cancelling") }}
+        <button class="btn btn--accent btn--block" type="submit">Apply</button>
+      </form>
+      <p class="field__hint">Allowed next steps: {{ form.status.choices|map('last')|join(', ') }}. Transitions are enforced on the server.</p>
+      {% else %}<p class="muted">This order is {{ order.status }} — no further changes are possible.</p>{% endif %}
+    </section>
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('user-round') }} Customer</h2>
+      <dl class="kv" style="grid-template-columns:100px 1fr">
+        <dt>Account</dt><dd>{{ order.user.full_name }}<br><span class="muted">{{ order.user.email }}</span></dd>
+        <dt>Ship to</dt><dd>{{ order.ship_name }} · {{ order.ship_phone }}<br>{{ order.ship_address }}</dd>
+        {% if order.notes %}<dt>Notes</dt><dd>{{ order.notes }}</dd>{% endif %}
+      </dl>
+    </section>
+    <section class="card">
+      <h2 style="font-size:17px">{{ icon('credit-card') }} Payment</h2>
+      {% for p in order.payments %}
+      <dl class="kv" style="grid-template-columns:100px 1fr"><dt>Provider</dt><dd>{{ p.provider }} · {{ p.method }}</dd><dt>Status</dt><dd><span class="status status--{{ p.status }}">{{ p.status }}</span></dd><dt>Reference</dt><dd class="mono">{{ p.reference }}</dd><dt>Note</dt><dd>{{ p.message }}</dd></dl>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

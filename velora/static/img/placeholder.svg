@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" role="img" aria-label="Image unavailable">
+  <rect width="600" height="750" fill="#EDE7DC"/>
+  <circle cx="470" cy="150" r="120" fill="#E0EDE6"/>
+  <circle cx="130" cy="640" r="90" fill="#FBEBD2"/>
+  <g fill="none" stroke="#1F6B52" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" transform="translate(220 290)">
+    <path d="M20 40h120l-12 120H32z"/>
+    <path d="M52 40c0-26 12-40 28-40s28 14 28 40"/>
+  </g>
+  <text x="300" y="520" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#77726A">velora.</text>
+</svg>

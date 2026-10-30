@@ -1,0 +1,18 @@
+{% from "_macros.html" import icon, product_card, pagination_nav, empty %}
+<span class="sr-only" data-result-count>{{ pagination.total }} product{{ '' if pagination.total == 1 else 's' }}</span>
+{% if active_filters %}
+<div class="active-chips">
+  {% if q %}<a class="chip" data-results-link href="{{ url_for(request.endpoint, **dict(request.view_args, **args_no_q)) }}">“{{ q }}” {{ icon('x', 'ic--sm') }}</a>{% endif %}
+  {% for b in selected_brands %}<span class="chip is-active">{{ b }}</span>{% endfor %}
+  {% if availability == 'in_stock' %}<span class="chip is-active">In stock</span>{% endif %}
+  {% if min_price or max_price %}<span class="chip is-active">₱{{ min_price or 0 }} – {{ ('₱' ~ max_price) if max_price else 'any' }}</span>{% endif %}
+</div>
+{% endif %}
+{% if products %}
+<div class="grid-products grid-products--3">
+  {% for p in products %}{{ product_card(p, money, wishlist_ids, eager=loop.index <= 3) }}{% endfor %}
+</div>
+{{ pagination_nav(pagination, request.endpoint, dict(request.view_args, **args)) }}
+{% else %}
+{{ empty('search-x', 'Nothing matches — yet', 'Try a broader search, remove a filter or explore a different aisle. We restock weekly.', url_for('catalog.listing'), 'See all products') }}
+{% endif %}

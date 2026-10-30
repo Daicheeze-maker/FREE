@@ -1,0 +1,77 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, stat, status_badge, bar_chart %}
+{% block title %}Admin console · Velora{% endblock %}
+{% block crumbs %}<p class="crumbs">{{ icon('shield-check', 'ic--sm') }} Elevated access · actions are audited</p>{% endblock %}
+{% block page_title %}Store-wide overview{% endblock %}
+{% block actions %}
+<a class="btn btn--ghost btn--sm" href="{{ url_for('admin.reports_view') }}">{{ icon('chart-column') }} Reports</a>
+<a class="btn btn--accent btn--sm" href="{{ url_for('admin.users') }}">{{ icon('users') }} Manage users</a>
+{% endblock %}
+{% block content %}
+<div class="stats">
+  {{ stat('Lifetime revenue', fmt_base(k.revenue_total), fmt_base(k.revenue_30) ~ ' in last 30 days', 'landmark', 'stat--dark') }}
+  {{ stat('Customers', k.customers, '+' ~ k.new_customers_30 ~ ' in 30 days', 'users') }}
+  {{ stat('Active products', k.active_products, k.low_stock ~ ' low on stock', 'boxes') }}
+  {{ stat('Open orders', k.awaiting, k.orders_30 ~ ' orders in 30 days', 'package') }}
+</div>
+
+<div class="dash-grid">
+  <section class="card">
+    <div class="card__head"><h2>{{ icon('activity') }} Revenue · 30 days</h2><span class="muted">Avg. order {{ fmt_base(k.aov_30) }}</span></div>
+    {{ bar_chart(series, fmt_base, 210) }}
+  </section>
+  <section class="card">
+    <div class="card__head"><h2>{{ icon('plug-zap') }} Integrations</h2><a class="link-arrow" href="{{ url_for('admin.api_health_view') }}">Details {{ icon('arrow-right') }}</a></div>
+    {% for key, label in [('openfoodfacts', 'Open Food Facts'), ('frankfurter', 'Frankfurter FX')] %}
+    {% set a = apis.get(key) %}
+    <div class="list" style="padding:12px 0;border-bottom:1px solid var(--line)">
+      <div class="row row--between">
+        <strong>{{ label }}</strong>
+        {% if not a or not a.last_success_at and not a.last_error_at %}<span class="health-card__state"><span class="pulse-dot pulse-dot--unknown"></span> Not used yet</span>
+        {% elif a.healthy %}<span class="health-card__state" style="color:var(--ok)"><span class="pulse-dot"></span> Healthy</span>
+        {% else %}<span class="health-card__state" style="color:var(--danger)"><span class="pulse-dot pulse-dot--bad"></span> Failing</span>{% endif %}
+      </div>
+      <small class="muted">Last success: {{ a.last_success_at|dtt if a else '—' }}</small>
+    </div>
+    {% endfor %}
+    <div class="stats" style="margin:16px 0 0;grid-template-columns:1fr 1fr">
+      <div><span class="stat__label">Disabled</span><div class="stat__value" style="font-size:26px">{{ disabled }}</div></div>
+      <div><span class="stat__label">Locked now</span><div class="stat__value" style="font-size:26px">{{ locked }}</div></div>
+    </div>
+  </section>
+</div>
+
+<div class="dash-grid">
+  <section class="card">
+    <div class="card__head"><h2>{{ icon('scroll-text') }} Recent sensitive actions</h2><a class="link-arrow" href="{{ url_for('admin.audit_log') }}">Audit log {{ icon('arrow-right') }}</a></div>
+    <ul class="feed">
+      {% for e in audit %}
+      <li><span class="feed__icon">{{ icon('user-cog' if e.action.startswith('user') else 'package' if e.action.startswith('order') else 'box' if e.action.startswith('product') else 'database' if e.action.startswith('off') else 'shield') }}</span>
+        <div><strong class="mono" style="font-size:12.5px">{{ e.action }}</strong> {{ e.details }}<small>{{ e.actor.email if e.actor else 'system' }} · {{ e.created_at|dtt }} · {{ e.ip_address }}</small></div></li>
+      {% else %}<li><span></span><span class="muted">No audited actions yet.</span></li>{% endfor %}
+    </ul>
+  </section>
+  <section class="card">
+    <div class="card__head"><h2>{{ icon('users') }} Accounts by role</h2></div>
+    {% set total_users = role_counts.values()|sum or 1 %}
+    <div class="breakdown">
+      {% for r in ['customer', 'seller', 'admin'] %}<a class="breakdown__row" href="{{ url_for('admin.users', role=r) }}" style="text-decoration:none"><span class="role-tag role-tag--{{ r }}">{{ r }}</span><div class="meter"><span style="--pct: {{ (role_counts.get(r, 0) / total_users * 100)|round(1) }}%"></span></div><strong class="num">{{ role_counts.get(r, 0) }}</strong></a>{% endfor %}
+    </div>
+    <p class="muted" style="font-size:13px;margin:16px 0 0">{{ icon('mail', 'ic--sm') }} {{ subscribers }} newsletter subscriber{{ '' if subscribers == 1 else 's' }}</p>
+  </section>
+</div>
+
+<div class="dash-grid dash-grid--even">
+  <section class="card card--flush">
+    <div class="card__head" style="padding:20px 22px 0"><h2>{{ icon('receipt') }} Latest orders</h2><a class="link-arrow" href="{{ url_for('seller.orders') }}">All orders {{ icon('arrow-right') }}</a></div>
+    <div class="table-wrap" style="border:0;border-radius:0"><table class="table"><tbody>
+      {% for o in recent_orders %}<tr><td><a class="mono" href="{{ url_for('seller.order_detail', number=o.number) }}">{{ o.number }}</a><br><small class="muted">{{ o.user.email }}</small></td><td>{{ status_badge(o.status) }}</td><td class="num">{{ fmt_base(o.total_minor) }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <section class="card">
+    <div class="card__head"><h2>{{ icon('warehouse') }} Inventory value</h2></div>
+    {% set peak = (by_cat|map(attribute=3)|max) or 1 %}
+    <div class="breakdown">{% for name, count, units, value in by_cat %}<div class="breakdown__row" style="grid-template-columns: 130px 1fr 100px"><span>{{ name }}</span><div class="meter"><span style="--pct: {{ (value / peak * 100)|round(1) }}%"></span></div><span class="num">{{ fmt_base(value) }}</span></div>{% endfor %}</div>
+  </section>
+</div>
+{% endblock %}
