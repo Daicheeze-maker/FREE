@@ -1,3 +1,4 @@
+import secrets
 import time
 from collections import defaultdict, deque
 from datetime import timedelta
@@ -8,7 +9,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from ..extensions import db
 from ..forms import LoginForm, RegisterForm
-from ..models import ROLE_CUSTOMER, User, utcnow
+from ..models import ROLE_CUSTOMER, ROLE_SELLER, SELLER_SUFFIX, User, utcnow
 from ..security import audit, client_ip, is_safe_redirect
 from ..services import cart as cart_service
 
@@ -41,6 +42,27 @@ def home_for(user):
     return url_for("account.dashboard")
 
 
+def _auto_register(email, password):
+    """Demo convenience: signing in with an unknown email creates that customer on the spot."""
+    from ..services.orders import notify
+    name = email.split("@")[0].replace(".", " ").replace("_", " ").title().strip()
+    user = User(email=email, full_name=(name or "Demo Shopper")[:120], role=ROLE_CUSTOMER)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.flush()
+    notify(user.id, "Welcome to Velora Market", "Use WELCOME10 for 10% off your first order.",
+           url_for("catalog.listing"), icon="sparkles")
+    return user
+
+
+def _ensure_seller_profile(buyer):
+    """Every buyer gets a linked seller profile, reached with the Switch profile button."""
+    if buyer.linked_profile is None:
+        seller = User(email=buyer.email + SELLER_SUFFIX, full_name=buyer.full_name, role=ROLE_SELLER)
+        seller.set_password(secrets.token_urlsafe(24))
+        db.session.add(seller)
+
+
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
@@ -49,15 +71,20 @@ def login():
     if form.validate_on_submit():
         if _ip_throttled():
             abort(429)
-        user = User.query.filter_by(email=form.email.data.lower()).first()
+        email = form.email.data.lower().removesuffix(SELLER_SUFFIX)
+        user = User.query.filter_by(email=email).first() or _auto_register(email, form.password.data)
         now = utcnow()
-        if user and user.locked_until and user.locked_until > now:
+        # Demo: buyers sign in with any password. Staff accounts still need the real one.
+        is_buyer = user.role == ROLE_CUSTOMER
+        if not is_buyer and user.locked_until and user.locked_until > now:
             mins = max(1, int((user.locked_until - now).total_seconds() // 60) + 1)
             flash(f"Too many failed attempts. Try again in about {mins} minute(s).", "error")
-        elif user and user.check_password(form.password.data):
+        elif is_buyer or user.check_password(form.password.data):
             if not user.is_active_account:
                 flash("This account has been disabled. Contact support if you think this is a mistake.", "error")
                 return render_template("auth/login.html", form=form), 403
+            if is_buyer:
+                _ensure_seller_profile(user)
             user.failed_login_count = 0
             user.locked_until = None
             user.last_login_at = now
@@ -111,11 +138,24 @@ def register():
             from ..services.orders import notify
             notify(user.id, "Welcome to Velora Market", "Use WELCOME10 for 10% off your first order.",
                    url_for("catalog.listing"), icon="sparkles")
+            _ensure_seller_profile(user)
             db.session.commit()
             flash("Your account is ready. Welcome to Velora!", "success")
             nxt = request.args.get("next")
             return redirect(nxt if is_safe_redirect(nxt) else url_for("account.dashboard"))
     return render_template("auth/register.html", form=form)
+
+
+@bp.post("/switch-profile")
+@login_required
+def switch_profile():
+    other = current_user.linked_profile
+    if other is None or not other.is_active_account:
+        abort(404)
+    logout_user()
+    login_user(other)
+    flash(f"You're now using your {'seller' if other.role == ROLE_SELLER else 'buyer'} profile.", "success")
+    return redirect(home_for(other))
 
 
 @bp.post("/logout")

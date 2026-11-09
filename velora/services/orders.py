@@ -13,6 +13,10 @@ from .payments import get_provider
 from .pricing import DiscountError, compute_totals, find_discount, validate_discount
 
 
+DELIVERY_MESSAGE = "Delivery is on the way, wait 10 mins po."
+DEMO_SHIP_ADDRESS = "Demo delivery (no address needed)"
+
+
 class CheckoutError(Exception):
     pass
 
@@ -28,7 +32,7 @@ def notify(user_id, title, body="", link=None, icon="bell"):
     db.session.add(Notification(user_id=user_id, title=title, body=body, link=link, icon=icon))
 
 
-def place_order(user, address, payment_method, checkout_token, discount_code=None, notes=None):
+def place_order(user, payment_method, checkout_token, discount_code=None, notes=None):
     """Create an order atomically. Everything is recomputed from the database.
 
     Idempotent per checkout_token: resubmitting the same checkout returns the existing order.
@@ -42,8 +46,6 @@ def place_order(user, address, payment_method, checkout_token, discount_code=Non
     provider = get_provider()
     if payment_method not in provider.methods:
         raise CheckoutError("Choose a valid payment method.")
-    if address is None or address.user_id != user.id:
-        raise CheckoutError("Choose a delivery address.")
 
     lines = cart_service.get_lines()
     if not lines:
@@ -66,7 +68,7 @@ def place_order(user, address, payment_method, checkout_token, discount_code=Non
         subtotal_minor=totals.subtotal_minor, discount_minor=totals.discount_minor,
         shipping_minor=totals.shipping_minor, total_minor=totals.total_minor,
         discount_code=discount.code if discount else None,
-        ship_name=address.full_name, ship_phone=address.phone, ship_address=address.one_line(),
+        ship_name=user.full_name, ship_phone=user.phone or "N/A", ship_address=DEMO_SHIP_ADDRESS,
         notes=(notes or "").strip()[:500] or None,
     )
     # Spread the order discount across lines proportionally (for accurate per-item snapshots)
@@ -112,12 +114,12 @@ def place_order(user, address, payment_method, checkout_token, discount_code=Non
             message=result.message,
         ))
         if result.status == "succeeded":
-            order.status = OrderStatus.CONFIRMED
-            order.confirmed_at = utcnow()
+            order.status = OrderStatus.SHIPPED
+            order.confirmed_at = order.shipped_at = utcnow()
         db.session.add(order)
         db.session.flush()
         notify(user.id, f"Order {order.number} received",
-               f"Total {fmt_minor(order.total_minor)} · {'payment confirmed (demo)' if result.status == 'succeeded' else 'pay on delivery'}",
+               f"Total {fmt_minor(order.total_minor)} · {DELIVERY_MESSAGE}",
                url_for("account.order_detail", number=order.number), icon="package-check")
         cart_service.clear()
         db.session.commit()

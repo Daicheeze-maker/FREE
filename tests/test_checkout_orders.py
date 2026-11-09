@@ -2,19 +2,18 @@ import re
 
 from velora.extensions import db
 from velora.models import DiscountCode, Order, OrderStatus, PaymentRecord, Product
+from velora.services.payments import DemoPaymentProvider, PaymentResult
 from velora.services.pricing import compute_totals
 
-from .conftest import default_address, get_user, in_stock_product, login
+from .conftest import get_user, in_stock_product, login
 
 
-def _checkout(client, method="demo_approve", address=None):
+def _checkout(client):
     page = client.get("/checkout").get_data(as_text=True)
     token = re.search(r'name="checkout_token" type="hidden" value="([^"]+)"', page) or \
         re.search(r'id="checkout_token" name="checkout_token" type="hidden" value="([^"]+)"', page)
     token = token.group(1) if token else re.search(r'checkout_token[^>]*value="([^"]+)"', page).group(1)
-    u = get_user("customer@velora.example")
-    addr = address or default_address(u)
-    return token, client.post("/checkout", data={"checkout_token": token, "address_id": addr.id, "payment_method": method})
+    return token, client.post("/checkout", data={"checkout_token": token})
 
 
 def test_checkout_creates_order_and_deducts_stock(customer):
@@ -26,7 +25,7 @@ def test_checkout_creates_order_and_deducts_stock(customer):
     db.session.refresh(p)
     assert p.stock == before - 2
     order = Order.query.order_by(Order.id.desc()).first()
-    assert order.status == OrderStatus.CONFIRMED
+    assert order.status == OrderStatus.SHIPPED and order.confirmed_at and order.shipped_at
     assert order.items[0].product_name == p.name and order.items[0].unit_price_minor == p.price_minor
     assert order.payment.status == "succeeded" and order.payment.reference.startswith("DEMO-")
     assert customer.get("/cart", headers={"X-Requested-With": "fetch"}).status_code == 200
@@ -50,8 +49,7 @@ def test_duplicate_checkout_submission_creates_one_order(customer):
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     count = Order.query.count()
     token, r1 = _checkout(customer)
-    u = get_user("customer@velora.example")
-    r2 = customer.post("/checkout", data={"checkout_token": token, "address_id": default_address(u).id, "payment_method": "demo_approve"})
+    r2 = customer.post("/checkout", data={"checkout_token": token})
     assert Order.query.count() == count + 1
     assert r1.headers["Location"] == r2.headers["Location"]
 
@@ -68,24 +66,47 @@ def test_checkout_rechecks_inventory(customer):
     assert p.stock == 1
 
 
-def test_declined_payment_rolls_back(customer):
+def test_failed_payment_rolls_back(customer, monkeypatch):
+    monkeypatch.setattr(DemoPaymentProvider, "charge", lambda *a: PaymentResult("failed", "DEMO-X", "Nope."))
     p = in_stock_product()
     before = p.stock
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     count = Order.query.count()
-    _, r = _checkout(customer, method="demo_decline")
+    _, r = _checkout(customer)
     assert Order.query.count() == count
     db.session.refresh(p)
     assert p.stock == before
     assert customer.get("/cart/drawer").json["count"] == 1  # bag kept
 
 
-def test_cod_order_starts_pending(customer):
+def test_demo_credit_is_unlimited_and_ships_immediately(customer):
     p = in_stock_product()
+    p.price_minor = 999_999_999_00
+    db.session.commit()
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
-    _checkout(customer, method="cod")
+    _checkout(customer)
     o = Order.query.order_by(Order.id.desc()).first()
-    assert o.status == OrderStatus.PENDING and o.payment.status == "pending"
+    assert o.total_minor >= p.price_minor
+    assert o.status == OrderStatus.SHIPPED and o.payment.status == "succeeded"
+    assert o.payment.method == "demo_credit"
+
+
+def test_checkout_page_offers_no_payment_outcomes(customer):
+    customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    page = customer.get("/checkout").get_data(as_text=True)
+    assert "Unlimited" in page
+    assert 'name="payment_method"' not in page
+    assert 'name="address_id"' not in page
+
+
+def test_new_account_checks_out_without_an_address(client):
+    assert login(client, "no.address@example.com", "x").status_code == 302
+    client.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    _, r = _checkout(client)
+    assert r.status_code == 302 and "/checkout/confirmation/" in r.headers["Location"]
+    assert "Delivery is on the way, wait 10 mins po." in client.get(r.headers["Location"]).get_data(as_text=True)
+    u = get_user("no.address@example.com")
+    assert Order.query.filter_by(user_id=u.id).one().ship_address
 
 
 def test_checkout_validation(customer):
@@ -94,18 +115,8 @@ def test_checkout_validation(customer):
     count = Order.query.count()
     page = customer.get("/checkout").get_data(as_text=True)
     token = re.search(r'checkout_token[^>]*value="([^"]+)"', page).group(1)
-    r = customer.post("/checkout", data={"checkout_token": token, "payment_method": "demo_approve"})
-    assert r.status_code == 200 and "field__error" in r.get_data(as_text=True)
-    r = customer.post("/checkout", data={"checkout_token": token, "address_id": 1, "payment_method": "real_card"})
-    assert Order.query.count() == count
-
-
-def test_cannot_use_another_users_address(customer):
-    p = in_stock_product()
-    customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
-    other = default_address(get_user("jonah@example.com"))
-    count = Order.query.count()
-    _checkout(customer, address=other)
+    r = customer.post("/checkout", data={"checkout_token": token + "-stale"})
+    assert r.status_code == 302 and r.headers["Location"].endswith("/checkout")
     assert Order.query.count() == count
 
 
@@ -179,6 +190,8 @@ def test_customer_cancel_rules_and_restock(customer):
     customer.post(f"/cart/add/{p.id}", data={"quantity": 2})
     _checkout(customer)
     o = Order.query.order_by(Order.id.desc()).first()
+    o.status = OrderStatus.CONFIRMED  # new orders ship immediately; cancelling needs an earlier status
+    db.session.commit()
     db.session.refresh(p)
     stock_after_order = p.stock
     r = customer.post(f"/account/orders/{o.number}/cancel", data={"reason": "test"})

@@ -1,0 +1,109 @@
+/* ==========================================================================
+   Velora Market — motion layer
+   One timing system for page changes, feedback and content entrances.
+   Press: 120ms · Hover: 200-300ms · Entrances: 350-550ms
+   Everything is opt-out: visitors who prefer reduced motion get none of this.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------------------------------------------------- page transitions */
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: vt-out .16s ease-in both; }
+  ::view-transition-new(root) { animation: vt-in .34s cubic-bezier(.22, .8, .24, 1) both; }
+  .site-header { view-transition-name: site-header; }
+  .sidebar { view-transition-name: console-sidebar; }
+  @keyframes vt-out { to { opacity: 0; } }
+  @keyframes vt-in { from { opacity: 0; transform: translateY(8px); } }
+
+  .route-bar {
+    position: fixed; inset: 0 0 auto; z-index: 200; height: 3px; pointer-events: none; opacity: 0;
+    transform: scaleX(0); transform-origin: left;
+    background: linear-gradient(90deg, var(--accent), var(--saffron));
+  }
+
+  /* -------------------------------------------------------------- buttons */
+  .btn:active { transform: scale(.97); box-shadow: none; transition-duration: .12s; }
+  .btn--accent, .btn--dark { position: relative; overflow: hidden; }
+  .btn--accent::before, .btn--dark::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-120%) skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .2), transparent);
+  }
+  .btn--accent:hover::before, .btn--dark:hover::before { transform: translateX(120%) skewX(-18deg); transition: transform .75s var(--ease); }
+  .btn .ic { transition: transform .25s var(--ease); }
+  .btn:hover .lucide-arrow-right { transform: translateX(3px); }
+  .btn:hover .lucide-plus { transform: rotate(90deg); }
+  .btn:hover .lucide-download { transform: translateY(2px); }
+
+  .icon-btn { transition: background-color .2s, transform .2s var(--ease); }
+  .icon-btn:hover { transform: scale(1.06); }
+  .icon-btn:active { transform: scale(.92); transition-duration: .12s; }
+  .cart-btn:hover .ic { animation: nudge .45s var(--ease); }
+  .wish-btn { transition: transform .2s var(--ease), background-color .2s; }
+  .wish-btn:hover { transform: scale(1.08); }
+  @keyframes nudge { 30% { transform: rotate(-9deg); } 65% { transform: rotate(6deg); } }
+
+  /* ----------------------------------------------------------- navigation */
+  .nav-link { transition: background-color .2s, color .2s; }
+  .logo__dot { display: inline-block; transition: transform .35s var(--ease); }
+  .logo:hover .logo__dot { transform: translateY(-4px); }
+  .mega-item__icon { transition: transform .25s var(--ease); }
+  .mega-item:hover .mega-item__icon { transform: scale(1.08); }
+  .side-link { transition: background-color .2s, color .2s; }
+  .side-link .ic { transition: transform .25s var(--ease); }
+  .side-link:hover .ic { transform: translateX(2px); }
+  .subnav a { transition: color .2s, border-color .2s; }
+  .pager a { transition: transform .2s var(--ease), background-color .2s, border-color .2s; }
+  .pager a:hover { transform: translateY(-2px); }
+
+  .site-footer ul a {
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    transition: background-size .3s var(--ease);
+  }
+  .site-footer ul a:hover { text-decoration: none; background-size: 100% 1px; }
+
+  /* ---------------------------------------------------------------- forms */
+  .field__label { transition: color .2s; }
+  .field:focus-within .field__label { color: var(--accent); }
+  .field__error { animation: rise-in .3s var(--ease) both; }
+  .field:has(.field__error) .input { animation: shake .4s var(--ease); }
+  .choice__card:hover { transform: translateY(-2px); }
+  @keyframes shake { 20% { transform: translateX(-5px); } 45% { transform: translateX(4px); } 70% { transform: translateX(-2px); } }
+
+  /* ----------------------------------------------------------- data views */
+  .stat { transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
+  .stat:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+  .stat__icon { transition: transform .3s var(--ease); }
+  .stat:hover .stat__icon { transform: scale(1.1) rotate(-4deg); }
+  .stat__value { font-variant-numeric: tabular-nums; }
+  .table tbody tr { transition: background-color .15s, box-shadow .2s; }
+  .table tbody tr:hover { box-shadow: inset 3px 0 0 var(--accent); }
+  .chart__bar { transition: filter .2s; }
+  .chart__bar:hover { filter: brightness(1.15); }
+
+  /* ------------------------------------------------------------- feedback */
+  .alert { animation: rise-in .4s var(--ease) both; }
+  .modal:not([hidden]) { animation: fade-in .2s ease-out both; }
+  .check-anim { animation: pop-in .6s var(--ease) both; }
+  .steps li.is-current .steps__dot { animation: pulse 2.6s ease-in-out infinite; }
+  details.disclosure[open] > :not(summary) { animation: rise-in .35s var(--ease) both; }
+  @keyframes fade-in { from { opacity: 0; } }
+  @keyframes rise-in { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes pop-in { from { opacity: 0; transform: scale(.7); } }
+
+  /* --------------------------------------------------------------- imagery */
+  main img.img-wait { opacity: 0; }
+  main img.img-in { animation: fade-in .6s ease-out both; }
+  .auth__art img { animation: slow-zoom 24s ease-in-out infinite alternate; }
+  @keyframes slow-zoom { to { transform: scale(1.07); } }
+
+  /* ------------------------------------------------------- headline reveal */
+  .word { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .12em; margin-bottom: -.12em; }
+  .word > span { display: inline-block; }
+
+  .confetti { position: fixed; z-index: 150; pointer-events: none; width: 8px; height: 12px; border-radius: 2px; }
+}
+
+/* A printed order must never inherit a half-finished entrance. */
+@media print {
+  main * { opacity: 1 !important; transform: none !important; }
+}

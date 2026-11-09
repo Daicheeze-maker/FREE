@@ -23,6 +23,10 @@ ROLE_CUSTOMER, ROLE_SELLER, ROLE_ADMIN = "customer", "seller", "admin"
 ROLES = (ROLE_CUSTOMER, ROLE_SELLER, ROLE_ADMIN)
 
 
+# A buyer's linked seller profile is stored as "<buyer email>#seller".
+SELLER_SUFFIX = "#seller"
+
+
 class User(UserMixin, TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), nullable=False, unique=True, index=True)
@@ -53,6 +57,17 @@ class User(UserMixin, TimestampMixin, db.Model):
     @property
     def is_active(self):  # Flask-Login: disabled accounts cannot authenticate
         return bool(self.is_active_account)
+
+    @property
+    def linked_profile(self):
+        """The other half of a demo buyer/seller pair, if there is one."""
+        if self.role == ROLE_CUSTOMER:
+            email, role = self.email + SELLER_SUFFIX, ROLE_SELLER
+        elif self.role == ROLE_SELLER and self.email.endswith(SELLER_SUFFIX):
+            email, role = self.email.removesuffix(SELLER_SUFFIX), ROLE_CUSTOMER
+        else:
+            return None
+        return User.query.filter_by(email=email, role=role).first()
 
     @property
     def first_name(self):

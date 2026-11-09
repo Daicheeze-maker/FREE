@@ -30,15 +30,76 @@ def test_duplicate_email_rejected(client):
 
 
 def test_login_success_and_wrong_password(client):
-    assert login(client, "customer@velora.example", "nope").status_code == 200
-    r = login(client, "customer@velora.example", "Customer123!")
-    assert r.status_code == 302 and r.headers["Location"].endswith("/account/")
+    assert login(client, "seller@velora.example", "nope").status_code == 200
+    r = login(client, "seller@velora.example", "Seller123!")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/seller/")
+
+
+def test_buyer_signs_in_with_any_password(client):
+    assert login(client, "repeat@example.com", "first").status_code == 302
+    client.post("/account/logout")
+    assert login(client, "repeat@example.com", "different").status_code == 302
+    assert client.get("/account/").status_code == 200
+
+
+def test_login_creates_linked_buyer_and_seller_profiles(client):
+    login(client, "both@example.com", "x")
+    buyer = get_user("both@example.com")
+    seller = get_user("both@example.com#seller")
+    assert buyer.role == "customer" and seller.role == "seller"
+    assert buyer.linked_profile.id == seller.id and seller.linked_profile.id == buyer.id
+    assert "Switch to seller profile" in client.get("/account/").get_data(as_text=True)
+
+    r = client.post("/account/switch-profile")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/seller/")
+    assert client.get("/seller/").status_code == 200
+    assert "Switch to buyer profile" in client.get("/seller/").get_data(as_text=True)
+
+    r = client.post("/account/switch-profile")
+    assert r.headers["Location"].endswith("/account/")
+    assert client.get("/account/").status_code == 200
+
+
+def test_repeat_login_does_not_duplicate_profiles(client):
+    login(client, "once@example.com", "x")
+    client.post("/account/logout")
+    n = User.query.count()
+    login(client, "once@example.com", "x")
+    assert User.query.count() == n
+
+
+def test_typing_seller_suffix_signs_in_as_buyer(client):
+    login(client, "suffix@example.com#seller", "x")
+    assert get_user("suffix@example.com").role == "customer"
+    assert client.get("/account/").status_code == 200
+
+
+def test_seeded_staff_have_no_switch(seller):
+    assert seller.post("/account/switch-profile").status_code == 404
+
+
+def test_unknown_login_creates_customer(client):
+    r = login(client, "someone.random@example.com", "x")
+    assert r.status_code == 302 and "/account" in r.headers["Location"]
+    u = get_user("someone.random@example.com")
+    assert u.role == "customer" and u.full_name == "Someone Random"
+    assert client.get("/account/").status_code == 200
+
+
+def test_login_accepts_text_that_is_not_an_email(client):
+    assert login(client, "asdf", "x").status_code == 302
+    assert get_user("asdf").role == "customer"
+
+
+def test_auto_login_never_opens_staff_accounts(client):
+    assert login(client, "admin@velora.example", "guess").status_code == 200
+    assert client.get("/admin/").status_code in (302, 403)
 
 
 def test_lockout_after_repeated_failures(client, app):
     for _ in range(app.config["LOGIN_MAX_ATTEMPTS"]):
-        login(client, "customer@velora.example", "wrong")
-    r = login(client, "customer@velora.example", "Customer123!")
+        login(client, "seller@velora.example", "wrong")
+    r = login(client, "seller@velora.example", "Seller123!")
     assert r.status_code == 200 and "Too many failed attempts" in r.get_data(as_text=True)
     assert AuditLog.query.filter_by(action="auth.lockout").count() == 1
 

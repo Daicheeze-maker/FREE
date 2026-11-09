@@ -38,7 +38,7 @@
         {% if order.discount_minor %}<dt>Discount</dt><dd>−{{ fmt_base(order.discount_minor) }} ({{ order.discount_code }})</dd>{% endif %}
         <dt>Delivery</dt><dd>{{ fmt_base(order.shipping_minor) if order.shipping_minor else 'Free' }}</dd>
         <dt><strong>Total</strong></dt><dd><strong>{{ fmt_base(order.total_minor) }}</strong></dd>
-        {% if order.payment %}<dt>Method</dt><dd>{{ {'demo_approve': 'Demo payment', 'cod': 'Cash on delivery'}.get(order.payment.method, order.payment.method) }}</dd><dt>Reference</dt><dd class="mono">{{ order.payment.reference }}</dd>{% endif %}
+        {% if order.payment %}<dt>Method</dt><dd>{{ {'demo_credit': 'Demo credit', 'demo_approve': 'Demo payment', 'cod': 'Cash on delivery'}.get(order.payment.method, order.payment.method) }}</dd><dt>Reference</dt><dd class="mono">{{ order.payment.reference }}</dd>{% endif %}
       </dl>
       <p class="fx-note">{{ icon('flask-conical', 'ic--sm') }} Simulated payment — no real money moved.</p>
     </section>

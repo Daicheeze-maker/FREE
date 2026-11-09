@@ -490,7 +490,7 @@
     if (window.ScrollTrigger) {
       ScrollTrigger.batch(cards, {
         start: "top 92%", once: true,
-        onEnter: (batch) => gsap.to(batch, { y: 0, opacity: 1, duration: .7, stagger: .07, ease: "power3.out", overwrite: true }),
+        onEnter: (batch) => gsap.to(batch, { y: 0, opacity: 1, duration: .7, stagger: Math.min(.07, .4 / batch.length), ease: "power3.out", overwrite: true }),
       });
     } else gsap.to(cards, { y: 0, opacity: 1, stagger: .05 });
   }

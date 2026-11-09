@@ -35,7 +35,8 @@ class PasswordStrength:
 
 
 class LoginForm(FlaskForm):
-    email = EmailField("Email", validators=[DataRequired(), Email(), Length(max=255)], filters=[strip])
+    # No Email() check: any text signs in, and unknown ones become demo customers.
+    email = EmailField("Email", validators=[DataRequired(), Length(max=255)], filters=[strip])
     password = PasswordField("Password", validators=[DataRequired(), Length(max=128)])
     remember = BooleanField("Keep me signed in")
 
@@ -75,8 +76,6 @@ class AddressForm(FlaskForm):
 
 class CheckoutForm(FlaskForm):
     checkout_token = HiddenField(validators=[DataRequired(), Length(max=64)])
-    address_id = RadioField("Delivery address", coerce=int, validators=[InputRequired("Choose a delivery address.")])
-    payment_method = RadioField("Payment", validators=[InputRequired("Choose a payment method.")])
     notes = TextAreaField("Delivery notes (optional)", validators=[Optional(), Length(max=500)])
 
 

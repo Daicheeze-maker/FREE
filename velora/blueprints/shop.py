@@ -5,11 +5,11 @@ from flask import Blueprint, abort, flash, jsonify, redirect, render_template, r
 from flask_login import current_user, login_required
 
 from ..extensions import db
-from ..forms import AddressForm, CheckoutForm, DiscountApplyForm
-from ..models import Address, Order, Product
+from ..forms import CheckoutForm, DiscountApplyForm
+from ..models import Order, Product
 from ..services import cart as cart_service
 from ..services.orders import CheckoutError, place_order
-from ..services.payments import get_provider
+from ..services.payments import DEMO_CREDIT
 from ..services.pricing import DiscountError, compute_totals, find_discount, validate_discount
 
 bp = Blueprint("shop", __name__)
@@ -142,17 +142,10 @@ def checkout():
     if not lines and request.method == "GET":
         flash("Your bag is empty.", "info")
         return redirect(url_for("shop.cart"))
-    provider = get_provider()
-    addresses = Address.query.filter_by(user_id=current_user.id).order_by(Address.is_default.desc(), Address.id).all()
     form = CheckoutForm()
-    form.address_id.choices = [(a.id, a.label) for a in addresses]
-    form.payment_method.choices = list(provider.methods.items())
     if request.method == "GET":
         # One-time token: resubmitting this exact checkout can never create a second order.
         session["checkout_token"] = form.checkout_token.data = secrets.token_urlsafe(24)
-        default = next((a for a in addresses if a.is_default), addresses[0] if addresses else None)
-        form.address_id.data = default.id if default else None
-        form.payment_method.data = "demo_approve"
     elif form.validate_on_submit():
         token = form.checkout_token.data
         prior = Order.query.filter_by(checkout_token=token, user_id=current_user.id).first()
@@ -161,41 +154,16 @@ def checkout():
         if token != session.get("checkout_token"):
             flash("This checkout has expired. Please review your order and submit again.", "error")
             return redirect(url_for("shop.checkout"))
-        address = db.session.get(Address, form.address_id.data)
         try:
-            order = place_order(current_user, address, form.payment_method.data, token,
-                                session.get("discount_code"), form.notes.data)
+            order = place_order(current_user, DEMO_CREDIT, token, session.get("discount_code"), form.notes.data)
         except CheckoutError as exc:
             flash(str(exc), "error")
             return redirect(url_for("shop.checkout") if cart_service.get_lines() else url_for("shop.cart"))
         session.pop("checkout_token", None)
         return redirect(url_for("shop.confirmation", number=order.number))
     totals = compute_totals(cart_service.subtotal_minor(lines), session.get("discount_code"), bool(lines))
-    return render_template("shop/checkout.html", form=form, lines=lines, totals=totals, addresses=addresses,
-                           address_form=AddressForm(formdata=None), discount_form=DiscountApplyForm())
-
-
-@bp.post("/checkout/address")
-@login_required
-def checkout_address():
-    if current_user.role != "customer":
-        abort(403)
-    form = AddressForm()
-    if form.validate_on_submit():
-        first = Address.query.filter_by(user_id=current_user.id).count() == 0
-        if form.is_default.data or first:
-            Address.query.filter_by(user_id=current_user.id).update({"is_default": False})
-        addr = Address(user_id=current_user.id)
-        form.populate_obj(addr)
-        addr.is_default = bool(form.is_default.data or first)
-        db.session.add(addr)
-        db.session.commit()
-        flash("Address saved.", "success")
-    else:
-        for name, errs in form.errors.items():
-            flash(f"{getattr(form, name).label.text}: {errs[0]}", "error")
-            break
-    return redirect(url_for("shop.checkout"))
+    return render_template("shop/checkout.html", form=form, lines=lines, totals=totals,
+                           discount_form=DiscountApplyForm())
 
 
 @bp.route("/checkout/confirmation/<number>")

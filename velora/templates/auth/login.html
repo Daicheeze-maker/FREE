@@ -10,7 +10,7 @@
   <div class="auth__panel">
     <div class="auth__form" data-reveal>
       <h1>Sign in</h1>
-      <p>New here? <a href="{{ url_for('auth.register', next=request.args.get('next')) }}">Create an account</a> — it takes 30 seconds.</p>
+      <p>Type any email and password. You get a buyer and a seller profile, and can switch between them from the account menu. Or <a href="{{ url_for('auth.register', next=request.args.get('next')) }}">create an account</a>.</p>
       <form method="post" novalidate>
         {{ form.csrf_token }}
         {{ field(form.email, "you@example.com", autocomplete="email") }}

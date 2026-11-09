@@ -10,6 +10,7 @@
   <link rel="preload" href="{{ url_for('static', filename='fonts/inter.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', filename='fonts/bricolage.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
   {% block head %}{% endblock %}
 </head>
@@ -88,6 +89,7 @@
               <a role="menuitem" href="{{ url_for('seller.dashboard') }}">{{ icon('store') }} Seller studio</a>
             {% endif %}
             <a role="menuitem" href="{{ url_for('account.profile') }}">{{ icon('settings') }} Profile & password</a>
+            {% if current_user.linked_profile %}<form method="post" action="{{ url_for('auth.switch_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button role="menuitem" type="submit">{{ icon('store' if current_user.role == 'customer' else 'user-round') }} Switch to {{ 'seller' if current_user.role == 'customer' else 'buyer' }} profile</button></form>{% endif %}
             <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button role="menuitem" type="submit">{{ icon('log-out') }} Sign out</button></form>
           {% else %}
             <div class="account-panel__head"><strong>Welcome</strong><span>Sign in for order tracking, wishlists and faster checkout.</span></div>
@@ -119,6 +121,7 @@
       {% if current_user.role == 'customer' %}<a href="{{ url_for('account.dashboard') }}">{{ icon('layout-dashboard') }} My account</a><a href="{{ url_for('account.wishlist') }}">{{ icon('heart') }} Wishlist</a>
       {% elif current_user.role == 'seller' %}<a href="{{ url_for('seller.dashboard') }}">{{ icon('store') }} Seller studio</a>
       {% else %}<a href="{{ url_for('admin.dashboard') }}">{{ icon('shield-check') }} Admin console</a>{% endif %}
+      {% if current_user.linked_profile %}<form method="post" action="{{ url_for('auth.switch_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button role="menuitem" type="submit">{{ icon('store' if current_user.role == 'customer' else 'user-round') }} Switch to {{ 'seller' if current_user.role == 'customer' else 'buyer' }} profile</button></form>{% endif %}
     {% else %}<a href="{{ url_for('auth.login') }}">{{ icon('log-in') }} Sign in</a><a href="{{ url_for('auth.register') }}">{{ icon('user-plus') }} Create account</a>{% endif %}
   </div>
 </aside>
@@ -182,6 +185,7 @@
 <script src="{{ url_for('static', filename='vendor/ScrollTrigger.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/motion.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

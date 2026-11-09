@@ -582,8 +582,8 @@ input[type="file"].input { padding: 10px; height: auto; }
 .empty p { color: var(--muted); }
 
 /* --------------------------------------------------------------- checkout */
-.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 4px 0 34px; position: relative; list-style: none; padding: 0; }
-.steps__rail { position: absolute; left: 12.5%; right: 12.5%; top: 17px; height: 2px; background: var(--line); }
+.steps { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; margin: 4px 0 34px; position: relative; list-style: none; padding: 0; }
+.steps__rail { position: absolute; left: 16.67%; right: 16.67%; top: 17px; height: 2px; background: var(--line); }
 .steps__fill { height: 100%; width: var(--progress, 0%); background: var(--accent); transform-origin: left; }
 .steps li { display: grid; justify-items: center; gap: 8px; font-size: 13px; color: var(--muted); font-weight: 600; position: relative; z-index: 1; text-align: center; }
 .steps__dot { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--line-2); color: var(--muted); transition: all .4s var(--ease); }
@@ -614,7 +614,8 @@ details.disclosure[open] { padding-bottom: 8px; }
 
 /* confirmation */
 .confirm-hero { text-align: center; padding: 48px 0 30px; }
-.check-anim { width: 92px; height: 92px; margin: 0 auto 22px; }
+.confirm-hero .eyebrow { display: flex; }
+.check-anim { display: block; width: 92px; height: 92px; margin: 0 auto 22px; }
 .check-anim circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
 .check-anim path { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 48; stroke-dashoffset: 48; animation: draw .7s .35s var(--ease) forwards; }
 @keyframes draw { to { stroke-dashoffset: 0; } }

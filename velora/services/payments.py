@@ -1,7 +1,9 @@
-"""Payment providers. Only a DEMO provider exists: it simulates a result and never charges money
-or collects card data. A real gateway can be added by implementing PaymentProvider."""
+"""Payment providers. Only a DEMO provider exists: every customer has unlimited demo credit, so it
+never charges money or collects card data. A real gateway can be added by implementing PaymentProvider."""
 import secrets
 from dataclasses import dataclass
+
+DEMO_CREDIT = "demo_credit"
 
 
 @dataclass
@@ -21,20 +23,12 @@ class PaymentProvider:
 
 class DemoPaymentProvider(PaymentProvider):
     name = "demo"
-    methods = {
-        "demo_approve": "Demo payment — simulate approval",
-        "demo_decline": "Demo payment — simulate a decline",
-        "cod": "Cash on delivery",
-    }
+    methods = {DEMO_CREDIT: "Unlimited demo credit"}
 
     def charge(self, amount_minor, currency, method, order_number):
         ref = "DEMO-" + secrets.token_hex(6).upper()
-        if method == "demo_approve":
-            return PaymentResult("succeeded", ref, "Simulated approval. No real money was charged.")
-        if method == "demo_decline":
-            return PaymentResult("failed", ref, "Simulated decline. Try the approval option or cash on delivery.")
-        if method == "cod":
-            return PaymentResult("pending", ref, "Pay the courier on delivery.")
+        if method == DEMO_CREDIT:
+            return PaymentResult("succeeded", ref, "Paid with unlimited demo credit. No real money was charged.")
         return PaymentResult("failed", ref, "Unsupported payment method.")
 
 

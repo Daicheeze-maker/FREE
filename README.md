@@ -134,8 +134,8 @@ The SQLite database and uploaded images live in `instance/` by default (`instanc
 | Profile | How to get it | Dashboard | Can do |
 |---|---|---|---|
 | **Guest shopper** | Not signed in | Storefront | Browse, search, filter (aisle / maker / price / availability), sort (featured, newest, popular, price, rating), view products, reviews and nutrition, use a session bag, switch currency, register / sign in. No access to account, seller or admin pages (server-side redirects or 403). |
-| **Customer** | Self-registration | `/account/` — stats, live tracker for the active order, recent orders, notifications, wishlist, “waiting for your review”, recently viewed | Persistent bag (merged from the guest bag at login), wishlist, addresses, discount codes, 3-step checkout, order history and tracking, cancel while *Pending/Confirmed*, review only **delivered** purchases (one per product), notifications, profile and password change. |
-| **Seller / store manager** | Assigned by an admin | `/seller/` — revenue chart, KPIs, fulfilment queue, order pipeline, low-stock alerts with one-click restock, top sellers, latest feedback | **Model photos**, product CRUD, archive and restore, secure image uploads, categories, inventory, order processing with enforced status transitions, promotions and discount codes, review moderation and public replies, **Open Food Facts import**, CSV exports. This is a single-store catalog, not a multi-vendor marketplace. |
+| **Customer** | Self-registration, or sign in with any email and any password (the demo creates the account and a linked seller profile) | `/account/` — stats, live tracker for the active order, recent orders, notifications, wishlist, “waiting for your review”, recently viewed | Persistent bag (merged from the guest bag at login), wishlist, addresses, discount codes, address-free demo checkout, order history and tracking, cancel while *Pending/Confirmed*, review only **delivered** purchases (one per product), notifications, profile and password change. |
+| **Seller / store manager** | Assigned by an admin, or the linked seller profile every buyer gets (use *Switch to seller profile* in the account menu) | `/seller/` — revenue chart, KPIs, fulfilment queue, order pipeline, low-stock alerts with one-click restock, top sellers, latest feedback | **Model photos**, product CRUD, archive and restore, secure image uploads, categories, inventory, order processing with enforced status transitions, promotions and discount codes, review moderation and public replies, **Open Food Facts import**, CSV exports. This is a single-store catalog, not a multi-vendor marketplace. |
 | **Administrator** | Seeded, or created with `flask --app wsgi create-admin` | `/admin/` (blue “Admin console” theme) — store KPIs, 30-day revenue, integrations status, audit feed, accounts by role, inventory value | Everything a seller can do, plus users and roles, enable/disable accounts, clear login locks, sales and inventory reports, store settings (shipping rules, low-stock threshold, announcement), **API health with live test buttons**, and a full **audit log**. |
 
 Roles are stored only in the database. Registration has no role field, so a submitted `role=admin` is ignored. Every protected route checks the role on the server. Admins can't demote or disable themselves, and at least one active admin always remains.
@@ -175,8 +175,8 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
   - Discount codes: percent or fixed, minimum spend, usage limits counted atomically, start and end dates.
   - Configurable flat shipping and free-shipping threshold.
 - Placing the order:
-  - Address book, with an address form inside checkout.
-  - Demo payment provider: approve, decline or cash on delivery (`services/payments.py`, built so a real gateway can be plugged in).
+  - No address needed at checkout: paid orders go straight to *Shipped* with a “wait 10 mins” message. The address book stays under the account pages.
+  - Demo payment provider: every customer has unlimited demo credit, so orders are paid and confirmed immediately (`services/payments.py`, built so a real gateway can be plugged in).
   - **One transaction** that re-validates stock, prices and discount on the server, decrements stock with a conditional `UPDATE … WHERE stock >= qty` (so it can't oversell), snapshots item name, SKU, price, discount and image, then records the payment.
   - A one-time checkout token with a unique constraint prevents duplicate orders from double-submits.
   - Confirmation page with an animated check.
@@ -230,7 +230,7 @@ There are 94 tests. External APIs are mocked, so no network is needed. They cove
   - discount codes (percent, fixed, minimum, expired, exhausted, usage counting);
   - inventory deduction and re-checks;
   - **duplicate checkout prevention**;
-  - declined-payment rollback;
+  - failed-payment rollback;
   - order ownership, cancellation rules with restocking, seller status transitions;
   - reviews (purchase required, duplicate blocked, rating range).
 - **Integrations:** currency conversion, caching, stale-cache and offline fallback, Open Food Facts parsing, normalization, rate limits, import and offline display.
