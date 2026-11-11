@@ -20,4 +20,4 @@ fi
 
 python -m flask --app wsgi init-db
 python -m flask --app wsgi seed
-echo "Setup complete. Start with: scripts/run.sh   (or scripts/run_gunicorn.sh)"
+echo "Setup complete. Start the store with: bash start.sh"

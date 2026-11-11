@@ -15,21 +15,20 @@ It runs directly on Windows 10/11 or Ubuntu, on bare metal or inside a virtual m
 ```bash
 sudo apt update && sudo apt install -y python3 python3-venv python3-pip   # Ubuntu 22.04+/24.04
 cd velora-market            # the project folder
-bash scripts/setup.sh       # venv + dependencies + .env + database + demo data
-bash scripts/run.sh         # http://127.0.0.1:5000
+bash start.sh               # first run sets everything up; then opens http://127.0.0.1:5000
 ```
 
-### Windows 10/11
+### Windows 10/11 — the easy way
 
-1. Install Python 3.11+ from python.org and tick **“Add python.exe to PATH”**.
-2. In *Command Prompt* inside the project folder:
+1. Install Python 3.11+ from python.org and tick **“Add python.exe to PATH”** (one time only).
+2. **Double-click `start.bat`** in the project folder. That's it.
+   - The first time it sets everything up (1–2 minutes, needs internet), then starts the store and **opens your browser**.
+   - Every time after that it starts in a few seconds.
+   - Press **Ctrl+C** in its window to stop the store.
 
-```bat
-scripts\setup.bat
-scripts\run.bat
-```
+In **VS Code** you can also press **F5** (Run → *Run Velora Market*) or use **Terminal → Run Build Task** (Ctrl+Shift+B), which runs `start.bat`.
 
-Open **http://127.0.0.1:5000**.
+Prefer typing commands? In a terminal inside the project folder: `.\start.bat` (PowerShell) or `start.bat` (Command Prompt). The older `scripts\setup.bat` and `scripts\run.bat` still work too.
 
 ### Manual setup (any OS)
 

@@ -21,5 +21,5 @@ if not exist .env (
 
 python -m flask --app wsgi init-db || exit /b 1
 python -m flask --app wsgi seed || exit /b 1
-echo Setup complete. Start with: scripts\run.bat
+echo Setup complete. Start the store by double-clicking start.bat
 endlocal
