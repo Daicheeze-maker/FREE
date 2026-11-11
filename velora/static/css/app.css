@@ -922,3 +922,9 @@ details.disclosure[open] { padding-bottom: 8px; }
 :root[data-theme="dark"] .theme-sun { display: inline-block; }
 :root[data-theme="dark"] .theme-moon { display: none; }
 .photo-slots > .card { margin-top: 0; }
+
+/* checkout: new-address fields appear only when "Deliver to a new address" is chosen */
+.address-pick .addr-new { display: none; margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line-2); }
+.address-pick:has(#addr-choice-new:checked) .addr-new { display: block; }
+@supports not selector(:has(*)) { .address-pick .addr-new { display: block; } }
+.choice__card--new { border-style: dashed; align-content: center; }

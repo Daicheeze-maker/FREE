@@ -4,10 +4,11 @@
 {% block content %}
 <div class="container">
   <header class="page-head"><h1>Checkout</h1></header>
-  <ol class="steps" data-steps style="--progress: 50%" aria-label="Checkout progress">
+  <ol class="steps" data-steps style="--progress: {{ 33 if not choice else 66 }}%" aria-label="Checkout progress">
     <div class="steps__rail" aria-hidden="true"><div class="steps__fill"></div></div>
     <li class="is-done"><span class="steps__dot">{{ icon('check') }}</span><span>Bag</span></li>
-    <li class="is-current" aria-current="step"><span class="steps__dot">{{ icon('credit-card') }}</span><span>Payment</span></li>
+    <li class="is-current" aria-current="step"><span class="steps__dot">{{ icon('map-pin') }}</span><span>Delivery</span></li>
+    <li><span class="steps__dot">{{ icon('credit-card') }}</span><span>Payment</span></li>
     <li><span class="steps__dot">{{ icon('package-check') }}</span><span>Confirmed</span></li>
   </ol>
 
@@ -15,6 +16,39 @@
     <div>
       <form method="post" id="checkout-form" action="{{ url_for('shop.checkout') }}" novalidate>
         {{ form.csrf_token }}{{ form.checkout_token }}
+        <section class="card address-pick" data-reveal id="delivery">
+          <div class="card__head"><h2>{{ icon('map-pin') }} Where should we deliver this order?</h2>{% if addresses %}<a class="btn btn--link btn--sm" href="{{ url_for('account.addresses') }}">Manage saved addresses</a>{% endif %}</div>
+          <p class="muted" style="font-size:14px;margin-top:0">We ask every time, so your order always goes to the right place. Pick an address you've used before, or enter a new one.</p>
+          {% if address_error %}<p class="alert alert--error" role="alert">{{ icon('circle-alert') }} <span>{{ address_error }}</span></p>{% endif %}
+          <div class="choice-grid" role="radiogroup" aria-label="Delivery address">
+            {% for a in addresses %}
+            <label class="choice">
+              <input type="radio" name="address_choice" value="{{ a.id }}" {% if choice == a.id|string %}checked{% endif %} required>
+              <span class="choice__card"><strong>{{ a.label }}{% if a.is_default %} · Default{% endif %}</strong>{{ a.full_name }} · {{ a.phone }}<br>{{ a.one_line() }}</span>
+            </label>
+            {% endfor %}
+            <label class="choice">
+              <input type="radio" name="address_choice" value="new" id="addr-choice-new" {% if choice == 'new' %}checked{% endif %} required>
+              <span class="choice__card choice__card--new"><strong>{{ icon('plus', 'ic--sm') }} Deliver to a new address</strong>Enter a different address for this order.</span>
+            </label>
+          </div>
+          <div class="addr-new" id="addr-new">
+            <div class="form-grid">
+              {{ field(new_form.label, "Home, Office…") }}
+              {{ field(new_form.full_name, "Who will receive it?", autocomplete="name") }}
+              {{ field(new_form.phone, "+63 917 000 0000", autocomplete="tel") }}
+              {{ field(new_form.postal_code, "1101", autocomplete="postal-code") }}
+              {{ field(new_form.line1, "House no., street, barangay", cls="span-2", autocomplete="address-line1") }}
+              {{ field(new_form.line2, "", cls="span-2", autocomplete="address-line2") }}
+              {{ field(new_form.city, "Quezon City", autocomplete="address-level2") }}
+              {{ field(new_form.region, "Metro Manila", autocomplete="address-level1") }}
+              {{ field(new_form.country, "", autocomplete="country-name") }}
+              <div class="span-2">{{ field(new_form.save_address) }}</div>
+              <div class="span-2">{{ field(new_form.is_default) }}</div>
+            </div>
+          </div>
+        </section>
+
         <section class="card" data-reveal>
           <div class="card__head"><h2>{{ icon('credit-card') }} Payment</h2><span class="demo-flag">{{ icon('flask-conical', 'ic--sm') }} Demo mode</span></div>
           <p class="alert alert--info">{{ icon('info') }} <span>You're paying with <strong>unlimited demo credit</strong>, so there's nothing to enter. No card details are requested and no money is charged.</span></p>

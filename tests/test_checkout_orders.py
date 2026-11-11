@@ -5,15 +5,26 @@ from velora.models import DiscountCode, Order, OrderStatus, PaymentRecord, Produ
 from velora.services.payments import DemoPaymentProvider, PaymentResult
 from velora.services.pricing import compute_totals
 
-from .conftest import get_user, in_stock_product, login
+from .conftest import default_address, get_user, in_stock_product, login
 
 
-def _checkout(client):
+def _token(client):
     page = client.get("/checkout").get_data(as_text=True)
-    token = re.search(r'name="checkout_token" type="hidden" value="([^"]+)"', page) or \
-        re.search(r'id="checkout_token" name="checkout_token" type="hidden" value="([^"]+)"', page)
-    token = token.group(1) if token else re.search(r'checkout_token[^>]*value="([^"]+)"', page).group(1)
-    return token, client.post("/checkout", data={"checkout_token": token})
+    return re.search(r'checkout_token[^>]*value="([^"]+)"', page).group(1)
+
+
+NEW_ADDRESS = {"address_choice": "new", "addr-label": "Work", "addr-full_name": "Maya Santos",
+               "addr-phone": "+63 917 555 0199", "addr-line1": "88 Ayala Ave", "addr-city": "Makati",
+               "addr-region": "Metro Manila", "addr-postal_code": "1226", "addr-country": "Philippines"}
+
+
+def _checkout(client, address=None, **extra):
+    """Place an order the way a shopper must: by choosing a saved address (default: their default one)."""
+    token = _token(client)
+    if address is None:
+        u = get_user("customer@velora.example")
+        address = {"address_choice": str(default_address(u).id)}
+    return token, client.post("/checkout", data={"checkout_token": token, **address, **extra})
 
 
 def test_checkout_creates_order_and_deducts_stock(customer):
@@ -49,7 +60,7 @@ def test_duplicate_checkout_submission_creates_one_order(customer):
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     count = Order.query.count()
     token, r1 = _checkout(customer)
-    r2 = customer.post("/checkout", data={"checkout_token": token})
+    r2 = customer.post("/checkout", data={"checkout_token": token, "address_choice": str(default_address(get_user("customer@velora.example")).id)})
     assert Order.query.count() == count + 1
     assert r1.headers["Location"] == r2.headers["Location"]
 
@@ -99,14 +110,89 @@ def test_checkout_page_offers_no_payment_outcomes(customer):
     assert 'name="address_id"' not in page
 
 
-def test_new_account_checks_out_without_an_address(client):
+def test_checkout_asks_for_an_address_every_time(customer):
+    customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    html = customer.get("/checkout").get_data(as_text=True)
+    assert "Where should we deliver this order?" in html
+    assert 'name="address_choice"' in html and "Deliver to a new address" in html
+    assert "checked" not in html.split('name="address_choice"')[1].split(">")[0]  # nothing pre-selected
+    for a in get_user("customer@velora.example").addresses:  # every saved address is offered
+        assert a.line1 in html
+
+
+def test_cannot_order_without_choosing_an_address(customer):
+    customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    count = Order.query.count()
+    token = _token(customer)
+    r = customer.post("/checkout", data={"checkout_token": token})
+    assert r.status_code == 400 and "Choose where to deliver this order" in r.get_data(as_text=True)
+    assert Order.query.count() == count
+    assert customer.get("/cart/drawer").json["count"] == 1  # bag untouched
+
+
+def test_order_uses_the_chosen_saved_address(customer):
+    u = get_user("customer@velora.example")
+    other = next(a for a in u.addresses if not a.is_default)  # e.g. "Office", not the default
+    customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    _, r = _checkout(customer, {"address_choice": str(other.id)})
+    assert r.status_code == 302
+    o = Order.query.order_by(Order.id.desc()).first()
+    assert o.ship_address == other.one_line() and o.ship_phone == other.phone
+    assert other.one_line() in customer.get(r.headers["Location"]).get_data(as_text=True)
+
+
+def test_new_address_is_used_and_saved(customer):
+    u = get_user("customer@velora.example")
+    before = len(u.addresses)
+    customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    _, r = _checkout(customer, NEW_ADDRESS, **{"addr-save_address": "y"})
+    assert r.status_code == 302
+    o = Order.query.order_by(Order.id.desc()).first()
+    assert "88 Ayala Ave" in o.ship_address and "Makati" in o.ship_address
+    db.session.expire_all()
+    assert len(get_user("customer@velora.example").addresses) == before + 1
+
+
+def test_new_address_not_saved_when_unticked(customer):
+    u = get_user("customer@velora.example")
+    before = len(u.addresses)
+    customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    _, r = _checkout(customer, NEW_ADDRESS)  # save box not sent = unticked
+    assert r.status_code == 302
+    db.session.expire_all()
+    assert len(get_user("customer@velora.example").addresses) == before
+    assert "88 Ayala Ave" in Order.query.order_by(Order.id.desc()).first().ship_address
+
+
+def test_invalid_new_address_is_rejected(customer):
+    customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    count = Order.query.count()
+    bad = {**NEW_ADDRESS, "addr-line1": "", "addr-phone": "abc"}
+    _, r = _checkout(customer, bad)
+    assert r.status_code == 400 and "field__error" in r.get_data(as_text=True)
+    assert Order.query.count() == count
+
+
+def test_cannot_ship_to_another_customers_address(customer):
+    other = default_address(get_user("jonah@example.com"))
+    customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    count = Order.query.count()
+    _, r = _checkout(customer, {"address_choice": str(other.id)})
+    assert r.status_code == 400 and Order.query.count() == count
+
+
+def test_first_purchase_with_no_saved_address_must_enter_one(client):
     assert login(client, "no.address@example.com", "x").status_code == 302
     client.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
-    _, r = _checkout(client)
+    html = client.get("/checkout").get_data(as_text=True)
+    assert 'value="new" id="addr-choice-new" checked' in html  # the only option is pre-chosen
+    token = _token(client)
+    assert client.post("/checkout", data={"checkout_token": token}).status_code == 400
+    r = client.post("/checkout", data={"checkout_token": token, **NEW_ADDRESS, "addr-save_address": "y"})
     assert r.status_code == 302 and "/checkout/confirmation/" in r.headers["Location"]
     assert "Delivery is on the way, wait 10 mins po." in client.get(r.headers["Location"]).get_data(as_text=True)
     u = get_user("no.address@example.com")
-    assert Order.query.filter_by(user_id=u.id).one().ship_address
+    assert len(u.addresses) == 1 and u.addresses[0].is_default  # saved, and becomes the default
 
 
 def test_checkout_validation(customer):
@@ -115,7 +201,7 @@ def test_checkout_validation(customer):
     count = Order.query.count()
     page = customer.get("/checkout").get_data(as_text=True)
     token = re.search(r'checkout_token[^>]*value="([^"]+)"', page).group(1)
-    r = customer.post("/checkout", data={"checkout_token": token + "-stale"})
+    r = customer.post("/checkout", data={"checkout_token": token + "-stale", "address_choice": "1"})
     assert r.status_code == 302 and r.headers["Location"].endswith("/checkout")
     assert Order.query.count() == count
 
@@ -226,3 +312,14 @@ def test_order_status_model_rules():
     assert OrderStatus.can_transition("pending", "confirmed")
     assert not OrderStatus.can_transition("delivered", "cancelled")
     assert not OrderStatus.can_transition("shipped", "pending")
+
+
+def test_new_address_form_keeps_name_and_phone_prefill_after_an_error(client):
+    assert login(client, "no.address@example.com", "x").status_code == 302
+    client.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    token = _token(client)
+    html = client.post("/checkout", data={"checkout_token": token}).get_data(as_text=True)  # nothing chosen
+    assert "Choose where to deliver this order" in html
+    assert 'name="addr-full_name"' in html
+    name = get_user("no.address@example.com").full_name
+    assert f'value="{name}"' in html

@@ -5,10 +5,10 @@ from flask import Blueprint, abort, flash, jsonify, redirect, render_template, r
 from flask_login import current_user, login_required
 
 from ..extensions import db
-from ..forms import CheckoutForm, DiscountApplyForm
-from ..models import Order, Product
+from ..forms import CheckoutAddressForm, CheckoutForm, DiscountApplyForm
+from ..models import Address, Order, Product
 from ..services import cart as cart_service
-from ..services.orders import CheckoutError, place_order
+from ..services.orders import CheckoutError, ShipTo, place_order
 from ..services.payments import DEMO_CREDIT
 from ..services.pricing import DiscountError, compute_totals, find_discount, validate_discount
 
@@ -132,6 +132,27 @@ def apply_discount():
     return redirect(request.form.get("back") == "checkout" and url_for("shop.checkout") or url_for("shop.cart"))
 
 
+def _resolve_ship_to(addresses):
+    """Work out the delivery address chosen on THIS checkout. Returns (ShipTo | None, choice, new_form, error).
+
+    Nothing is assumed: the customer must pick one of their own saved addresses or type a new one.
+    """
+    choice = (request.form.get("address_choice") or "").strip()
+    new_form = CheckoutAddressForm(formdata=request.form if choice == "new" else None, prefix="addr",
+                                   full_name=current_user.full_name, phone=current_user.phone or "")
+    if choice == "new":
+        if new_form.validate():
+            a = new_form
+            parts = [a.line1.data, a.line2.data, a.city.data, a.region.data, a.postal_code.data, a.country.data]
+            return ShipTo(a.full_name.data, a.phone.data, ", ".join(p for p in parts if p)), choice, new_form, None
+        return None, choice, new_form, "Check the new address below."
+    saved = {str(a.id): a for a in addresses}  # only this customer's own addresses are ever accepted
+    if choice in saved:
+        a = saved[choice]
+        return ShipTo(a.full_name, a.phone, a.one_line()), choice, new_form, None
+    return None, choice, new_form, "Choose where to deliver this order."
+
+
 @bp.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
@@ -142,10 +163,16 @@ def checkout():
     if not lines and request.method == "GET":
         flash("Your bag is empty.", "info")
         return redirect(url_for("shop.cart"))
+    addresses = Address.query.filter_by(user_id=current_user.id).order_by(Address.is_default.desc(), Address.id).all()
     form = CheckoutForm()
+    choice, address_error = None, None
+    new_form = CheckoutAddressForm(formdata=None, prefix="addr", full_name=current_user.full_name,
+                                   phone=current_user.phone or "")
     if request.method == "GET":
         # One-time token: resubmitting this exact checkout can never create a second order.
         session["checkout_token"] = form.checkout_token.data = secrets.token_urlsafe(24)
+        if not addresses:
+            choice = "new"  # first purchase: the only option is to enter an address
     elif form.validate_on_submit():
         token = form.checkout_token.data
         prior = Order.query.filter_by(checkout_token=token, user_id=current_user.id).first()
@@ -154,16 +181,28 @@ def checkout():
         if token != session.get("checkout_token"):
             flash("This checkout has expired. Please review your order and submit again.", "error")
             return redirect(url_for("shop.checkout"))
-        try:
-            order = place_order(current_user, DEMO_CREDIT, token, session.get("discount_code"), form.notes.data)
-        except CheckoutError as exc:
-            flash(str(exc), "error")
-            return redirect(url_for("shop.checkout") if cart_service.get_lines() else url_for("shop.cart"))
-        session.pop("checkout_token", None)
-        return redirect(url_for("shop.confirmation", number=order.number))
+        ship_to, choice, new_form, address_error = _resolve_ship_to(addresses)
+        if ship_to is not None:
+            try:
+                order = place_order(current_user, DEMO_CREDIT, token, session.get("discount_code"),
+                                    form.notes.data, ship_to)
+            except CheckoutError as exc:
+                flash(str(exc), "error")
+                return redirect(url_for("shop.checkout") if cart_service.get_lines() else url_for("shop.cart"))
+            if choice == "new" and new_form.save_address.data:
+                if new_form.is_default.data or not addresses:
+                    Address.query.filter_by(user_id=current_user.id).update({"is_default": False})
+                addr = Address(user_id=current_user.id)
+                new_form.populate_obj(addr)
+                addr.is_default = bool(new_form.is_default.data or not addresses)
+                db.session.add(addr)
+                db.session.commit()
+            session.pop("checkout_token", None)
+            return redirect(url_for("shop.confirmation", number=order.number))
     totals = compute_totals(cart_service.subtotal_minor(lines), session.get("discount_code"), bool(lines))
-    return render_template("shop/checkout.html", form=form, lines=lines, totals=totals,
-                           discount_form=DiscountApplyForm())
+    return render_template("shop/checkout.html", form=form, lines=lines, totals=totals, addresses=addresses,
+                           choice=choice, new_form=new_form, address_error=address_error,
+                           discount_form=DiscountApplyForm()), (400 if address_error else 200)
 
 
 @bp.route("/checkout/confirmation/<number>")

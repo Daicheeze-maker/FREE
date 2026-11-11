@@ -74,6 +74,14 @@ class AddressForm(FlaskForm):
     is_default = BooleanField("Make this my default address")
 
 
+class CheckoutAddressForm(AddressForm):
+    """Inline "deliver somewhere new" fields on the checkout page (shares the page's CSRF token)."""
+    class Meta:
+        csrf = False
+
+    save_address = BooleanField("Save this address to my account", default=True)
+
+
 class CheckoutForm(FlaskForm):
     checkout_token = HiddenField(validators=[DataRequired(), Length(max=64)])
     notes = TextAreaField("Delivery notes (optional)", validators=[Optional(), Length(max=500)])
