@@ -117,7 +117,8 @@ def orders_csv():
     rows = [(o.number, o.created_at.isoformat(timespec="seconds"), o.user.email, o.status, o.item_count,
              str(to_major(o.subtotal_minor)), str(to_major(o.discount_minor)), str(to_major(o.shipping_minor)),
              str(to_major(o.total_minor)), o.discount_code or "", o.payment.method if o.payment else "",
-             o.payment.status if o.payment else "")
+             o.payment.status if o.payment else "",
+             "; ".join(f"{i.product_name}{' (' + i.size + ')' if i.size else ''} x{i.quantity}" for i in o.items))
             for o in Order.query.order_by(Order.created_at.desc()).all()]
     return _csv(rows, ["order", "created_at", "customer", "status", "items", "subtotal_php", "discount_php",
-                       "shipping_php", "total_php", "code", "payment_method", "payment_status"])
+                       "shipping_php", "total_php", "code", "payment_method", "payment_status", "items_detail"])

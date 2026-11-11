@@ -3,11 +3,11 @@ import secrets
 from dataclasses import dataclass
 
 from flask import url_for
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from ..extensions import db
 from ..models import (PRODUCT_ACTIVE, DiscountCode, Notification, Order, OrderItem, OrderStatus,
-                      PaymentRecord, Product, utcnow)
+                      PaymentRecord, Product, User, utcnow)
 from ..money import fmt_minor
 from . import cart as cart_service
 from .payments import get_provider
@@ -101,7 +101,7 @@ def place_order(user, payment_method, checkout_token, discount_code=None, notes=
                 remaining -= share
             img = p.primary_image
             order.items.append(OrderItem(
-                product_id=p.id, product_name=p.name, product_sku=p.sku, product_brand=p.brand,
+                product_id=p.id, product_name=p.name, product_sku=p.sku, product_brand=p.brand, size=line.size or None,
                 image_url=(img.url if img and img.url else (url_for("main.media", filename=img.filename) if img and img.filename else None)),
                 unit_price_minor=p.price_minor, quantity=line.quantity, discount_minor=share,
                 line_total_minor=line.line_total_minor - share,
@@ -115,6 +115,15 @@ def place_order(user, payment_method, checkout_token, discount_code=None, notes=
             if res.rowcount != 1:
                 raise CheckoutError("That discount code has just reached its usage limit.")
 
+        # Spend the buyer's demo credit. The conditional UPDATE can never take a balance below zero,
+        # even if two checkouts race.
+        spent = db.session.execute(
+            update(User).where(User.id == user.id, User.balance_minor >= order.total_minor)
+            .values(balance_minor=User.balance_minor - order.total_minor))
+        if spent.rowcount != 1:
+            have = db.session.scalar(select(User.balance_minor).where(User.id == user.id)) or 0
+            raise CheckoutError(f"Not enough demo credit: this order is {fmt_minor(order.total_minor)} "
+                                f"and you have {fmt_minor(have)} left.")
         result = provider.charge(order.total_minor, order.currency, payment_method, order.number)
         if result.status == "failed":
             raise CheckoutError(result.message)
@@ -184,7 +193,9 @@ def change_status(order, new_status, reason=None):
         pay = order.payment
         if pay and pay.status == "succeeded":
             pay.status = "refunded"
-            pay.message = "Simulated refund issued (demo)."
+            pay.message = "Refunded to your demo credit."
+            db.session.execute(update(User).where(User.id == order.user_id)
+                               .values(balance_minor=User.balance_minor + pay.amount_minor))
     word, body, icon = STATUS_MESSAGES[new_status]
     notify(order.user_id, f"Order {order.number} is {word}", body,
            url_for("account.order_detail", number=order.number), icon=icon)

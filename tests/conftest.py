@@ -39,13 +39,15 @@ def login(client, email, password):
 
 @pytest.fixture()
 def customer(client):
-    assert login(client, "customer@velora.example", "Customer123!").status_code == 302
+    assert login(client, "buyer1@velora.example", "Buyer123!").status_code == 302
     return client
 
 
 @pytest.fixture()
 def seller(client):
-    assert login(client, "seller@velora.example", "Seller123!").status_code == 302
+    """Seller profile of buyer 1 (each buyer has a linked seller profile; switch to it after sign-in)."""
+    assert login(client, "buyer1@velora.example", "Buyer123!").status_code == 302
+    assert client.post("/account/switch-profile").status_code == 302
     return client
 
 
@@ -60,7 +62,14 @@ def get_user(email):
 
 
 def in_stock_product(min_stock=5):
-    return Product.query.filter(Product.stock >= min_stock, Product.status == "active").order_by(Product.id).first()
+    """A product that needs no size (so tests can add it straight to the bag)."""
+    return (Product.query.filter(Product.stock >= min_stock, Product.status == "active", Product.sizes.is_(None))
+            .order_by(Product.id).first())
+
+
+def sized_product(min_stock=5):
+    return (Product.query.filter(Product.stock >= min_stock, Product.status == "active", Product.sizes.isnot(None))
+            .order_by(Product.id).first())
 
 
 def default_address(user):

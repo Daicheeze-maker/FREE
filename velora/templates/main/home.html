@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon, product_card, price, stars %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
 {% block content %}
 
 <section class="hero" data-hero>
@@ -10,7 +11,7 @@
         <span class="line"><span>Style that</span></span>
         <span class="line"><span>speaks <em>first.</em></span></span>
       </h1>
-      <p class="hero__lede" data-hero-fade>Clothing, watches and fine jewelry — and the keys to your next car. Every piece is hand-picked and modelled by our own team.</p>
+      <p class="hero__lede" data-hero-fade>Clothing, watches and fine jewelry — and bags to match. Every piece is hand-picked and modelled by our own team.</p>
       <div class="hero__ctas" data-hero-fade>
         <a href="{{ url_for('catalog.listing') }}" class="btn btn--dark btn--lg">Start shopping <span class="btn__orb">{{ icon('arrow-up-right') }}</span></a>
         <a href="{{ url_for('catalog.listing', sort='newest') }}" class="play-link"><span class="play-link__box">{{ icon('sparkles') }}</span>What's trending?</a>
@@ -37,7 +38,7 @@
         <span class="hero__check">{{ icon('check', 'ic--sm') }}</span>
       </a>
       {% endif %}
-      <div class="hero__chip hero__chip--rating"><span class="orb">{{ icon('star', 'ic--fill') }}</span><div><strong>4.8 / 5</strong><span>from real buyers</span></div></div>
+      {% if avg_rating %}<div class="hero__chip hero__chip--rating"><span class="orb">{{ icon('star', 'ic--fill') }}</span><div><strong>{{ avg_rating }} / 5</strong><span>from {{ review_count }} verified review{{ '' if review_count == 1 else 's' }}</span></div></div>{% endif %}
       <div class="hero__chip hero__chip--ship"><span class="orb">{{ icon('gem') }}</span><div><strong>Authenticity guaranteed</strong><span>on every watch & jewel</span></div></div>
     </div>
   </div>
@@ -52,7 +53,7 @@
     <div class="aisles" data-reveal>
       <a class="aisles__intro" href="{{ url_for('catalog.listing', sort='popular') }}">
         <img src="{{ site_photo('lookbook') }}" alt="Our team modelling the lookbook" loading="lazy">
-        <div><strong>Worn by<br>our team</strong><span>See the lookbook {{ icon('arrow-right', 'ic--sm') }}</span></div>
+        <div><strong>Worn by<br>our team</strong><span>Shop the bestsellers {{ icon('arrow-right', 'ic--sm') }}</span></div>
       </a>
       <div class="aisles__panel">
         {% for c in categories %}
@@ -81,12 +82,19 @@
 <section class="section--tight">
   <div class="container bento">
     <a class="tile tile--promo" href="{{ url_for('catalog.listing', slug='women') }}" data-reveal>
-      <img src="{{ site_photo('promo') }}" alt="Model wearing pieces from the season sale" loading="lazy">
+      <img src="{{ site_photo('promo') }}" alt="Model wearing dresses and denim from the new collection" loading="lazy">
       <div class="tile__content">
-        <p class="eyebrow" style="color:rgba(255,255,255,.75)">{{ icon('calendar-days') }} Limited · 3 weeks only</p>
+        {% if promo %}
+        <p class="eyebrow" style="color:rgba(255,255,255,.75)">{{ icon('calendar-days') }} {% if promo.ends_at %}Ends {{ promo.ends_at|dt('%b %d') }}{% else %}Limited time{% endif %}</p>
         <h3>The season<br>style sale</h3>
-        <p>Dresses, jackets and accessories from this season's collection.</p>
-        <span class="code-tag">{{ icon('ticket-percent') }} SEASON15 · 15% off</span>
+        <p>{{ promo.value }}% off your order. Start with the dresses, denim and jackets in Women.</p>
+        <span class="code-tag">{{ icon('ticket-percent') }} {{ promo.code }} · {{ promo.value }}% off</span>
+        {% else %}
+        <p class="eyebrow" style="color:rgba(255,255,255,.75)">{{ icon('sparkles') }} New season</p>
+        <h3>The new<br>collection</h3>
+        <p>Dresses, denim and jackets, modelled by our own team.</p>
+        <span class="code-tag">{{ icon('shirt') }} Shop Women</span>
+        {% endif %}
       </div>
     </a>
     <div class="tile tile--quote" data-reveal>
@@ -104,7 +112,7 @@
     <div class="tile tile--ship" data-reveal>
       {{ icon('package-check') }}
       <h4>Free delivery over {{ money(free_ship_minor) }}</h4>
-      <p>Insured, tracked delivery nationwide. Cars are delivered by our showroom team.</p>
+      <p>Insured, tracked delivery nationwide, with free returns for 30 days.</p>
     </div>
   </div>
 </section>
@@ -148,6 +156,36 @@
 </section>
 {% endif %}
 
+<section class="section--tight" id="visit">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <div><p class="eyebrow">{{ icon('map-pin') }} Visit us</p><h2>Try it on in store</h2><p>Come and meet the team who model our collection. Fitting rooms, free alterations on suits and a coffee on us.</p></div>
+    </div>
+    <div class="store-ad" data-reveal>
+      <div class="store-ad__info">
+        <h3>{{ store.name }}</h3>
+        <ul class="store-ad__list">
+          <li>{{ icon('map-pin') }}<span>{{ store.address }}</span></li>
+          <li>{{ icon('clock') }}<span>{{ store.hours }}</span></li>
+          <li>{{ icon('mail') }}<a href="mailto:{{ support_email }}">{{ support_email }}</a></li>
+        </ul>
+        <div class="row">
+          <a class="btn btn--dark" href="https://www.openstreetmap.org/directions?to={{ store.lat }}%2C{{ store.lng }}" target="_blank" rel="noopener">{{ icon('navigation') }} Get directions</a>
+          <a class="btn btn--ghost" href="https://www.google.com/maps/dir/?api=1&destination={{ store.lat }},{{ store.lng }}" target="_blank" rel="noopener">Open in Google Maps</a>
+        </div>
+      </div>
+      <div class="store-ad__map" id="store-map" role="region" aria-label="Map showing {{ store.name }}"
+           data-lat="{{ store.lat }}" data-lng="{{ store.lng }}" data-name="{{ store.name }}" data-address="{{ store.address }}"
+           data-hours="{{ store.hours }}" data-icons="{{ url_for('static', filename='vendor/leaflet/images/') }}">
+        <div class="store-ad__loading">{{ icon('map') }} Loading map…</div>
+        <div class="store-ad__fallback" hidden>
+          {{ icon('map-pin') }}<strong>{{ store.name }}</strong><span>{{ store.address }}</span><span class="muted">The interactive map couldn't load. Use “Get directions” instead.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="section" id="newsletter">
   <div class="container">
     <div class="newsletter" data-reveal>
@@ -163,4 +201,8 @@
     </div>
   </div>
 </section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/store-map.js') }}"></script>
 {% endblock %}

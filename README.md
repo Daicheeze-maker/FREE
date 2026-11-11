@@ -49,9 +49,12 @@ python serve.py
 
 | Role | Email | Password |
 |---|---|---|
-| Customer | `customer@velora.example` | `Customer123!` |
-| Seller / store manager | `seller@velora.example` | `Seller123!` |
+| Buyer 1 (Maya Santos) | `buyer1@velora.example` | `Buyer123!` (buyers can sign in with any password in this demo) |
+| Buyer 2 (Jonah Cruz) | `buyer2@velora.example` | `Buyer123!` |
+| Seller 1 / Seller 2 | the **seller profile of each buyer** | sign in as the buyer, open the account menu, choose **Switch to seller profile** |
 | Administrator | `admin@velora.example` | `Admin123!` |
+
+That is **2 buyers + 2 sellers** (two people, each with a buyer profile and a linked seller profile) plus one admin. **Every buyer starts with ₱500,000 of demo credit** that is spent at checkout; an admin can reset it under *Admin → Users → (buyer) → Demo credit*.
 
 The sign-in page has one-click buttons that fill these in. Change or disable them before any real deployment. Demo discount codes: `WELCOME10`, `STYLE500` (₱500 off ₱5,000+), `SEASON15` (limited uses), and `SUMMER25` (expired, to show validation).
 
@@ -73,11 +76,11 @@ Portrait photos at least 1200 px tall look best. Every upload is checked, resize
 
 | Collection | Examples |
 |---|---|
-| Women | linen wrap dress, silk slip dress, leather biker jacket, jeans, leather tote |
+| Women | linen wrap dress, silk slip dress, leather biker jacket, jeans |
 | Men | tailored wool suit, heavyweight tee, field jacket, sneakers, sunglasses |
 | Watches | minimalist, chronograph, gold dress watch, automatic diver, smart watch |
 | Jewelry | 18k stacking rings, pearl earrings, diamond pendant, silver bracelet, gift set |
-| Cars | pre-owned sports coupes and a new electric SUV (demo listings, ₱2.19M–₱4.8M) |
+| Bags | structured leather tote, quilted chain crossbody, canvas backpack, evening clutch, weekender duffel |
 | Gifts & Gourmet | gift box, chocolate, coffee, candle — the natural home for Open Food Facts imports |
 
 If you created the database before this catalog existed, rebuild it with `python -m flask --app wsgi reset-demo --yes-delete-everything`. This deletes all data.
@@ -164,6 +167,11 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
 
 ---
 
+### OpenStreetMap + Leaflet — the "Visit our store" map ad
+- The homepage has a store ad with an interactive map (marker, popup with address and hours, "Get directions" links). It uses **Leaflet** (vendored in `velora/static/vendor/leaflet`, no CDN) with free **OpenStreetMap** tiles. No API key. The "© OpenStreetMap contributors" credit is shown on the map.
+- Edit the store name, address, hours and map coordinates under **Admin → Store settings**. The same address is used on the Contact page.
+- The map loads when you scroll to it. If the tiles can't load (no internet), it shows the plain address card instead. Tiles are fetched by the visitor's browser, so they're not on the *API health* page (it has a note instead).
+
 ## 5. Features
 
 **Storefront.** Editorial hero with floating product card. Shop-by-aisle panel. Bento promo grid with a real top review. Featured, new-arrivals scroller, bestseller ranking and recently viewed sections. Newsletter with validation and database persistence. Mega-menu, search, currency picker, account menu, wishlist, bag. Footer with support and policy pages.
@@ -177,8 +185,9 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
   - Discount codes: percent or fixed, minimum spend, usage limits counted atomically, start and end dates.
   - Configurable flat shipping and free-shipping threshold.
 - Placing the order:
-  - No address needed at checkout: paid orders go straight to *Shipped* with a “wait 10 mins” message. The address book stays under the account pages.
-  - Demo payment provider: every customer has unlimited demo credit, so orders are paid and confirmed immediately (`services/payments.py`, built so a real gateway can be plugged in).
+  - **Delivery address on every purchase:** the customer picks one of their saved addresses or enters a new one (with an option to save it). Nothing is pre-selected and an order can't be placed without a valid choice; the address is copied onto the order.
+  - **Sizes:** clothing (XS–XL, waist and suit sizes), shoes (EU 39–46) and rings (5–9) need a size before they can be added to the bag. The same item in two sizes is two bag lines, stock is shared across sizes, and the size is saved on the order.
+  - **Demo credit:** every buyer starts with ₱500,000 and pays from it at checkout. An order that costs more than the remaining credit is refused (the balance can never go below zero, even with two checkouts at once); cancelling refunds the credit. Paid orders go straight to *Shipped* with a “wait 10 mins” message (`services/payments.py`, built so a real gateway can be plugged in).
   - **One transaction** that re-validates stock, prices and discount on the server, decrements stock with a conditional `UPDATE … WHERE stock >= qty` (so it can't oversell), snapshots item name, SKU, price, discount and image, then records the payment.
   - A one-time checkout token with a unique constraint prevents duplicate orders from double-submits.
   - Confirmation page with an animated check.
@@ -224,7 +233,7 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
 python -m pytest -q
 ```
 
-There are 94 tests. External APIs are mocked, so no network is needed. They cover:
+There are 139 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

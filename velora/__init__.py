@@ -92,6 +92,7 @@ def _register_template_helpers(app):
             "nav_categories": Category.query.order_by(Category.position, Category.name).all(),
             "announcement": get_setting("store_announcement"),
             "support_email": get_setting("support_email"),
+            "store_address": get_setting("store_address"),
             "free_ship_minor": get_int_setting("free_shipping_threshold_minor"),
             "currencies": app.config["DISPLAY_CURRENCIES"],
             "wishlist_ids": wish_ids,

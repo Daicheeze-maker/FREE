@@ -3,7 +3,7 @@
   <h2 style="font-size:18px">Order summary</h2>
   {% if checkout_lines is defined %}
   <ul class="mini-lines">
-    {% for l in checkout_lines %}<li><img src="{{ image_src(l.product.primary_image) }}" alt=""><span><strong>{{ l.product.name }}</strong><span class="muted">Qty {{ l.quantity }}</span></span><span>{{ money(l.line_total_minor) }}</span></li>{% endfor %}
+    {% for l in checkout_lines %}<li><img src="{{ image_src(l.product.primary_image) }}" alt=""><span><strong>{{ l.product.name }}</strong><span class="muted">{% if l.size %}Size {{ l.size }} · {% endif %}Qty {{ l.quantity }}</span></span><span>{{ money(l.line_total_minor) }}</span></li>{% endfor %}
   </ul>
   {% endif %}
   {% set left = totals.to_free_shipping_minor %}

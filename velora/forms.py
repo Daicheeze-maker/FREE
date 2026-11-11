@@ -114,7 +114,8 @@ class ProductForm(FlaskForm):
     price = MoneyField("Price (₱)", validators=[DataRequired()])
     compare_at = MoneyField("Compare-at price (₱, optional)", validators=[Optional()])
     stock = IntegerField("Stock", validators=[InputRequired(), NumberRange(min=0, max=100000)])
-    size_label = StringField("Size / variant", validators=[Optional(), Length(max=60)], filters=[strip])
+    size_label = StringField("Size / variant note", validators=[Optional(), Length(max=60)], filters=[strip])
+    sizes = StringField("Sizes shoppers can choose (comma-separated)", validators=[Optional(), Length(max=120)], filters=[strip])
     origin = StringField("Origin", validators=[Optional(), Length(max=120)], filters=[strip])
     ingredients = TextAreaField("Materials, care, specs or ingredients", validators=[Optional(), Length(max=4000)], filters=[strip])
     status = SelectField("Status", choices=[(s, s.title()) for s in PRODUCT_STATUSES])
@@ -122,6 +123,12 @@ class ProductForm(FlaskForm):
     image = FileField("Add image (JPG, PNG, WebP · max 4 MB)")
     make_cover = BooleanField("Use the new photo as the cover image", default=True)
     image_url = StringField("…or image URL (https)", validators=[Optional(), Length(max=500), Regexp(r"^https://", message="Use an https:// URL.")], filters=[strip])
+
+    def validate_sizes(self, field):
+        parts = [p.strip() for p in (field.data or "").split(",") if p.strip()]
+        if len(set(parts)) != len(parts) or any(len(p) > 12 for p in parts) or len(parts) > 12:
+            raise ValidationError("Use up to 12 different sizes, each under 12 characters, e.g. S, M, L.")
+        field.data = ",".join(parts)
 
     def validate_price(self, field):
         if field.minor is None or field.minor <= 0:
@@ -206,3 +213,24 @@ class SettingsForm(FlaskForm):
     low_stock_threshold = IntegerField("Low-stock alert at", validators=[InputRequired(), NumberRange(min=0, max=1000)])
     store_announcement = StringField("Announcement bar", validators=[Optional(), Length(max=200)], filters=[strip])
     support_email = EmailField("Support email", validators=[DataRequired(), Email(), Length(max=200)], filters=[strip])
+    store_name = StringField("Store name (map ad)", validators=[DataRequired(), Length(max=120)], filters=[strip])
+    store_address = StringField("Store address (map ad)", validators=[DataRequired(), Length(max=300)], filters=[strip])
+    store_hours = StringField("Opening hours", validators=[DataRequired(), Length(max=200)], filters=[strip])
+    store_lat = StringField("Map latitude", validators=[DataRequired()], filters=[strip])
+    store_lng = StringField("Map longitude", validators=[DataRequired()], filters=[strip])
+
+    def validate_store_lat(self, field):
+        try:
+            ok = -90 <= float(field.data) <= 90
+        except ValueError:
+            ok = False
+        if not ok:
+            raise ValidationError("Latitude is a number from -90 to 90, e.g. 14.5507.")
+
+    def validate_store_lng(self, field):
+        try:
+            ok = -180 <= float(field.data) <= 180
+        except ValueError:
+            ok = False
+        if not ok:
+            raise ValidationError("Longitude is a number from -180 to 180, e.g. 121.0505.")

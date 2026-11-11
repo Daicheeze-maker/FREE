@@ -16,6 +16,9 @@
     <h2 style="font-size:17px;margin-top:10px">{{ icon('megaphone') }} Storefront</h2>
     {{ field(form.store_announcement) }}
     {{ field(form.support_email) }}
+    <h2 style="font-size:17px;margin-top:10px">{{ icon('map-pin') }} Store location (homepage map)</h2>
+    {{ field(form.store_name) }}{{ field(form.store_address) }}{{ field(form.store_hours) }}
+    <div class="form-grid">{{ field(form.store_lat, "14.5507", hint="Find it: right-click your spot on openstreetmap.org → “Show address”.") }}{{ field(form.store_lng, "121.0505") }}</div>
   </section>
   <section class="card">
     <h2 style="font-size:17px">{{ icon('info') }} Notes</h2>

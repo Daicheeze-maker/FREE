@@ -32,7 +32,8 @@
   const placeholder = document.body.dataset.placeholder;
   document.addEventListener("error", (e) => {
     const img = e.target;
-    if (img.tagName === "IMG" && placeholder && !img.dataset.fallback) {
+    // Map tiles are handled by the map itself (it shows an address card if they can't load)
+    if (img.tagName === "IMG" && placeholder && !img.dataset.fallback && !img.closest(".leaflet-container")) {
       img.dataset.fallback = "1";
       img.src = placeholder;
     }
@@ -241,6 +242,18 @@
     const form = e.target.closest("[data-add-to-cart]");
     if (!form) return;
     e.preventDefault();
+    const sizeRadios = Array.from(form.elements).filter((el) => el.name === "size" && el.type === "radio");
+    if (sizeRadios.length && !sizeRadios.some((r) => r.checked)) {
+      const picker = document.querySelector("[data-size-picker]");
+      if (picker) {
+        picker.classList.add("has-error");
+        picker.querySelector(".size-picker__error").hidden = false;
+        picker.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+        if (hasGsap) gsap.fromTo(picker.querySelector(".size-picker__opts"), { x: -6 }, { x: 0, duration: .5, ease: "elastic.out(1, .3)" });
+      }
+      toast("Please choose a size first.", "error");
+      return;
+    }
     const btn = form.querySelector("button[type=submit]");
     if (btn.classList.contains("is-loading")) return;
     btn.classList.add("is-loading");
@@ -306,6 +319,15 @@
       gsap.to(p, { x: Math.cos(ang) * 26, y: Math.sin(ang) * 26, opacity: 0, scale: .4, duration: .6, ease: "power2.out", onComplete: () => p.remove() });
     }
   }
+
+  /* ------------------------------------------------------ size picker */
+  document.addEventListener("change", (e) => {
+    if (e.target.matches("[data-size-picker] input[type=radio]")) {
+      const picker = e.target.closest("[data-size-picker]");
+      picker.classList.remove("has-error");
+      picker.querySelector(".size-picker__error").hidden = true;
+    }
+  });
 
   /* --------------------------------------------------- qty steppers */
   document.addEventListener("click", (e) => {

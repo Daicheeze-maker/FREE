@@ -18,7 +18,7 @@
           <img class="thumb" src="{{ it.image_url or url_for('static', filename='img/placeholder.svg') }}" alt="">
           <div class="list__main">
             {% if it.product and it.product.status == 'active' %}<a href="{{ url_for('catalog.detail', slug=it.product.slug) }}"><strong>{{ it.product_name }}</strong></a>{% else %}<strong>{{ it.product_name }}</strong>{% endif %}
-            <small>{{ it.product_brand }} · {{ it.quantity }} × {{ fmt_base(it.unit_price_minor) }}{% if it.discount_minor %} · −{{ fmt_base(it.discount_minor) }} discount{% endif %}</small>
+            <small>{{ it.product_brand }}{% if it.size %} · Size {{ it.size }}{% endif %} · {{ it.quantity }} × {{ fmt_base(it.unit_price_minor) }}{% if it.discount_minor %} · −{{ fmt_base(it.discount_minor) }} discount{% endif %}</small>
           </div>
           {% if order.status == 'delivered' and it.product_id and it.product and it.product.status == 'active' %}
             {% if it.product_id in reviewed %}<span class="tag tag--ok">Reviewed</span>

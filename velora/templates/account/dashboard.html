@@ -5,7 +5,8 @@
 <div class="stats">
   {{ stat('Orders placed', order_count, 'All time', 'package', 'stat--dark') }}
   {{ stat('In progress', active|length, 'Being prepared or on the way', 'truck') }}
-  {{ stat('Total spent', fmt_base(spent), 'Excludes cancelled orders', 'wallet') }}
+  {{ stat('Demo credit left', fmt_base(current_user.balance_minor), 'You started with ' ~ fmt_base(500000 * 100), 'wallet') }}
+  {{ stat('Total spent', fmt_base(spent), 'Excludes cancelled orders', 'receipt') }}
   {{ stat('Wishlist', current_user.wishlist_items|length, 'Saved for later', 'heart') }}
 </div>
 <div class="account-grid">

@@ -90,6 +90,7 @@ def _apply_product_form(form, product):
     product.compare_at_minor = form.compare_at.minor
     product.stock = form.stock.data
     product.size_label = form.size_label.data or None
+    product.sizes = form.sizes.data or None
     product.origin = form.origin.data or None
     product.ingredients = form.ingredients.data or None
     product.status = form.status.data

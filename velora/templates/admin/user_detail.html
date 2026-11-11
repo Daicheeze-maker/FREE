@@ -36,5 +36,16 @@
     <p class="field__hint" style="margin-bottom:14px">Disabling signs the user out on their next request and blocks sign-in. You can't demote or disable yourself, and at least one active admin must remain.</p>
     <button class="btn btn--accent btn--block" type="submit">Save access</button>
   </form>
+  {% if user.role == 'customer' %}
+  <section class="card">
+    <h2 style="font-size:17px">{{ icon('wallet') }} Demo credit</h2>
+    <p style="font-size:24px;font-weight:700;margin:0 0 6px">{{ fmt_base(user.balance_minor) }}</p>
+    <p class="muted" style="font-size:13px">Each buyer starts with {{ fmt_base(50000000) }} and can't spend more.</p>
+    <form method="post" action="{{ url_for('admin.user_reset_credit', user_id=user.id) }}" data-confirm="Set {{ user.full_name }}'s credit back to {{ fmt_base(50000000) }}?" data-confirm-title="Reset credit?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--ghost btn--block" type="submit">Reset to {{ fmt_base(50000000) }}</button>
+    </form>
+  </section>
+  {% endif %}
 </div>
 {% endblock %}

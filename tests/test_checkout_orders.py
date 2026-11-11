@@ -22,7 +22,7 @@ def _checkout(client, address=None, **extra):
     """Place an order the way a shopper must: by choosing a saved address (default: their default one)."""
     token = _token(client)
     if address is None:
-        u = get_user("customer@velora.example")
+        u = get_user("buyer1@velora.example")
         address = {"address_choice": str(default_address(u).id)}
     return token, client.post("/checkout", data={"checkout_token": token, **address, **extra})
 
@@ -60,7 +60,7 @@ def test_duplicate_checkout_submission_creates_one_order(customer):
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     count = Order.query.count()
     token, r1 = _checkout(customer)
-    r2 = customer.post("/checkout", data={"checkout_token": token, "address_choice": str(default_address(get_user("customer@velora.example")).id)})
+    r2 = customer.post("/checkout", data={"checkout_token": token, "address_choice": str(default_address(get_user("buyer1@velora.example")).id)})
     assert Order.query.count() == count + 1
     assert r1.headers["Location"] == r2.headers["Location"]
 
@@ -90,22 +90,91 @@ def test_failed_payment_rolls_back(customer, monkeypatch):
     assert customer.get("/cart/drawer").json["count"] == 1  # bag kept
 
 
-def test_demo_credit_is_unlimited_and_ships_immediately(customer):
+def test_buyer_starts_with_500k_and_it_is_spent_at_checkout(customer):
+    u = get_user("buyer1@velora.example")
+    assert u.balance_minor == 50_000_000  # PHP 500,000.00
     p = in_stock_product()
-    p.price_minor = 999_999_999_00
-    db.session.commit()
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     _checkout(customer)
     o = Order.query.order_by(Order.id.desc()).first()
-    assert o.total_minor >= p.price_minor
-    assert o.status == OrderStatus.SHIPPED and o.payment.status == "succeeded"
-    assert o.payment.method == "demo_credit"
+    db.session.expire_all()
+    assert o.status == OrderStatus.SHIPPED and o.payment.status == "succeeded" and o.payment.method == "demo_credit"
+    assert get_user("buyer1@velora.example").balance_minor == 50_000_000 - o.total_minor
+
+
+def test_cannot_spend_more_than_the_500k_credit(customer):
+    p = in_stock_product()
+    p.price_minor = 60_000_000  # PHP 600,000 > the buyer's PHP 500,000
+    stock = p.stock
+    db.session.commit()
+    customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
+    count = Order.query.count()
+    _, r = _checkout(customer)
+    assert r.status_code == 302 and r.headers["Location"].endswith("/checkout")
+    assert Order.query.count() == count
+    db.session.expire_all()
+    assert get_user("buyer1@velora.example").balance_minor == 50_000_000  # untouched
+    assert db.session.get(Product, p.id).stock == stock  # stock released with the rolled-back order
+    assert "Not enough demo credit" in customer.get("/checkout").get_data(as_text=True)  # the flashed message
+
+
+def test_credit_runs_out_across_several_orders_and_never_goes_negative(customer):
+    p = in_stock_product()
+    p.price_minor = 30_000_000  # PHP 300,000 each
+    db.session.commit()
+    customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
+    _, first = _checkout(customer)
+    assert "/checkout/confirmation/" in first.headers["Location"]
+    customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
+    _, second = _checkout(customer)  # only about PHP 200,000 left
+    assert second.headers["Location"].endswith("/checkout")
+    db.session.expire_all()
+    assert 0 <= get_user("buyer1@velora.example").balance_minor < 30_000_000
+    assert Order.query.filter_by(user_id=get_user("buyer1@velora.example").id).count() >= 1
+
+
+def test_checkout_page_shows_credit_and_blocks_an_unaffordable_order(customer):
+    p = in_stock_product()
+    customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
+    html = customer.get("/checkout").get_data(as_text=True)
+    assert "Your demo credit" in html and "₱500,000.00" in html and "Left after paying" in html
+    p.price_minor = 60_000_000
+    db.session.commit()
+    html = customer.get("/checkout").get_data(as_text=True)
+    assert "more than your credit" in html and "disabled" in html
+
+
+def test_cancelling_refunds_the_credit(customer):
+    p = in_stock_product()
+    customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
+    _checkout(customer)
+    o = Order.query.order_by(Order.id.desc()).first()
+    o.status = OrderStatus.CONFIRMED  # a cancellable stage (this demo ships paid orders immediately)
+    db.session.commit()
+    db.session.expire_all()
+    assert get_user("buyer1@velora.example").balance_minor < 50_000_000
+    assert customer.post(f"/account/orders/{o.number}/cancel", data={}).status_code == 302
+    db.session.expire_all()
+    assert get_user("buyer1@velora.example").balance_minor == 50_000_000
+    assert Order.query.get(o.id).payment.status == "refunded"
+
+
+def test_admin_can_reset_a_buyers_credit(app):
+    from velora.models import User
+    c = app.test_client()
+    login(c, "admin@velora.example", "Admin123!")
+    u = get_user("buyer2@velora.example")
+    u.balance_minor = 1234
+    db.session.commit()
+    assert c.post(f"/admin/users/{u.id}/reset-credit").status_code == 302
+    db.session.expire_all()
+    assert User.query.get(u.id).balance_minor == 50_000_000
 
 
 def test_checkout_page_offers_no_payment_outcomes(customer):
     customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
     page = customer.get("/checkout").get_data(as_text=True)
-    assert "Unlimited" in page
+    assert "Your demo credit" in page
     assert 'name="payment_method"' not in page
     assert 'name="address_id"' not in page
 
@@ -116,7 +185,7 @@ def test_checkout_asks_for_an_address_every_time(customer):
     assert "Where should we deliver this order?" in html
     assert 'name="address_choice"' in html and "Deliver to a new address" in html
     assert "checked" not in html.split('name="address_choice"')[1].split(">")[0]  # nothing pre-selected
-    for a in get_user("customer@velora.example").addresses:  # every saved address is offered
+    for a in get_user("buyer1@velora.example").addresses:  # every saved address is offered
         assert a.line1 in html
 
 
@@ -131,7 +200,7 @@ def test_cannot_order_without_choosing_an_address(customer):
 
 
 def test_order_uses_the_chosen_saved_address(customer):
-    u = get_user("customer@velora.example")
+    u = get_user("buyer1@velora.example")
     other = next(a for a in u.addresses if not a.is_default)  # e.g. "Office", not the default
     customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
     _, r = _checkout(customer, {"address_choice": str(other.id)})
@@ -142,7 +211,7 @@ def test_order_uses_the_chosen_saved_address(customer):
 
 
 def test_new_address_is_used_and_saved(customer):
-    u = get_user("customer@velora.example")
+    u = get_user("buyer1@velora.example")
     before = len(u.addresses)
     customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
     _, r = _checkout(customer, NEW_ADDRESS, **{"addr-save_address": "y"})
@@ -150,17 +219,17 @@ def test_new_address_is_used_and_saved(customer):
     o = Order.query.order_by(Order.id.desc()).first()
     assert "88 Ayala Ave" in o.ship_address and "Makati" in o.ship_address
     db.session.expire_all()
-    assert len(get_user("customer@velora.example").addresses) == before + 1
+    assert len(get_user("buyer1@velora.example").addresses) == before + 1
 
 
 def test_new_address_not_saved_when_unticked(customer):
-    u = get_user("customer@velora.example")
+    u = get_user("buyer1@velora.example")
     before = len(u.addresses)
     customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
     _, r = _checkout(customer, NEW_ADDRESS)  # save box not sent = unticked
     assert r.status_code == 302
     db.session.expire_all()
-    assert len(get_user("customer@velora.example").addresses) == before
+    assert len(get_user("buyer1@velora.example").addresses) == before
     assert "88 Ayala Ave" in Order.query.order_by(Order.id.desc()).first().ship_address
 
 
@@ -174,7 +243,7 @@ def test_invalid_new_address_is_rejected(customer):
 
 
 def test_cannot_ship_to_another_customers_address(customer):
-    other = default_address(get_user("jonah@example.com"))
+    other = default_address(get_user("buyer2@velora.example"))
     customer.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
     count = Order.query.count()
     _, r = _checkout(customer, {"address_choice": str(other.id)})
@@ -262,9 +331,9 @@ def test_free_shipping_threshold(app):
 # ----------------------------------------------------------- orders/rules
 
 def test_order_ownership(app):
-    other_order = Order.query.filter(Order.user.has(email="jonah@example.com")).first()
+    other_order = Order.query.filter(Order.user.has(email="buyer2@velora.example")).first()
     c = app.test_client()
-    login(c, "customer@velora.example", "Customer123!")
+    login(c, "buyer1@velora.example", "Buyer123!")
     assert c.get(f"/account/orders/{other_order.number}").status_code == 404
     assert c.post(f"/account/orders/{other_order.number}/cancel").status_code == 404
     db.session.refresh(other_order)
@@ -289,7 +358,7 @@ def test_customer_cancel_rules_and_restock(customer):
 
 
 def test_customer_cannot_cancel_shipped(customer):
-    u = get_user("customer@velora.example")
+    u = get_user("buyer1@velora.example")
     o = Order.query.filter_by(user_id=u.id, status=OrderStatus.SHIPPED).first() or \
         Order.query.filter_by(user_id=u.id, status=OrderStatus.DELIVERED).first()
     customer.post(f"/account/orders/{o.number}/cancel", data={})

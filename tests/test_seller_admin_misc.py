@@ -116,7 +116,9 @@ def test_review_moderation(seller):
 def test_admin_settings_change_shipping(admin):
     r = admin.post("/admin/settings", data={"shipping_flat": "99.00", "free_shipping_threshold": "1000",
                                            "low_stock_threshold": "3", "store_announcement": "Hi",
-                                           "support_email": "help@example.com"})
+                                           "support_email": "help@example.com", "store_name": "Velora Flagship",
+                                           "store_address": "1 Ayala Ave, Makati", "store_hours": "Daily 10-8",
+                                           "store_lat": "14.55", "store_lng": "121.02"})
     assert r.status_code == 302
     assert db.session.get(StoreSetting, "shipping_flat_minor").value == "9900"
     from velora.services.pricing import compute_totals
@@ -167,13 +169,31 @@ def test_production_requires_secret_key(monkeypatch):
 
 # ------------------------------------------------------------- model photos
 
-def test_new_catalog_has_requested_collections(client):
+def test_catalog_has_requested_collections_and_no_cars(client):
     names = {c.name for c in Category.query.all()}
-    assert {"Women", "Men", "Watches", "Jewelry", "Cars"} <= names
-    html = client.get("/shop/c/cars").get_data(as_text=True)
-    assert "Classic Red Sports Coupe" in html
-    car = Product.query.filter_by(slug="classic-red-sports-coupe-pre-owned").first()
-    assert "Specifications" in client.get(f"/shop/p/{car.slug}").get_data(as_text=True)
+    assert {"Women", "Men", "Watches", "Jewelry", "Bags"} <= names and "Cars" not in names
+    html = client.get("/shop/c/bags").get_data(as_text=True)
+    assert "Structured Leather Tote" in html and "Quilted Chain Crossbody" in html
+    nav = client.get("/").get_data(as_text=True).split("header__nav")[1].split("</nav>")[0]
+    assert all(w in nav for w in ("Clothing", "Watches", "Jewelry", "Bags")) and "Cars" not in nav
+    assert client.get("/shop/c/cars").status_code == 404
+
+
+def test_bags_are_not_in_the_women_section(client):
+    women = client.get("/shop/c/women").get_data(as_text=True)
+    assert "Leather Tote" not in women and "Crossbody" not in women and "Backpack" not in women
+    tote = Product.query.filter_by(slug="structured-leather-tote").one()
+    assert tote.category.slug == "bags"
+
+
+def test_every_product_is_in_a_sensible_category(app):
+    expected = {"Women": ("Dress", "Jeans", "Jacket"), "Watches": ("Watch", "Diver"), "Bags": ("Tote", "Crossbody", "Backpack", "Clutch", "Duffel"),
+                "Jewelry": ("Ring", "Earrings", "Pendant", "Bracelet", "Jewelry")}
+    for cat, words in expected.items():
+        for p in Product.query.join(Category).filter(Category.name == cat):
+            assert any(w in p.name for w in words), (cat, p.name)
+    for p in Product.query.filter(Product.name.contains("Bag")):
+        assert p.category.name == "Bags"
 
 
 def test_site_photo_upload_and_reset(seller):

@@ -35,7 +35,9 @@
         {{ icon('heart') }}
       </button>
     </form>
-    {% if p.in_stock %}
+    {% if p.in_stock and p.size_list %}
+    <div class="pcard__quick"><a class="btn btn--dark btn--sm btn--block" href="{{ url_for('catalog.detail', slug=p.slug) }}#sizes">{{ icon('ruler') }} Choose size</a></div>
+    {% elif p.in_stock %}
     <form method="post" action="{{ url_for('shop.add', product_id=p.id) }}" class="pcard__quick" data-add-to-cart>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="quantity" value="1">

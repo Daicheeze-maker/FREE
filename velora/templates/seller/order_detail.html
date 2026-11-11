@@ -13,7 +13,7 @@
       <div class="table-wrap" style="border:0;border-radius:0"><table class="table">
         <thead><tr><th>Product</th><th class="num">Unit</th><th class="num">Qty</th><th class="num">Discount</th><th class="num">Line total</th></tr></thead>
         <tbody>{% for it in order.items %}<tr>
-          <td><div class="cell-product"><img src="{{ it.image_url or url_for('static', filename='img/placeholder.svg') }}" alt=""><div>{% if it.product_id %}<a href="{{ url_for('seller.product_edit', product_id=it.product_id) }}">{{ it.product_name }}</a>{% else %}{{ it.product_name }}{% endif %}<small class="mono">{{ it.product_sku }}</small></div></div></td>
+          <td><div class="cell-product"><img src="{{ it.image_url or url_for('static', filename='img/placeholder.svg') }}" alt=""><div>{% if it.product_id %}<a href="{{ url_for('seller.product_edit', product_id=it.product_id) }}">{{ it.product_name }}</a>{% else %}{{ it.product_name }}{% endif %}<small class="mono">{{ it.product_sku }}{% if it.size %} · Size {{ it.size }}{% endif %}</small></div></div></td>
           <td class="num">{{ fmt_base(it.unit_price_minor) }}</td><td class="num">{{ it.quantity }}</td>
           <td class="num">{{ ('−' ~ fmt_base(it.discount_minor)) if it.discount_minor else '—' }}</td><td class="num"><strong>{{ fmt_base(it.line_total_minor) }}</strong></td>
         </tr>{% endfor %}</tbody>

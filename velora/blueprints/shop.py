@@ -62,7 +62,8 @@ def add(product_id):
     product = db.session.get(Product, product_id) or abort(404)
     qty = request.form.get("quantity", 1, type=int) or 1
     try:
-        cart_service.set_quantity(product, max(1, min(qty, cart_service.MAX_QTY_PER_LINE)), add=True)
+        cart_service.set_quantity(product, max(1, min(qty, cart_service.MAX_QTY_PER_LINE)),
+                                  request.form.get("size", ""), add=True)
     except ValueError as exc:
         if _is_fetch():
             return jsonify(ok=False, error=str(exc)), 409
@@ -87,10 +88,11 @@ def update(product_id):
             return jsonify(ok=False, error=msg), 400
         flash(msg, "error")
         return redirect(url_for("shop.cart"))
+    size = request.form.get("size", "")
     try:
-        final = cart_service.set_quantity(product, qty) if qty > 0 else cart_service.remove(product.id)
+        final = cart_service.set_quantity(product, qty, size) if qty > 0 else cart_service.remove(product.id, size)
     except ValueError as exc:
-        cart_service.remove(product.id)
+        cart_service.remove(product.id, size)
         final, msg = 0, str(exc)
     else:
         msg = None
@@ -105,7 +107,7 @@ def update(product_id):
 
 @bp.post("/cart/remove/<int:product_id>")
 def remove(product_id):
-    cart_service.remove(product_id)
+    cart_service.remove(product_id, request.form.get("size", ""))
     if _is_fetch():
         return _cart_payload("Removed from your bag")
     flash("Removed from your bag.", "info")

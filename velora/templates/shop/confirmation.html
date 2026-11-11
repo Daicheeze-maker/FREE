@@ -13,7 +13,7 @@
   <div class="card" data-reveal>{{ order_tracker(order, ['pending', 'confirmed', 'processing', 'shipped', 'delivered']) }}</div>
   <div class="card" data-reveal>
     <div class="card__head"><h2>{{ icon('receipt') }} Summary</h2><span class="status status--{{ order.payment.status }}">{{ icon('flask-conical', 'ic--sm') }} {{ order.payment.reference }}</span></div>
-    <ul class="mini-lines">{% for it in order.items %}<li><img src="{{ it.image_url or url_for('static', filename='img/placeholder.svg') }}" alt=""><span><strong>{{ it.product_name }}</strong><span class="muted">Qty {{ it.quantity }} × {{ fmt_base(it.unit_price_minor) }}</span></span><span>{{ fmt_base(it.unit_price_minor * it.quantity) }}</span></li>{% endfor %}</ul>
+    <ul class="mini-lines">{% for it in order.items %}<li><img src="{{ it.image_url or url_for('static', filename='img/placeholder.svg') }}" alt=""><span><strong>{{ it.product_name }}</strong><span class="muted">{% if it.size %}Size {{ it.size }} · {% endif %}Qty {{ it.quantity }} × {{ fmt_base(it.unit_price_minor) }}</span></span><span>{{ fmt_base(it.unit_price_minor * it.quantity) }}</span></li>{% endfor %}</ul>
     <dl class="kv">
       <dt>Subtotal</dt><dd>{{ fmt_base(order.subtotal_minor) }}</dd>
       {% if order.discount_minor %}<dt>Discount ({{ order.discount_code }})</dt><dd>−{{ fmt_base(order.discount_minor) }}</dd>{% endif %}

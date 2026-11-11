@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Velora Market — clothing, watches, jewelry & cars{% endblock %}</title>
-  <meta name="description" content="{% block description %}Velora Market: clothing, watches, fine jewelry and pre-owned cars, modelled by our own team.{% endblock %}">
+  <title>{% block title %}Velora Market — clothing, watches, jewelry & bags{% endblock %}</title>
+  <meta name="description" content="{% block description %}Velora Market: clothing, watches, fine jewelry and bags, modelled by our own team.{% endblock %}">
   <meta name="theme-color" content="#F5F1EA">
   <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
   <link rel="preload" href="{{ url_for('static', filename='fonts/inter.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -34,7 +34,7 @@
           {% endfor %}
         </div>
       </div>
-      {% for slug, label, ic in (('watches', 'Watches', 'watch'), ('jewelry', 'Jewelry', 'gem'), ('cars', 'Cars', 'car')) if slug in cat_by_slug %}
+      {% for slug, label, ic in (('watches', 'Watches', 'watch'), ('jewelry', 'Jewelry', 'gem'), ('bags', 'Bags', 'shopping-bag')) if slug in cat_by_slug %}
       <a href="{{ url_for('catalog.listing', slug=slug) }}" class="nav-link {% if current_slug == slug %}is-active{% endif %}" {% if current_slug == slug %}aria-current="page"{% endif %}>{{ icon(ic, 'ic--sm') }} {{ label }}</a>
       {% endfor %}
     </nav>
@@ -76,7 +76,7 @@
         </button>
         <div class="dropdown__panel dropdown__panel--right account-panel" role="menu">
           {% if current_user.is_authenticated %}
-            <div class="account-panel__head"><strong>{{ current_user.full_name }}</strong><span>{{ current_user.email }}</span><span class="role-tag role-tag--{{ current_user.role }}">{{ current_user.role }}</span></div>
+            <div class="account-panel__head"><strong>{{ current_user.full_name }}</strong><span>{{ current_user.email }}</span><span class="role-tag role-tag--{{ current_user.role }}">{{ current_user.role }}</span>{% if current_user.role == 'customer' %}<span class="credit-chip">{{ icon('wallet', 'ic--sm') }} Credit {{ fmt_base(current_user.balance_minor) }}</span>{% endif %}</div>
             {% if current_user.role == 'customer' %}
               <a role="menuitem" href="{{ url_for('account.dashboard') }}">{{ icon('layout-dashboard') }} My account</a>
               <a role="menuitem" href="{{ url_for('account.orders') }}">{{ icon('package') }} Orders</a>
@@ -113,7 +113,7 @@
     <a href="{{ url_for('catalog.listing', slug='men') }}">{{ icon('shirt') }} Clothing · Men {{ icon('arrow-right') }}</a>
     <a href="{{ url_for('catalog.listing', slug='watches') }}">{{ icon('watch') }} Watches {{ icon('arrow-right') }}</a>
     <a href="{{ url_for('catalog.listing', slug='jewelry') }}">{{ icon('gem') }} Jewelry {{ icon('arrow-right') }}</a>
-    <a href="{{ url_for('catalog.listing', slug='cars') }}">{{ icon('car') }} Cars {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', slug='bags') }}">{{ icon('shopping-bag') }} Bags {{ icon('arrow-right') }}</a>
     <p class="mobile-nav__label">All collections</p>
     {% for c in nav_categories %}<a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ icon(c.icon) }} {{ c.name }}</a>{% endfor %}
     <p class="mobile-nav__label">Account</p>
@@ -134,7 +134,7 @@
   <div class="container footer__grid">
     <div class="footer__brand">
       <a href="{{ url_for('main.home') }}" class="logo logo--lg">velora<span class="logo__dot">.</span></a>
-      <p>Clothing, watches, fine jewelry and hand-picked cars — curated in Manila and modelled by our own team.</p>
+      <p>Clothing, watches, fine jewelry and bags — curated in Manila and modelled by our own team.</p>
       <p class="footer__contact">{{ icon('mail') }} <a href="mailto:{{ support_email }}">{{ support_email }}</a><br>{{ icon('clock') }} Mon–Sat, 9:00–18:00 PHT</p>
     </div>
     <div><h4>Shop</h4><ul>{% for c in nav_categories %}<li><a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ c.name }}</a></li>{% endfor %}</ul></div>

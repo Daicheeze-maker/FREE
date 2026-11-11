@@ -5,7 +5,8 @@ from sqlalchemy.exc import IntegrityError
 
 from ..extensions import db
 from ..forms import NewsletterForm
-from ..models import Category, NewsletterSubscription, Product, ProductReview
+from ..models import (Category, DiscountCode, NewsletterSubscription, Product, ProductReview, get_setting,
+                      utcnow)
 from ..security import is_safe_redirect
 from ..services.catalog import visible_products
 
@@ -36,13 +37,25 @@ def home():
     categories = Category.query.order_by(Category.position).all()
     counts = dict(db.session.query(Product.category_id, db.func.count(Product.id))
                   .filter(Product.status == "active").group_by(Product.category_id).all())
-    hero = featured[0] if featured else (new_arrivals[0] if new_arrivals else None)
+    # The hero ad sits next to a model photo, so feature a clothing item (best-selling dress or top).
+    clothing = {c.id for c in categories if c.slug in ("women", "men")}
+    hero = next((p for p in featured if p.category_id in clothing), None) or (featured[0] if featured else None)
     review_count = ProductReview.query.filter_by(is_hidden=False).count()
+    avg_rating = db.session.query(db.func.avg(ProductReview.rating)).filter(ProductReview.is_hidden.is_(False)).scalar()
+    avg_rating = round(float(avg_rating), 1) if avg_rating else None
+    # Only advertise the sale while its code really works
+    promo = DiscountCode.query.filter_by(code="SEASON15").first()
+    now = utcnow()
+    if promo is not None and not (promo.is_active and (promo.ends_at is None or promo.ends_at > now)
+                                  and (promo.max_uses is None or promo.used_count < promo.max_uses)):
+        promo = None
+    store = {k: get_setting("store_" + k) for k in ("name", "address", "hours", "lat", "lng")}
     top_review = (ProductReview.query.filter_by(is_hidden=False, rating=5)
                   .order_by(ProductReview.created_at.desc()).first())
     return render_template("main/home.html", featured=featured, new_arrivals=new_arrivals,
                            bestsellers=bestsellers, categories=categories, counts=counts, hero=hero,
                            recent=recently_viewed(), review_count=review_count, top_review=top_review,
+                           avg_rating=avg_rating, promo=promo, store=store,
                            newsletter_form=NewsletterForm())
 
 

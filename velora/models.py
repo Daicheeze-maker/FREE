@@ -23,6 +23,9 @@ ROLE_CUSTOMER, ROLE_SELLER, ROLE_ADMIN = "customer", "seller", "admin"
 ROLES = (ROLE_CUSTOMER, ROLE_SELLER, ROLE_ADMIN)
 
 
+# Every buyer starts with this much demo credit (PHP 500,000.00 in centavos) and cannot spend more.
+STARTING_CREDIT_MINOR = 50_000_000
+
 # A buyer's linked seller profile is stored as "<buyer email>#seller".
 SELLER_SUFFIX = "#seller"
 
@@ -38,6 +41,8 @@ class User(UserMixin, TimestampMixin, db.Model):
     failed_login_count = db.Column(db.Integer, nullable=False, default=0)
     locked_until = db.Column(db.DateTime)
     last_login_at = db.Column(db.DateTime)
+    balance_minor = db.Column(db.Integer, nullable=False, default=STARTING_CREDIT_MINOR,
+                              server_default=str(STARTING_CREDIT_MINOR))
 
     addresses = db.relationship("Address", back_populates="user", cascade="all, delete-orphan",
                                 order_by="Address.is_default.desc()")
@@ -144,6 +149,7 @@ class Product(TimestampMixin, db.Model):
     is_featured = db.Column(db.Boolean, nullable=False, default=False)
     sold_count = db.Column(db.Integer, nullable=False, default=0)
     size_label = db.Column(db.String(60))
+    sizes = db.Column(db.String(120))  # comma-separated choices a shopper must pick from, e.g. "XS,S,M,L,XL"
     origin = db.Column(db.String(120))
 
     # Open Food Facts enrichment
@@ -176,6 +182,10 @@ class Product(TimestampMixin, db.Model):
     @property
     def in_stock(self):
         return self.stock > 0
+
+    @property
+    def size_list(self):
+        return [s.strip() for s in (self.sizes or "").split(",") if s.strip()]
 
     @property
     def stock_label(self):
@@ -229,12 +239,13 @@ class CartItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cart_id = db.Column(db.Integer, db.ForeignKey("cart.id", ondelete="CASCADE"), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id", ondelete="CASCADE"), nullable=False)
+    size = db.Column(db.String(20), nullable=False, default="", server_default="")
     quantity = db.Column(db.Integer, nullable=False, default=1)
 
     cart = db.relationship("Cart", back_populates="items")
     product = db.relationship("Product")
     __table_args__ = (
-        UniqueConstraint("cart_id", "product_id", name="uq_cart_item_product"),
+        UniqueConstraint("cart_id", "product_id", "size", name="uq_cart_item_product_size"),
         CheckConstraint("quantity > 0", name="quantity_positive"),
     )
 
@@ -338,6 +349,7 @@ class OrderItem(db.Model):
     product_sku = db.Column(db.String(64), nullable=False)
     product_brand = db.Column(db.String(120))
     image_url = db.Column(db.String(500))
+    size = db.Column(db.String(20))
     unit_price_minor = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     discount_minor = db.Column(db.Integer, nullable=False, default=0)
@@ -476,6 +488,11 @@ DEFAULT_SETTINGS = {
     "low_stock_threshold": "8",
     "store_announcement": "Free delivery on orders over ₱2,500 · 30-day free returns on clothing & accessories",
     "support_email": "care@veloramarket.example",
+    "store_name": "Velora Market Flagship",
+    "store_address": "32nd Street corner 5th Avenue, Bonifacio Global City, Taguig, Metro Manila",
+    "store_hours": "Mon–Sat 10:00–20:00 · Sun 11:00–18:00",
+    "store_lat": "14.5507",
+    "store_lng": "121.0505",
 }
 
 

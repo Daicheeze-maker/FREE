@@ -1,13 +1,14 @@
-"""Repeatable demo data (fashion, watches, jewelry, cars and gifts). Safe to run more than once: it only seeds an empty database.
+"""Repeatable demo data (fashion, watches, jewelry, bags and gifts). Safe to run more than once: it only seeds an empty database.
 
 Photos are hot-linked from Unsplash (free to use under the Unsplash License). If any URL
 fails to load, the storefront swaps in a local placeholder automatically.
 """
 import random
+import secrets
 from datetime import timedelta
 
 from .extensions import db
-from .models import (DEFAULT_SETTINGS, Address, Cart, Category, DiscountCode, Notification, Order, OrderItem,
+from .models import (DEFAULT_SETTINGS, SELLER_SUFFIX, STARTING_CREDIT_MINOR, Address, Cart, Category, DiscountCode, Notification, Order, OrderItem,
                      OrderStatus, PaymentRecord, Product, ProductImage, ProductReview, StoreSetting, User,
                      WishlistItem, utcnow)
 from .services.catalog import slugify
@@ -22,7 +23,7 @@ CATEGORIES = [
     ("Men", "shirt", "Tailoring, tees, jackets, sneakers and eyewear."),
     ("Watches", "watch", "Everyday automatics, chronographs and smart watches."),
     ("Jewelry", "gem", "Gold, silver, pearls and diamonds for every day and big days."),
-    ("Cars", "car", "Hand-picked pre-owned and new cars from the Velora Motors showroom."),
+    ("Bags", "shopping-bag", "Totes, crossbodies, backpacks and travel bags for every day."),
     ("Gifts & Gourmet", "gift", "Gift boxes, fine chocolate and coffee — including products imported from Open Food Facts."),
 ]
 
@@ -46,10 +47,6 @@ PRODUCTS = [
      ["1542272604-787c3835535d"], "Rigid cotton denim · high rise",
      "A relaxed, straight-leg jean in rigid denim that softens beautifully with wear.",
      "100% cotton denim, 13 oz. Wash inside out, cold."),
-    ("Structured Leather Tote", "Atelier Noir", 0, 5450, None, 12, "One size · fits 14\" laptop", "Made in Marikina, PH", False, 88,
-     ["1548036328-c9fa89d128fa"], "Full-grain leather · inner zip pocket",
-     "A clean-lined everyday tote in full-grain leather that holds its shape, with an inner zip pocket and magnetic closure.",
-     "Full-grain cowhide, cotton twill lining."),
     # Men
     ("Tailored Wool Suit", "Maison Lune", 1, 12900, 14900, 7, "36–46", "Tailored in Manila, PH", True, 54,
      ["1507679799987-c73779587ccf"], "Two-piece · half-canvas construction",
@@ -113,23 +110,27 @@ PRODUCTS = [
      ["1515562141207-7a88fb7ce338"], "Three-piece set · gift boxed",
      "Our most-gifted set: a delicate ring, studs and a fine necklace, presented in a keepsake box.",
      "18k gold vermeil on sterling silver, cubic zirconia."),
-    # Cars
-    ("Classic Red Sports Coupe (Pre-owned)", "Velora Motors", 4, 3850000, None, 1, "2019 · 21,400 km", "Velora Motors showroom, Taguig", True, 2,
-     ["1494976388531-d1058494cdd8"], "V8 · automatic · one owner",
-     "A one-owner red coupe with full service history, inspected bumper to bumper by our technicians. Price includes registration transfer. (Demo listing.)",
-     "Engine: 5.0 L V8. Transmission: 10-speed automatic. Mileage: 21,400 km. Colour: red. Warranty: 12 months (demo)."),
-    ("Silver Luxury Sports Car (Pre-owned)", "Velora Motors", 4, 4800000, 5200000, 1, "2020 · 15,900 km", "Velora Motors showroom, Taguig", True, 1,
-     ["1503376780353-7e6692767b70"], "Turbo flat-six · PDK-style dual clutch",
-     "A low-mileage silver sports car with sports exhaust, heated seats and a clean history report. (Demo listing.)",
-     "Engine: 3.0 L twin-turbo flat-six. Transmission: 8-speed dual clutch. Mileage: 15,900 km. Colour: silver."),
-    ("Midnight Muscle Coupe (Pre-owned)", "Velora Motors", 4, 2650000, None, 1, "2018 · 34,200 km", "Velora Motors showroom, Taguig", False, 3,
-     ["1552519507-da3b142c6e3d"], "V8 · manual · track pack",
-     "A dark, rumbling coupe with a six-speed manual and track package. Fresh tyres and brakes. (Demo listing.)",
-     "Engine: 6.2 L V8. Transmission: 6-speed manual. Mileage: 34,200 km."),
-    ("Electric Crossover SUV", "Velora Motors", 4, 2190000, None, 2, "2024 · brand new", "Velora Motors showroom, Taguig", False, 4,
-     ["1580273916550-e323be2ae537"], "Up to 450 km range · fast charging",
-     "A brand-new all-electric family crossover with 450 km range, fast charging and a home charger included. (Demo listing.)",
-     "Battery: 75 kWh. Range: up to 450 km. Charging: 10–80% in 30 min (DC). Seats: 5."),
+    # Bags
+    ("Structured Leather Tote", "Atelier Noir", 4, 5450, None, 12, "One size · fits a 14\" laptop", "Made in Marikina, PH", True, 88,
+     ["1584917865442-de89df76afd3"], "Full-grain leather · inner zip pocket",
+     "A clean-lined everyday tote in full-grain leather that holds its shape, with an inner zip pocket and magnetic closure.",
+     "Full-grain cowhide, cotton twill lining. Wipe clean with a soft dry cloth."),
+    ("Quilted Chain Crossbody", "Atelier Noir", 4, 6950, None, 9, "One size · 24 × 14 cm", "Made in Marikina, PH", True, 120,
+     ["1548036328-c9fa89d128fa"], "Quilted leather · gold chain strap",
+     "A black quilted crossbody with a gold-tone chain strap and magnetic flap — small enough for evenings, roomy enough for your phone, cards and keys.",
+     "Quilted lambskin leather, gold-tone hardware, microfibre lining."),
+    ("Everyday Canvas Backpack", "Trailhead", 4, 3290, None, 25, "One size · 22 L", "Imported", False, 140,
+     ["1553062407-98eeb64c6a62"], "Water-resistant canvas · padded laptop sleeve",
+     "A roomy 22-litre backpack in water-resistant canvas with a padded 15-inch laptop sleeve, two side pockets and leather-trimmed straps.",
+     "Water-resistant cotton canvas, leather trim, YKK zips."),
+    ("Evening Leather Clutch", "Atelier Noir", 4, 2890, 3290, 14, "One size · 25 × 14 cm", "Made in Marikina, PH", False, 60,
+     ["1566150905458-1bf1fc113f0d"], "Slim clutch · detachable wrist strap",
+     "A slim envelope clutch in smooth leather that fits a phone and essentials, with a detachable wrist strap.",
+     "Smooth calf leather, suede lining."),
+    ("Weekender Duffel Bag", "Trailhead", 4, 4950, None, 8, "One size · 40 L", "Imported", False, 42,
+     ["1590874103328-eac38a683ce7"], "Carry-on size · shoe compartment",
+     "A 40-litre weekender that fits airline cabin limits, with a ventilated shoe compartment, shoulder strap and trolley sleeve.",
+     "Waxed canvas, leather handles, brass hardware."),
     # Gifts & Gourmet
     ("Luxury Gift Box", "Velora Gifting", 5, 1450, None, 30, "Medium box", "Packed in Manila, PH", True, 140,
      ["1549465220-1a8b9238cd48"], "Hand-wrapped · personal note included",
@@ -148,6 +149,19 @@ PRODUCTS = [
      "Clean-burning soy wax scented with Japanese cypress and green fig.",
      "Soy wax, cotton wick, fragrance oils"),
 ]
+
+# Products a shopper must choose a size for (everything else has no sizes)
+SIZES = {
+    "Linen Wrap Midi Dress": "XS,S,M,L,XL",
+    "Red Silk Slip Dress": "XS,S,M,L",
+    "Cropped Leather Biker Jacket": "XS,S,M,L",
+    "Relaxed Straight Jeans": "24,26,28,30,32,34",
+    "Tailored Wool Suit": "36,38,40,42,44,46",
+    "Heavyweight White Tee": "S,M,L,XL,XXL",
+    "Utility Field Jacket": "S,M,L,XL",
+    "Red Runner Sneakers": "39,40,41,42,43,44,45,46",
+    "18k Gold Stacking Rings (Set of 3)": "5,6,7,8,9",
+}
 
 REVIEWS = [
     (5, "My new favourite piece", "The quality is even better in person. I've worn it three times this week."),
@@ -185,7 +199,7 @@ def seed(force=False):
         p = Product(name=name, slug=slugify(name), sku=f"VM-{1000 + i}", brand=brand, category=cats[ci],
                     short_description=short, description=desc, price_minor=price * 100,
                     compare_at_minor=compare * 100 if compare else None, stock=stock, size_label=size,
-                    origin=origin, is_featured=featured, sold_count=sold, ingredients=ingr,
+                    origin=origin, is_featured=featured, sold_count=sold, ingredients=ingr, sizes=SIZES.get(name),
                     created_at=now - timedelta(days=60 - i * 2 if i < 18 else rng.randint(1, 12)))
         for pos, pid in enumerate(photos):
             p.images.append(ProductImage(url=U(pid), alt=f"{name} — {short}", position=pos, credit="Unsplash"))
@@ -203,20 +217,23 @@ def seed(force=False):
         return u
 
     admin = user("admin@velora.example", "Alex Reyes", "admin", "Admin123!")
-    seller = user("seller@velora.example", "Sam Villanueva", "seller", "Seller123!")
-    customer = user("customer@velora.example", "Maya Santos", "customer", "Customer123!")
-    extra = [user(f"{n.split()[0].lower()}@example.com", n, "customer", "Customer123!")
-             for n in ("Jonah Cruz", "Bea Lim", "Paolo Garcia", "Ines Tan", "Rafa Dizon")]
-    test_acct = user("test.account@example.com", "QA Test Account", "customer", "Customer123!")
+    # Two people. Each has a buyer profile and a linked seller profile (use "Switch profile" to change).
+    people = []
+    for email, name in (("buyer1@velora.example", "Maya Santos"), ("buyer2@velora.example", "Jonah Cruz")):
+        buyer = user(email, name, "customer", "Buyer123!")
+        buyer.balance_minor = STARTING_CREDIT_MINOR  # PHP 500,000 each
+        user(email + SELLER_SUFFIX, name, "seller", secrets.token_urlsafe(24))
+        people.append(buyer)
     db.session.flush()
 
-    for u in [customer] + extra:
-        db.session.add(Address(user_id=u.id, label="Home", full_name=u.full_name, phone="+63 917 555 0142",
-                               line1=f"{rng.randint(10, 400)} Kalayaan Ave", line2="Unit 5B", city="Quezon City",
+    for buyer, street, phone in zip(people, ("56 Kalayaan Ave", "14 Katipunan Ave"), ("+63 917 555 0142", "+63 918 555 0187")):
+        db.session.add(Address(user_id=buyer.id, label="Home", full_name=buyer.full_name, phone=phone,
+                               line1=street, line2="Unit 5B", city="Quezon City",
                                region="Metro Manila", postal_code="1101", is_default=True))
-    db.session.add(Address(user_id=customer.id, label="Office", full_name=customer.full_name, phone="+63 917 555 0142",
-                           line1="32nd St corner 5th Ave", line2="BGC Corporate Center, 12F", city="Taguig",
-                           region="Metro Manila", postal_code="1634"))
+        db.session.add(Address(user_id=buyer.id, label="Office", full_name=buyer.full_name, phone=phone,
+                               line1="32nd St corner 5th Ave", line2="BGC Corporate Center, 12F", city="Taguig",
+                               region="Metro Manila", postal_code="1634"))
+    customer = people[0]
 
     db.session.add_all([
         DiscountCode(code="WELCOME10", description="10% off your first order", kind="percent", value=10),
@@ -231,24 +248,25 @@ def seed(force=False):
     # Orders across all statuses over the last ~30 days, so dashboards show real records
     plan = ([OrderStatus.DELIVERED] * 14 + [OrderStatus.SHIPPED] * 3 + [OrderStatus.PROCESSING] * 3 +
             [OrderStatus.CONFIRMED] * 3 + [OrderStatus.PENDING] * 2 + [OrderStatus.CANCELLED] * 2)
-    buyers = [customer] * 6 + extra
+    buyers = people
     seq = 0
     for status in plan:
         buyer = buyers[seq % len(buyers)]
         seq += 1
         created = now - timedelta(days=rng.randint(0 if status in (OrderStatus.PENDING, OrderStatus.CONFIRMED) else 3, 29),
                                   hours=rng.randint(0, 23))
-        picks = rng.sample([p for p in products if p.stock > 0 and p.category is not cats[4]], rng.randint(1, 3))
+        picks = rng.sample([p for p in products if p.stock > 0], rng.randint(1, 3))
         addr = buyer.addresses[0] if buyer.addresses else None
         o = Order(number=f"VM-{created:%y%m}-{0xA00 + seq:04X}", user_id=buyer.id, status=status,
                   checkout_token=f"seed-{seq}", created_at=created, updated_at=created,
-                  ship_name=buyer.full_name, ship_phone="+63 917 555 0142",
-                  ship_address="Kalayaan Ave, Quezon City, Metro Manila, 1101, Philippines", subtotal_minor=0, total_minor=0)
+                  ship_name=buyer.full_name, ship_phone=addr.phone,
+                  ship_address=addr.one_line(), subtotal_minor=0, total_minor=0)
         sub = 0
         for p in picks:
             q = rng.randint(1, 2)
             o.items.append(OrderItem(product_id=p.id, product_name=p.name, product_sku=p.sku, product_brand=p.brand,
                                      image_url=p.images[0].url, unit_price_minor=p.price_minor, quantity=q,
+                                     size=rng.choice(p.size_list) if p.size_list else None,
                                      line_total_minor=p.price_minor * q))
             sub += p.price_minor * q
         o.subtotal_minor = sub
@@ -262,9 +280,8 @@ def seed(force=False):
             o.delivered_at = created + timedelta(days=3)
         if status == OrderStatus.CANCELLED:
             o.cancelled_at, o.cancel_reason = created + timedelta(hours=2), "Changed my mind"
-        method = "cod" if seq % 4 == 0 else "demo_approve"
-        pay_status = ("refunded" if status == OrderStatus.CANCELLED and method != "cod" else
-                      "pending" if method == "cod" and status != OrderStatus.DELIVERED else "succeeded")
+        method = "demo_credit"
+        pay_status = "refunded" if status == OrderStatus.CANCELLED else "succeeded"
         o.payments.append(PaymentRecord(provider="demo", method=method, status=pay_status, amount_minor=o.total_minor,
                                         currency="PHP", reference=f"DEMO-SEED{seq:04d}", created_at=created,
                                         message="Seeded demo payment — no real money involved."))
@@ -283,15 +300,16 @@ def seed(force=False):
             db.session.add(ProductReview(product_id=it.product_id, user_id=o.user_id, rating=rating, title=title,
                                          body=body, created_at=o.delivered_at + timedelta(days=1)))
 
-    for p in products[:3]:
-        db.session.add(WishlistItem(user_id=customer.id, product_id=p.id))
-    if not Cart.query.filter_by(user_id=customer.id).first():
-        db.session.add(Cart(user_id=customer.id))
-    db.session.add_all([
-        Notification(user_id=customer.id, title="Welcome to Velora Market", body="Use WELCOME10 for 10% off.",
-                     link="/shop/", icon="sparkles", is_read=True, created_at=now - timedelta(days=30)),
-        Notification(user_id=customer.id, title="The Red Silk Slip Dress is back", body="Restocked in sizes XS–L.",
-                     link="/shop/p/red-silk-slip-dress", icon="shirt", created_at=now - timedelta(days=1)),
-    ])
+    for n, buyer in enumerate(people):
+        for p in products[n * 3:n * 3 + 3]:
+            db.session.add(WishlistItem(user_id=buyer.id, product_id=p.id))
+        if not Cart.query.filter_by(user_id=buyer.id).first():
+            db.session.add(Cart(user_id=buyer.id))
+        db.session.add_all([
+            Notification(user_id=buyer.id, title="Welcome to Velora Market", body="Use WELCOME10 for 10% off.",
+                         link="/shop/", icon="sparkles", is_read=True, created_at=now - timedelta(days=30)),
+            Notification(user_id=buyer.id, title="The Red Silk Slip Dress is back", body="Restocked in sizes XS–L.",
+                         link="/shop/p/red-silk-slip-dress", icon="shirt", created_at=now - timedelta(days=1)),
+        ])
     db.session.commit()
     return True

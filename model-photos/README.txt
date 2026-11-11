@@ -28,14 +28,14 @@ Photos are checked, resized and re-saved safely when they're loaded.
 You can also upload one at a time in Seller studio > Model photos, or on any product's edit page.
 
 Product slugs in the demo data:
-  Clothing (women): linen-wrap-midi-dress, red-silk-slip-dress, cropped-leather-biker-jacket,
-                    relaxed-straight-jeans, structured-leather-tote
-  Clothing (men):   tailored-wool-suit, heavyweight-white-tee, utility-field-jacket,
+  Women:            linen-wrap-midi-dress, red-silk-slip-dress, cropped-leather-biker-jacket,
+                    relaxed-straight-jeans
+  Men:              tailored-wool-suit, heavyweight-white-tee, utility-field-jacket,
                     red-runner-sneakers, tortoiseshell-sunglasses
   Watches:          minimalist-leather-strap-watch, chronograph-steel-watch,
                     classic-gold-tone-dress-watch, diver-automatic-200m, smart-fitness-watch
   Jewelry:          18k-gold-stacking-rings-set-of-3, freshwater-pearl-drop-earrings,
                     diamond-solitaire-pendant, sterling-silver-chain-bracelet, signature-jewelry-gift-set
-  Cars:             classic-red-sports-coupe-pre-owned, silver-luxury-sports-car-pre-owned,
-                    midnight-muscle-coupe-pre-owned, electric-crossover-suv
-  Gifts:            luxury-gift-box, 72-dark-chocolate-bar, single-origin-coffee-beans, scented-soy-candle
+  Bags:             structured-leather-tote, quilted-chain-crossbody, everyday-canvas-backpack,
+                    evening-leather-clutch, weekender-duffel-bag
+  Gifts & Gourmet:  luxury-gift-box, 72-dark-chocolate-bar, single-origin-coffee-beans, scented-soy-candle

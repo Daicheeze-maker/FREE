@@ -7,7 +7,7 @@ from sqlalchemy import or_
 
 from ..extensions import db
 from ..forms import SettingsForm, UserAdminForm
-from ..models import (ROLE_ADMIN, ROLES, ApiStatus, AuditLog, ExchangeRateCache, NewsletterSubscription, Order,
+from ..models import (ROLE_ADMIN, ROLES, STARTING_CREDIT_MINOR, ApiStatus, AuditLog, ExchangeRateCache, NewsletterSubscription, Order,
                       StoreSetting, User, get_int_setting, get_setting, utcnow)
 from ..money import to_major
 from ..security import audit, roles_required
@@ -89,6 +89,19 @@ def user_detail(user_id):
     return render_template("admin/user_detail.html", user=user, form=form, orders=orders, logs=logs, now=utcnow())
 
 
+@bp.post("/users/<int:user_id>/reset-credit")
+def user_reset_credit(user_id):
+    user = db.session.get(User, user_id) or abort(404)
+    if user.role != "customer":
+        abort(400)
+    old = user.balance_minor
+    user.balance_minor = STARTING_CREDIT_MINOR
+    audit("user.credit_reset", "user", user.id, f"{user.email}: {to_major(old)} → {to_major(STARTING_CREDIT_MINOR)}")
+    db.session.commit()
+    flash(f"{user.full_name}'s demo credit is back to ₱500,000.", "success")
+    return redirect(url_for("admin.user_detail", user_id=user.id))
+
+
 @bp.post("/users/<int:user_id>/unlock")
 def user_unlock(user_id):
     user = db.session.get(User, user_id) or abort(404)
@@ -120,6 +133,8 @@ def settings():
         form.low_stock_threshold.data = get_int_setting("low_stock_threshold")
         form.store_announcement.data = get_setting("store_announcement")
         form.support_email.data = get_setting("support_email")
+        for key in ("name", "address", "hours", "lat", "lng"):
+            getattr(form, "store_" + key).data = get_setting("store_" + key)
     if form.validate_on_submit():
         values = {
             "shipping_flat_minor": str(form.shipping_flat.minor),
@@ -127,6 +142,9 @@ def settings():
             "low_stock_threshold": str(form.low_stock_threshold.data),
             "store_announcement": form.store_announcement.data or "",
             "support_email": form.support_email.data,
+            "store_name": form.store_name.data, "store_address": form.store_address.data,
+            "store_hours": form.store_hours.data, "store_lat": str(float(form.store_lat.data)),
+            "store_lng": str(float(form.store_lng.data)),
         }
         changed = []
         for key, value in values.items():

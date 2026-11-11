@@ -72,8 +72,8 @@ def test_cannot_add_sold_out(client):
 def test_guest_cart_merges_on_login(client):
     p = in_stock_product()
     client.post(f"/cart/add/{p.id}", data={"quantity": 3})
-    login(client, "customer@velora.example", "Customer123!")
-    u = get_user("customer@velora.example")
+    login(client, "buyer1@velora.example", "Buyer123!")
+    u = get_user("buyer1@velora.example")
     item = CartItem.query.join(CartItem.cart).filter_by(user_id=u.id).filter(CartItem.product_id == p.id).first()
     assert item and item.quantity == 3
     assert "Your bag" in client.get("/cart").get_data(as_text=True)
@@ -82,10 +82,10 @@ def test_guest_cart_merges_on_login(client):
 def test_customer_cart_is_persistent(app):
     p = in_stock_product()
     c1 = app.test_client()
-    login(c1, "customer@velora.example", "Customer123!")
+    login(c1, "buyer1@velora.example", "Buyer123!")
     c1.post(f"/cart/add/{p.id}", data={"quantity": 1})
     c2 = app.test_client()
-    login(c2, "customer@velora.example", "Customer123!")
+    login(c2, "buyer1@velora.example", "Buyer123!")
     assert p.name in c2.get("/cart").get_data(as_text=True)
 
 
@@ -130,7 +130,7 @@ def _delivered_unreviewed_product(user):
 
 
 def test_review_requires_purchase(customer):
-    u = get_user("customer@velora.example")
+    u = get_user("buyer1@velora.example")
     from velora.models import Order, OrderItem
     bought = {i.product_id for i in OrderItem.query.join(Order).filter(Order.user_id == u.id)}
     p = Product.query.filter(~Product.id.in_(bought), Product.status == "active").first()
@@ -139,7 +139,7 @@ def test_review_requires_purchase(customer):
 
 
 def test_review_after_delivery_and_duplicate_blocked(customer):
-    u = get_user("customer@velora.example")
+    u = get_user("buyer1@velora.example")
     p = _delivered_unreviewed_product(u)
     assert p is not None
     data = {"rating": "4", "title": "Really good", "body": "Arrived fresh and tasted wonderful."}
@@ -149,7 +149,7 @@ def test_review_after_delivery_and_duplicate_blocked(customer):
 
 
 def test_review_invalid_rating_rejected(customer):
-    u = get_user("customer@velora.example")
+    u = get_user("buyer1@velora.example")
     p = _delivered_unreviewed_product(u)
     customer.post(f"/shop/p/{p.slug}/review", data={"rating": "9", "title": "Hmm hmm", "body": "Ten out of five."})
     assert ProductReview.query.filter_by(user_id=u.id, product_id=p.id).count() == 0

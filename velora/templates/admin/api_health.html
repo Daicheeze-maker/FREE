@@ -26,6 +26,10 @@
   </section>
   {% endfor %}
 </div>
+<section class="card" style="margin-bottom:18px">
+  <div class="card__head" style="margin:0"><h2>{{ icon('map') }} OpenStreetMap map tiles <span class="tag">Homepage map ad</span></h2></div>
+  <p class="muted" style="margin:8px 0 0;font-size:13.5px">The "Visit our store" map uses Leaflet with free OpenStreetMap tiles (no key). Your visitors' browsers load the tiles directly, so this server can't measure them. If tiles can't load, the homepage shows the plain address card. Set the location under <a href="{{ url_for('admin.settings') }}">Store settings</a>. <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">Tile usage policy</a></p>
+</section>
 <section class="card card--flush">
   <div class="card__head" style="padding:20px 22px 0"><h2>{{ icon('coins') }} Cached exchange rates</h2><span class="muted" style="font-size:12.5px">Base PHP · cache TTL {{ config.FX_CACHE_HOURS }} h · stale rates are still used as a fallback</span></div>
   {% if rates %}

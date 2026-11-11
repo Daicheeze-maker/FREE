@@ -24,15 +24,15 @@ def test_register_validation_errors(client):
 
 
 def test_duplicate_email_rejected(client):
-    r = client.post("/account/register", data={"full_name": "Dup", "email": "customer@velora.example",
+    r = client.post("/account/register", data={"full_name": "Dup", "email": "buyer1@velora.example",
                                                "password": "Secret123", "confirm": "Secret123", "accept": "y"})
     assert "already exists" in r.get_data(as_text=True)
 
 
 def test_login_success_and_wrong_password(client):
-    assert login(client, "seller@velora.example", "nope").status_code == 200
-    r = login(client, "seller@velora.example", "Seller123!")
-    assert r.status_code == 302 and r.headers["Location"].endswith("/seller/")
+    assert login(client, "admin@velora.example", "nope").status_code == 200  # staff need the real password
+    r = login(client, "admin@velora.example", "Admin123!")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/admin/")
 
 
 def test_buyer_signs_in_with_any_password(client):
@@ -74,8 +74,24 @@ def test_typing_seller_suffix_signs_in_as_buyer(client):
     assert client.get("/account/").status_code == 200
 
 
-def test_seeded_staff_have_no_switch(seller):
-    assert seller.post("/account/switch-profile").status_code == 404
+def test_admin_has_no_other_profile_to_switch_to(admin):
+    assert admin.post("/account/switch-profile").status_code == 404
+
+
+def test_two_buyers_and_two_sellers_are_seeded(app):
+    from velora.models import User
+    buyers = User.query.filter_by(role="customer").all()
+    sellers = User.query.filter_by(role="seller").all()
+    assert sorted(b.email for b in buyers) == ["buyer1@velora.example", "buyer2@velora.example"]
+    assert len(sellers) == 2 and all(s.linked_profile in buyers for s in sellers)
+    assert all(b.linked_profile is not None for b in buyers)
+    assert {b.balance_minor for b in buyers} == {50_000_000}  # PHP 500,000.00 each
+
+
+def test_seller_profile_can_switch_back_to_buyer(seller):
+    assert "Store dashboard" in seller.get("/seller/").get_data(as_text=True)
+    assert seller.post("/account/switch-profile").status_code == 302
+    assert seller.get("/seller/").status_code == 403  # back on the buyer profile
 
 
 def test_unknown_login_creates_customer(client):
@@ -98,17 +114,17 @@ def test_auto_login_never_opens_staff_accounts(client):
 
 def test_lockout_after_repeated_failures(client, app):
     for _ in range(app.config["LOGIN_MAX_ATTEMPTS"]):
-        login(client, "seller@velora.example", "wrong")
-    r = login(client, "seller@velora.example", "Seller123!")
+        login(client, "admin@velora.example", "wrong")
+    r = login(client, "admin@velora.example", "Admin123!")
     assert r.status_code == 200 and "Too many failed attempts" in r.get_data(as_text=True)
     assert AuditLog.query.filter_by(action="auth.lockout").count() == 1
 
 
 def test_disabled_account_cannot_sign_in(client):
-    u = get_user("jonah@example.com")
+    u = get_user("buyer2@velora.example")
     u.is_active_account = False
     db.session.commit()
-    assert login(client, "jonah@example.com", "Customer123!").status_code == 403
+    assert login(client, "buyer2@velora.example", "Buyer123!").status_code == 403
 
 
 def test_logout_requires_post(customer):
@@ -136,10 +152,9 @@ def test_seller_cannot_access_admin(seller):
 
 def test_four_distinct_dashboards(client):
     assert "Featured this week" in client.get("/").get_data(as_text=True)  # guest storefront
-    login(client, "customer@velora.example", "Customer123!")
+    login(client, "buyer1@velora.example", "Buyer123!")
     assert "Customer account" in client.get("/account/").get_data(as_text=True)
-    client.post("/account/logout")
-    login(client, "seller@velora.example", "Seller123!")
+    client.post("/account/switch-profile")  # the same person's seller profile
     html = client.get("/seller/").get_data(as_text=True)
     assert "Store dashboard" in html and "Fulfilment queue" in html
     client.post("/account/logout")
@@ -149,7 +164,7 @@ def test_four_distinct_dashboards(client):
 
 
 def test_admin_changes_role_with_audit(admin):
-    u = get_user("bea@example.com")
+    u = get_user("buyer2@velora.example")
     r = admin.post(f"/admin/users/{u.id}", data={"role": "seller", "is_active_account": "y"})
     assert r.status_code == 302
     db.session.refresh(u)
@@ -166,23 +181,23 @@ def test_admin_cannot_demote_self(admin):
 
 def test_disabling_user_logs_them_out(app):
     c = app.test_client()
-    login(c, "paolo@example.com", "Customer123!")
+    login(c, "buyer2@velora.example", "Buyer123!")
     assert c.get("/account/").status_code == 200
-    u = get_user("paolo@example.com")
+    u = get_user("buyer2@velora.example")
     u.is_active_account = False
     db.session.commit()
     assert c.get("/account/").status_code == 302
 
 
 def test_open_redirect_blocked(client):
-    r = client.post("/account/login?next=https://evil.example/x", data={"email": "customer@velora.example", "password": "Customer123!"})
+    r = client.post("/account/login?next=https://evil.example/x", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
     assert "evil.example" not in r.headers["Location"]
 
 
 def test_csrf_enforced_when_enabled(app):
     app.config["WTF_CSRF_ENABLED"] = True
     c = app.test_client()
-    r = c.post("/account/login", data={"email": "customer@velora.example", "password": "Customer123!"})
+    r = c.post("/account/login", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
     assert r.status_code == 400
 
 

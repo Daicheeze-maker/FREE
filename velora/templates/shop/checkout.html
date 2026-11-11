@@ -51,8 +51,10 @@
 
         <section class="card" data-reveal>
           <div class="card__head"><h2>{{ icon('credit-card') }} Payment</h2><span class="demo-flag">{{ icon('flask-conical', 'ic--sm') }} Demo mode</span></div>
-          <p class="alert alert--info">{{ icon('info') }} <span>You're paying with <strong>unlimited demo credit</strong>, so there's nothing to enter. No card details are requested and no money is charged.</span></p>
-          <dl class="kv"><dt>Available credit</dt><dd><strong>Unlimited</strong></dd><dt>This order</dt><dd>{{ money(totals.total_minor) }}</dd></dl>
+          <p class="alert alert--info">{{ icon('info') }} <span>You're paying with your <strong>demo credit</strong>, so there's nothing to enter. No card details are requested and no real money is charged.</span></p>
+          {% set left = current_user.balance_minor - totals.total_minor %}
+          <dl class="kv"><dt>Your demo credit</dt><dd><strong>{{ fmt_base(current_user.balance_minor) }}</strong></dd><dt>This order</dt><dd>{{ fmt_base(totals.total_minor) }}</dd><dt>Left after paying</dt><dd><strong {% if left < 0 %}style="color:var(--danger)"{% endif %}>{{ fmt_base(left) if left >= 0 else 'Not enough credit' }}</strong></dd></dl>
+          {% if left < 0 %}<p class="alert alert--error" role="alert">{{ icon('circle-alert') }} <span>This order is {{ fmt_base(-left) }} more than your credit. Remove something from your bag to continue.</span></p>{% endif %}
           <div style="margin-top:18px">{{ field(form.notes, "Anything the rider should know…") }}</div>
         </section>
       </form>
@@ -61,7 +63,7 @@
     <div>
       {% set checkout_lines = lines %}{% set back = 'checkout' %}
       {% include "shop/_summary.html" %}
-      <button type="submit" form="checkout-form" class="btn btn--accent btn--lg btn--block" style="margin-top:14px" data-loading-text="Paying…">{{ icon('lock') }} Pay with demo credit · {{ money(totals.total_minor) }}</button>
+      <button type="submit" form="checkout-form" class="btn btn--accent btn--lg btn--block" style="margin-top:14px" data-loading-text="Paying…" {% if current_user.balance_minor < totals.total_minor %}disabled{% endif %}>{{ icon('lock') }} Pay with demo credit · {{ money(totals.total_minor) }}</button>
       <p class="muted" style="font-size:12px;text-align:center;margin-top:10px">By placing this order you agree to our <a href="{{ url_for('main.page', slug='terms') }}">terms</a>.</p>
     </div>
   </div>

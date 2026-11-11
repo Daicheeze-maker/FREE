@@ -6,17 +6,17 @@
     <img src="{{ image_src(p.primary_image) }}" alt="">
     <div>
       <a class="cart-line__name" href="{{ url_for('catalog.detail', slug=p.slug) }}">{{ p.name }}</a>
-      <span class="cart-line__meta">{{ p.brand }}{% if p.size_label %} · {{ p.size_label }}{% endif %}</span>
+      <span class="cart-line__meta">{{ p.brand }}{% if l.size %} · <strong>Size {{ l.size }}</strong>{% elif p.size_label %} · {{ p.size_label }}{% endif %}</span>
       {% if l.problem %}<div class="cart-line__problem">{{ l.problem }}</div>{% endif %}
       <div class="cart-line__actions">
         <form method="post" action="{{ url_for('shop.update', product_id=p.id) }}" data-cart-ajax class="qty">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="size" value="{{ l.size }}">
           <button type="submit" name="quantity" value="{{ l.quantity - 1 }}" aria-label="Decrease {{ p.name }}">{{ icon('minus', 'ic--sm') }}</button>
           <input type="number" value="{{ l.quantity }}" readonly aria-label="Quantity of {{ p.name }}" tabindex="-1">
           <button type="submit" name="quantity" value="{{ l.quantity + 1 }}" aria-label="Increase {{ p.name }}" {% if l.quantity >= p.stock %}disabled{% endif %}>{{ icon('plus', 'ic--sm') }}</button>
         </form>
         <form method="post" action="{{ url_for('shop.remove', product_id=p.id) }}" data-cart-ajax>
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="size" value="{{ l.size }}">
           <button type="submit" class="btn btn--link btn--sm" aria-label="Remove {{ p.name }}">Remove</button>
         </form>
       </div>
