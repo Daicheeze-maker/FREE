@@ -36,12 +36,14 @@ Open **http://127.0.0.1:5000**.
 ```bash
 python -m venv .venv
 # Linux/macOS: source .venv/bin/activate     Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 cp .env.example .env          # then put a random value in SECRET_KEY
-flask --app wsgi init-db      # create/upgrade the schema via migrations (non-destructive)
-flask --app wsgi seed         # demo data; does nothing if the DB already has users
+python -m flask --app wsgi init-db      # create/upgrade the schema via migrations (non-destructive)
+python -m flask --app wsgi seed         # demo data; does nothing if the DB already has users
 python serve.py
 ```
+
+**Windows says `flask.exe` / `pip.exe` "was blocked by your organization's Device Guard policy"?** Some school and work PCs block programs inside `.venv\Scripts`. All the scripts here call everything through Python (`python -m flask …`, `python -m pip …`), which isn't blocked. Use the same form for any command in this README, e.g. `python -m flask --app wsgi reset-demo --yes-delete-everything`.
 
 ### Demo accounts (seeded)
 
@@ -62,7 +64,7 @@ The store ships with stock photos so it looks finished right away. To put **your
 - **Many photos at once:** drop files into `model-photos/` (instructions and every product's folder name are in `model-photos/README.txt`), then run:
 
 ```bash
-flask --app wsgi load-model-photos
+python -m flask --app wsgi load-model-photos
 ```
 
 Portrait photos at least 1200 px tall look best. Every upload is checked, resized, converted to WebP and stored in `instance/uploads/`.
@@ -78,7 +80,7 @@ Portrait photos at least 1200 px tall look best. Every upload is checked, resize
 | Cars | pre-owned sports coupes and a new electric SUV (demo listings, ₱2.19M–₱4.8M) |
 | Gifts & Gourmet | gift box, chocolate, coffee, candle — the natural home for Open Food Facts imports |
 
-If you created the database before this catalog existed, rebuild it with `flask --app wsgi reset-demo --yes-delete-everything`. This deletes all data.
+If you created the database before this catalog existed, rebuild it with `python -m flask --app wsgi reset-demo --yes-delete-everything`. This deletes all data.
 
 ---
 
@@ -136,7 +138,7 @@ The SQLite database and uploaded images live in `instance/` by default (`instanc
 | **Guest shopper** | Not signed in | Storefront | Browse, search, filter (aisle / maker / price / availability), sort (featured, newest, popular, price, rating), view products, reviews and nutrition, use a session bag, switch currency, register / sign in. No access to account, seller or admin pages (server-side redirects or 403). |
 | **Customer** | Self-registration, or sign in with any email and any password (the demo creates the account and a linked seller profile) | `/account/` — stats, live tracker for the active order, recent orders, notifications, wishlist, “waiting for your review”, recently viewed | Persistent bag (merged from the guest bag at login), wishlist, addresses, discount codes, address-free demo checkout, order history and tracking, cancel while *Pending/Confirmed*, review only **delivered** purchases (one per product), notifications, profile and password change. |
 | **Seller / store manager** | Assigned by an admin, or the linked seller profile every buyer gets (use *Switch to seller profile* in the account menu) | `/seller/` — revenue chart, KPIs, fulfilment queue, order pipeline, low-stock alerts with one-click restock, top sellers, latest feedback | **Model photos**, product CRUD, archive and restore, secure image uploads, categories, inventory, order processing with enforced status transitions, promotions and discount codes, review moderation and public replies, **Open Food Facts import**, CSV exports. This is a single-store catalog, not a multi-vendor marketplace. |
-| **Administrator** | Seeded, or created with `flask --app wsgi create-admin` | `/admin/` (blue “Admin console” theme) — store KPIs, 30-day revenue, integrations status, audit feed, accounts by role, inventory value | Everything a seller can do, plus users and roles, enable/disable accounts, clear login locks, sales and inventory reports, store settings (shipping rules, low-stock threshold, announcement), **API health with live test buttons**, and a full **audit log**. |
+| **Administrator** | Seeded, or created with `python -m flask --app wsgi create-admin` | `/admin/` (blue “Admin console” theme) — store KPIs, 30-day revenue, integrations status, audit feed, accounts by role, inventory value | Everything a seller can do, plus users and roles, enable/disable accounts, clear login locks, sales and inventory reports, store settings (shipping rules, low-stock threshold, announcement), **API health with live test buttons**, and a full **audit log**. |
 
 Roles are stored only in the database. Registration has no role field, so a submitted `role=admin` is ignored. Every protected route checks the role on the server. Admins can't demote or disable themselves, and at least one active admin always remains.
 
@@ -158,7 +160,7 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
 - **Fallbacks:** if a refresh fails, the app uses the last cached rate and labels it *cached*. With no rate at all, it shows prices in PHP with an “unavailable” note. After a failure it waits `API_RETRY_BACKOFF_MINUTES` before retrying, so an offline VM doesn't stall page loads.
 - Converted prices carry a “≈” and a note saying **orders are always charged in PHP**. Orders, totals and payments are stored only in PHP minor units (centavos).
 
-> **Note on verification:** this project was built in a sandbox with no access to either API, so the endpoints and response shapes follow the published docs and the automated tests mock them. Please run `flask --app wsgi refresh-rates` and press the **API health → test** buttons once in your VM to confirm live connectivity. If a provider moves its base URL, change `OFF_BASE_URL` / `FRANKFURTER_BASE_URL` in `.env`.
+> **Note on verification:** this project was built in a sandbox with no access to either API, so the endpoints and response shapes follow the published docs and the automated tests mock them. Please run `python -m flask --app wsgi refresh-rates` and press the **API health → test** buttons once in your VM to confirm live connectivity. If a provider moves its base URL, change `OFF_BASE_URL` / `FRANKFURTER_BASE_URL` in `.env`.
 
 ---
 
@@ -236,7 +238,7 @@ There are 94 tests. External APIs are mocked, so no network is needed. They cove
 - **Integrations:** currency conversion, caching, stale-cache and offline fallback, Open Food Facts parsing, normalization, rate limits, import and offline display.
 - **Staff tools and setup:** invalid, oversized and spoofed uploads, path traversal, CSV export, settings, model-photo uploads, cover photos and the bulk loader, database initialization via migrations, and the non-destructive seed.
 
-Useful commands: `flask --app wsgi create-admin`, `flask --app wsgi refresh-rates`, `flask --app wsgi check-images` (checks every remote product photo; broken ones fall back to a local placeholder automatically), `flask --app wsgi db upgrade` / `db migrate`.
+Useful commands: `python -m flask --app wsgi create-admin`, `python -m flask --app wsgi refresh-rates`, `python -m flask --app wsgi check-images` (checks every remote product photo; broken ones fall back to a local placeholder automatically), `python -m flask --app wsgi db upgrade` / `db migrate`.
 
 ---
 
@@ -268,7 +270,7 @@ serve.py  wsgi.py      Waitress runner / WSGI entry point
 ## 9. Known limitations
 
 - **Payments are simulated** by design (`DemoPaymentProvider`). A real gateway needs a new `PaymentProvider`, webhooks and PCI-compliant hosted fields. Car listings are demo items: a real dealership would take a reservation deposit rather than full checkout.
-- **Stock photos** are hot-linked from Unsplash and couldn't be checked from the build sandbox, which had no outbound access to those hosts. Run `flask --app wsgi check-images` in your VM. Any failing image automatically shows the local placeholder. Replace them with your own model photos anytime (see section 1).
+- **Stock photos** are hot-linked from Unsplash and couldn't be checked from the build sandbox, which had no outbound access to those hosts. Run `python -m flask --app wsgi check-images` in your VM. Any failing image automatically shows the local placeholder. Replace them with your own model photos anytime (see section 1).
 - SQLite is fine for a single VM and moderate traffic. With many concurrent writers, move to PostgreSQL by setting `DATABASE_URL`; the code is ORM-only. The per-IP login throttle is per-process, while the per-account lockout is shared through the database.
 - No outbound email: notifications are in-app. Password reset by email isn't implemented, but admins can manage accounts.
 - Exchange rates are ECB daily reference rates, so they don't move intraday and are for display only.

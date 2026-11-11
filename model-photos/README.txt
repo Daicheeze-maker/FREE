@@ -3,7 +3,7 @@ YOUR OWN MODEL PHOTOS
 
 Want to be the models for the store? Put your photos here, then run:
 
-    flask --app wsgi load-model-photos
+    python -m flask --app wsgi load-model-photos
 
 (With the virtual environment active. On Windows, run it in the same Command Prompt where you ran scripts\setup.bat.)
 

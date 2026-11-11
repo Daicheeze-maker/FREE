@@ -8,8 +8,8 @@ PY=${PYTHON:-python3}
 
 [ -d .venv ] || "$PY" -m venv .venv
 . .venv/bin/activate
-pip install --upgrade pip >/dev/null
-pip install -r requirements.txt
+python -m pip install --upgrade pip >/dev/null
+python -m pip install -r requirements.txt
 
 if [ ! -f .env ]; then
   cp .env.example .env
@@ -18,6 +18,6 @@ if [ ! -f .env ]; then
   echo "Created .env with a fresh SECRET_KEY."
 fi
 
-flask --app wsgi init-db
-flask --app wsgi seed
+python -m flask --app wsgi init-db
+python -m flask --app wsgi seed
 echo "Setup complete. Start with: scripts/run.sh   (or scripts/run_gunicorn.sh)"

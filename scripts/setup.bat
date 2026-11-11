@@ -9,7 +9,7 @@ where py >nul 2>nul && (set PY=py -3) || (set PY=python)
 if not exist .venv (%PY% -m venv .venv)
 call .venv\Scripts\activate.bat
 python -m pip install --upgrade pip >nul
-pip install -r requirements.txt || exit /b 1
+python -m pip install -r requirements.txt || exit /b 1
 
 if not exist .env (
   copy .env.example .env >nul
@@ -19,7 +19,7 @@ if not exist .env (
   echo Created .env with a fresh SECRET_KEY.
 )
 
-flask --app wsgi init-db || exit /b 1
-flask --app wsgi seed || exit /b 1
+python -m flask --app wsgi init-db || exit /b 1
+python -m flask --app wsgi seed || exit /b 1
 echo Setup complete. Start with: scripts\run.bat
 endlocal

@@ -3,6 +3,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 . .venv/bin/activate
-flask --app wsgi init-db >/dev/null
-flask --app wsgi seed   # loads demo products only if the catalog is empty
+python -m flask --app wsgi init-db >/dev/null
+python -m flask --app wsgi seed   # loads demo products only if the catalog is empty
 exec python serve.py
