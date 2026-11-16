@@ -22,10 +22,13 @@ def demo_status():
 
     'empty'    - nothing loaded yet (seed will load it)
     'current'  - the up-to-date demo store
+    'stale'    - the current store from a slightly older release (e.g. no Shoes/Accessories yet): refreshed
+                 automatically WITHOUT deleting anything
     'outdated' - an older version of the demo store (still has Cars, the old accounts, ...)
     'custom'   - somebody's own store (no demo admin): never touched automatically
     """
-    from .models import Category, User
+    from .models import Category, Product, User
+    from .seed import KNOWN_MOVES
     if Category.query.first() is None:
         return "empty"
     if User.query.filter_by(email=DEMO_ADMIN).first() is None:
@@ -33,7 +36,14 @@ def demo_status():
     has_cars = Category.query.filter_by(slug="cars").first() is not None
     has_bags = Category.query.filter_by(slug="bags").first() is not None
     has_buyers = User.query.filter(User.email.in_(DEMO_BUYERS)).count() == len(DEMO_BUYERS)
-    return "current" if (has_bags and has_buyers and not has_cars) else "outdated"
+    if has_cars or not (has_bags and has_buyers):
+        return "outdated"
+    wanted = {"shoes", "accessories"}
+    have = {c.slug for c in Category.query.filter(Category.slug.in_(wanted))}
+    moved = all(
+        (p := Product.query.filter_by(slug=slug).first()) is None or p.category.slug == target
+        for slug, target in KNOWN_MOVES.items())
+    return "current" if (have == wanted and moved) else "stale"
 
 
 def wipe_and_reseed():
@@ -82,7 +92,13 @@ def register_cli(app):
         """If the demo store is an older version, offer to replace it with the current one."""
         import sys
         init_database()
-        if demo_status() != "outdated":
+        status = demo_status()
+        if status == "stale":
+            from .seed import refresh_catalog
+            for change in refresh_catalog():  # safe: adds/moves things, deletes no accounts, orders or photos
+                click.echo(f" Catalog updated: {change}")
+            return
+        if status != "outdated":
             return  # up to date, empty, or someone's own store: nothing to do (and nothing printed)
         if current_app.config.get("ENV_NAME") == "production":
             click.echo("Demo data is outdated, but it is never replaced automatically in production.")

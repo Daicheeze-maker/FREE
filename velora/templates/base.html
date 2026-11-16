@@ -24,7 +24,7 @@
       {% set cat_by_slug = {} %}{% for c in nav_categories %}{% set _ = cat_by_slug.update({c.slug: c}) %}{% endfor %}
       {% set current_slug = (request.view_args or {}).get('slug') if request.endpoint == 'catalog.listing' else None %}
       <div class="dropdown" data-dropdown>
-        <button class="nav-link dropdown__toggle {% if current_slug in ('women', 'men') %}is-active{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">{{ icon('shirt', 'ic--sm') }} Clothing {{ icon('chevron-down', 'ic--sm') }}</button>
+        <button class="nav-link dropdown__toggle {% if current_slug in ('women', 'men') %}is-active{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">Clothing {{ icon('chevron-down', 'ic--sm') }}</button>
         <div class="dropdown__panel dropdown__panel--mega" role="menu">
           {% for slug in ('women', 'men') if slug in cat_by_slug %}{% set c = cat_by_slug[slug] %}
           <a role="menuitem" class="mega-item" href="{{ url_for('catalog.listing', slug=c.slug) }}">
@@ -34,8 +34,8 @@
           {% endfor %}
         </div>
       </div>
-      {% for slug, label, ic in (('watches', 'Watches', 'watch'), ('jewelry', 'Jewelry', 'gem'), ('bags', 'Bags', 'shopping-bag')) if slug in cat_by_slug %}
-      <a href="{{ url_for('catalog.listing', slug=slug) }}" class="nav-link {% if current_slug == slug %}is-active{% endif %}" {% if current_slug == slug %}aria-current="page"{% endif %}>{{ icon(ic, 'ic--sm') }} {{ label }}</a>
+      {% for slug, label in (('shoes', 'Shoes'), ('accessories', 'Accessories'), ('watches', 'Watches'), ('jewelry', 'Jewelry'), ('bags', 'Bags')) if slug in cat_by_slug %}
+      <a href="{{ url_for('catalog.listing', slug=slug) }}" class="nav-link {% if current_slug == slug %}is-active{% endif %}" {% if current_slug == slug %}aria-current="page"{% endif %}>{{ label }}</a>
       {% endfor %}
     </nav>
     <a href="{{ url_for('main.home') }}" class="logo" aria-label="Velora Market home">velora<span class="logo__dot">.</span><small>market</small></a>
@@ -111,6 +111,8 @@
     <form action="{{ url_for('catalog.listing') }}" method="get" class="search search--block" role="search">{{ icon('search') }}<label class="sr-only" for="m-search">Search</label><input id="m-search" type="search" name="q" placeholder="Search products" maxlength="100"></form>
     <a href="{{ url_for('catalog.listing', slug='women') }}">{{ icon('shirt') }} Clothing · Women {{ icon('arrow-right') }}</a>
     <a href="{{ url_for('catalog.listing', slug='men') }}">{{ icon('shirt') }} Clothing · Men {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', slug='shoes') }}">{{ icon('footprints') }} Shoes {{ icon('arrow-right') }}</a>
+    <a href="{{ url_for('catalog.listing', slug='accessories') }}">{{ icon('glasses') }} Accessories {{ icon('arrow-right') }}</a>
     <a href="{{ url_for('catalog.listing', slug='watches') }}">{{ icon('watch') }} Watches {{ icon('arrow-right') }}</a>
     <a href="{{ url_for('catalog.listing', slug='jewelry') }}">{{ icon('gem') }} Jewelry {{ icon('arrow-right') }}</a>
     <a href="{{ url_for('catalog.listing', slug='bags') }}">{{ icon('shopping-bag') }} Bags {{ icon('arrow-right') }}</a>

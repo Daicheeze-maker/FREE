@@ -65,7 +65,7 @@ The five big site photos (homepage hero, lookbook tile, sale banner, sign-in and
 
 - **Find professional model photos (free, from Pexels):**
   1. One-time: click **Set up free Pexels photos**, sign up at [pexels.com/api](https://www.pexels.com/api/) (free, one minute), copy your key and paste it into the page. (Or put `PEXELS_API_KEY=…` in `.env`.)
-  2. Click **Auto-fill with model photos** to fill every empty spot in one click, or use **Find a photo** on a spot to search and pick one yourself. For a product, open it under *Products* and click **Find a model photo**.
+  2. Click **Auto-fill with model photos** to fill every empty spot in one click, or use **Find a photo** on a spot to search and pick one yourself. For a product, open it under *Products* and click **Find a model photo**. To fix many products at once, open **Products** and click **Fill missing & broken photos**: it checks every product photo, replaces missing or dead ones (products with no photo first) using a search specific to each product, such as “tortoiseshell sunglasses”, up to 30 per click.
   3. Each pick is **downloaded into your store** (`instance/uploads/`), so it never breaks, and the photographer is credited on the product page and the About page.
 - **Use your own photos:** upload one per spot on the same page, or on a product's edit page (keep “Use the new photo as the cover image” ticked). For many at once, drop files into `model-photos/` (see `model-photos/README.txt`) and run `python -m flask --app wsgi load-model-photos`.
 
@@ -76,13 +76,17 @@ Portrait photos (taller than wide) look best. Every image is checked, resized an
 | Collection | Examples |
 |---|---|
 | Women | linen wrap dress, silk slip dress, leather biker jacket, jeans |
-| Men | tailored wool suit, heavyweight tee, field jacket, sneakers, sunglasses |
+| Men | tailored wool suit, heavyweight tee, field jacket |
+| Shoes | red runner sneakers, white court sneakers, Chelsea boots, loafers, block-heel sandals |
+| Accessories | tortoiseshell and aviator sunglasses, leather belt, silk scarf, card holder |
 | Watches | minimalist, chronograph, gold dress watch, automatic diver, smart watch |
 | Jewelry | 18k stacking rings, pearl earrings, diamond pendant, silver bracelet, gift set |
 | Bags | structured leather tote, quilted chain crossbody, canvas backpack, evening clutch, weekender duffel |
-| Gifts & Gourmet | gift box, chocolate, coffee, candle — the natural home for Open Food Facts imports |
+| Gifts & Gourmet | gift box, chocolate, coffee, candle (the natural home for Open Food Facts imports) |
 
-**Updating from an older version?** `start.bat` / `start.sh` notice an out-of-date demo database (one that still has Cars or the old accounts) and ask *“Update to the new demo store now?”*. Answer `y` to load the new store (this replaces the local demo data); answer `n` to keep what you have. Your own stores (no `admin@velora.example`) are never touched. You can also run it yourself: `python -m flask --app wsgi upgrade-demo`, or force a full reset with `python -m flask --app wsgi reset-demo --yes-delete-everything`.
+Every product is in the collection that matches what it is (the menu's *Clothing* only holds clothes; sneakers are under *Shoes* and sunglasses under *Accessories*). A test checks this for every product.
+
+**Updating from an older version?** If your database only lacks the newest collections (for example Shoes and Accessories), `start.bat` / `start.sh` fix it automatically and **keep** your accounts, orders and photos (it prints what it changed). If it is much older (it still has Cars or the old accounts), they notice an out-of-date demo database (one that still has Cars or the old accounts) and ask *“Update to the new demo store now?”*. Answer `y` to load the new store (this replaces the local demo data); answer `n` to keep what you have. Your own stores (no `admin@velora.example`) are never touched. You can also run it yourself: `python -m flask --app wsgi upgrade-demo`, or force a full reset with `python -m flask --app wsgi reset-demo --yes-delete-everything`.
 
 ---
 
@@ -238,7 +242,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 174 tests. External APIs are mocked, so no network is needed. They cover:
+There are 192 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

@@ -188,6 +188,7 @@ def test_bags_are_not_in_the_women_section(client):
 
 def test_every_product_is_in_a_sensible_category(app):
     expected = {"Women": ("Dress", "Jeans", "Jacket"), "Watches": ("Watch", "Diver"), "Bags": ("Tote", "Crossbody", "Backpack", "Clutch", "Duffel"),
+                "Shoes": ("Sneakers", "Boots", "Loafers", "Sandals"), "Accessories": ("Sunglasses", "Belt", "Scarf", "Card Holder"),
                 "Jewelry": ("Ring", "Earrings", "Pendant", "Bracelet", "Jewelry")}
     for cat, words in expected.items():
         for p in Product.query.join(Category).filter(Category.name == cat):
@@ -252,7 +253,7 @@ def test_seed_runs_when_catalog_empty_even_if_accounts_exist(tmp_path):
         db.session.add(early)
         db.session.commit()
         assert seed() is True
-        assert Category.query.count() == 6 and Product.query.count() > 20
+        assert Category.query.count() == 8 and Product.query.count() > 30
         assert User.query.filter_by(email="early@example.com").count() == 1
         assert seed() is False
 

@@ -968,3 +968,8 @@ details.disclosure[open] { padding-bottom: 8px; }
 .photo-card img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; background: var(--bg-2); }
 .photo-card__body { padding: 12px; display: grid; gap: 8px; align-content: start; }
 .photo-credit { font-size: 12px; color: var(--muted); margin: 8px 0 0; display: flex; gap: 6px; align-items: center; }
+
+/* six top-level sections: keep the nav on one line without crowding the logo */
+.header__nav { gap: 0; }
+.header__nav .nav-link { padding: 8px 10px; white-space: nowrap; }
+@media (max-width: 1180px) and (min-width: 961px) { .header__nav .nav-link { padding: 8px 7px; font-size: 13.5px; } }

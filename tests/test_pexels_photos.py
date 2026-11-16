@@ -132,10 +132,10 @@ def test_search_defaults_to_a_sensible_query_per_target(seller, ready):
     with fake_pexels([photo(1)]) as calls:
         seller.get("/seller/find-photos?target=slot:hero")
     assert calls[0][1]["params"]["query"] == "fashion model portrait studio"
-    watch = Product.query.filter_by(slug="minimalist-leather-strap-watch").one()
+    shades = Product.query.filter_by(slug="tortoiseshell-sunglasses").one()
     with fake_pexels([photo(1)]) as calls:
-        seller.get(f"/seller/find-photos?target=product:{watch.id}")
-    assert "wristwatch" in calls[0][1]["params"]["query"]
+        seller.get(f"/seller/find-photos?target=product:{shades.id}")
+    assert calls[0][1]["params"]["query"] == "tortoiseshell sunglasses"  # specific to the product
 
 
 def test_search_drops_photos_from_other_hosts(app):

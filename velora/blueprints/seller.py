@@ -16,11 +16,11 @@ from ..forms import (CategoryForm, DiscountForm, OFFImportForm, OFFSearchForm, O
                      StaffReplyForm)
 from ..models import (PRODUCT_ACTIVE, PRODUCT_ARCHIVED, PRODUCT_DRAFT, PRODUCT_STATUSES, Category, DiscountCode,
                       Order, OrderStatus, Product, ProductImage, ProductReview, StoreSetting, utcnow)
-from ..photos import PRODUCT_QUERIES, SLOTS, credit_key, setting_key
+from ..photos import SLOTS, credit_key, product_query, setting_key
 from ..money import to_major
 from ..security import audit, roles_required
 from ..services import openfoodfacts as off
-from ..services import pexels
+from ..services import pexels, photo_check
 from ..services import reports
 from ..services.catalog import next_sku, slugify, unique_slug
 from ..services.orders import change_status
@@ -64,12 +64,16 @@ def products():
         query = query.filter_by(status=status)
     if cat:
         query = query.filter_by(category_id=cat)
+    if request.args.get("nophoto"):
+        query = query.filter(~Product.images.any())
     if request.args.get("low"):
         from ..models import get_int_setting
         query = query.filter(Product.stock <= get_int_setting("low_stock_threshold"), Product.status == PRODUCT_ACTIVE)
     page = request.args.get("page", 1, type=int)
     pagination = query.order_by(Product.updated_at.desc()).paginate(page=max(page, 1), per_page=20, error_out=False)
-    return render_template("seller/products.html", pagination=pagination, q=q, status=status, cat=cat,
+    no_photo = Product.query.filter(Product.status != PRODUCT_ARCHIVED, ~Product.images.any()).count()
+    return render_template("seller/products.html", pagination=pagination, q=q, status=status, cat=cat, no_photo=no_photo,
+                           pexels_ready=bool(pexels.api_key()),
                            categories=Category.query.order_by(Category.position).all(), statuses=PRODUCT_STATUSES)
 
 
@@ -553,7 +557,7 @@ def _target(raw):
     if kind == "product" and ident.isdigit():
         product = db.session.get(Product, int(ident))
         if product is not None:
-            return "product", product, product.name, PRODUCT_QUERIES.get(product.category.slug, "fashion model")
+            return "product", product, product.name, product_query(product)
     return None
 
 
@@ -576,6 +580,17 @@ def _apply_photo(target, filename, credit):
         for pos, img in enumerate(ordered):
             img.position = pos
         obj.images.sort(key=lambda i: i.position)
+
+
+def _pick_photo(query, used):
+    """The best unused Pexels photo for a search: a portrait one if possible, looking at two pages of results."""
+    candidates = []
+    for page in (1, 2):
+        photos, total = pexels.search(query, page=page, per_page=15)
+        candidates += [p for p in photos if p.id not in used and p.id not in {c.id for c in candidates}]
+        if any(p.height >= p.width * 1.2 for p in candidates) or page * 15 >= total:
+            break
+    return next((p for p in candidates if p.height >= p.width * 1.2), None) or (candidates[0] if candidates else None)
 
 
 @bp.route("/find-photos")
@@ -634,9 +649,7 @@ def photos_autofill():
     used, filled = set(), 0
     try:
         for slot in todo:
-            photos, _ = pexels.search(SLOTS[slot][2], per_page=20)
-            fresh = [p for p in photos if p.id not in used]
-            pick = next((p for p in fresh if p.height >= p.width * 1.2), None) or (fresh[0] if fresh else None)
+            pick = _pick_photo(SLOTS[slot][2], used)
             if pick is None:
                 continue
             _apply_photo(("slot", slot), save_image_bytes(pexels.download(pick)), pick.credit)
@@ -679,3 +692,45 @@ def pexels_key():
     db.session.commit()
     flash("Pexels key saved. You can search for photos now.", "success")
     return redirect(request.referrer or url_for("seller.find_photos"))
+
+
+@bp.post("/products/autofill-photos")
+def products_autofill_photos():
+    """Give every product with a missing or broken photo a right-looking one from Pexels."""
+    if not pexels.api_key():
+        flash("Add your free Pexels key first, then photos can be filled in.", "info")
+        return redirect(url_for("seller.find_photos"))
+    products = Product.query.filter(Product.status != PRODUCT_ARCHIVED).order_by(Product.name).all()
+    status = photo_check.check_remote(img.url for p in products for img in p.images if img.url and not img.filename)
+    need = [p for p in products if not photo_check.working_images(p, status)]
+    need.sort(key=lambda p: (bool(p.images), p.name))  # products with no photo at all come first, then broken ones
+    if not need:
+        flash("Every product already has a photo that loads. Nothing to fill in.", "success")
+        return redirect(url_for("seller.products"))
+    used, done, skipped = set(), [], []
+    try:
+        for product in need[:30]:  # keeps one click well inside Pexels' free hourly limit
+            pick = _pick_photo(product_query(product), used)
+            if pick is None:
+                skipped.append(product.name)
+                continue
+            filename = save_image_bytes(pexels.download(pick))
+            for img in [i for i in product.images if i not in photo_check.working_images(product, status)]:
+                product.images.remove(img)  # dead links go
+                db.session.delete(img)
+            _apply_photo(("product", product), filename, pick.credit)
+            used.add(pick.id)
+            audit("photo.pexels", "product", product.id, f"{product.name} ← Pexels #{pick.id} (fill missing)")
+            db.session.commit()
+            done.append(product.name)
+    except (pexels.PexelsError, UploadError) as exc:
+        db.session.rollback()
+        flash(f"Stopped after {len(done)} product(s): {exc}", "error")
+        return redirect(url_for("seller.products"))
+    msg = f"Added photos to {len(done)} product(s)."
+    if len(need) > 30:
+        msg += f" {len(need) - 30} more are left. Press the button again."
+    if skipped:
+        msg += f" No photo found for: {', '.join(skipped)}."
+    flash(msg + " Look them over, and use “Find a model photo” on any you want to swap.", "success")
+    return redirect(url_for("seller.products"))
