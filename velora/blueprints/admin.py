@@ -1,7 +1,7 @@
 """Administrator console: users, roles, settings, API health, audit log, reports."""
 from datetime import timedelta
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import or_
 
@@ -13,7 +13,7 @@ from ..money import to_major
 from ..security import audit, roles_required
 from ..services import api_health, currency, reports
 from ..services import openfoodfacts as off
-from ..services import pexels
+from ..services import mapbox, pexels
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -169,8 +169,38 @@ def api_health_view():
     apis = {a.name: a for a in ApiStatus.query.all()}
     rates = ExchangeRateCache.query.order_by(ExchangeRateCache.target).all()
     return render_template("admin/api_health.html", apis=apis, rates=rates, now=utcnow(),
-                           OFF=api_health.OFF, FX=api_health.FRANKFURTER, PEXELS=api_health.PEXELS,
-                           pexels_ready=bool(pexels.api_key()))
+                           OFF=api_health.OFF, FX=api_health.FRANKFURTER, PEXELS=api_health.PEXELS, MAPBOX=api_health.MAPBOX,
+                           pexels_ready=bool(pexels.api_key()), mapbox_ready=bool(mapbox.token()),
+                           mapbox_from_env=bool(current_app.config.get("MAPBOX_TOKEN")))
+
+
+@bp.post("/mapbox-token")
+def mapbox_token():
+    row = db.session.get(StoreSetting, "mapbox_token")
+    if request.form.get("action") == "remove":
+        if row:
+            db.session.delete(row)
+            audit("mapbox.token_removed", "settings", "mapbox_token", "Mapbox token removed")
+            db.session.commit()
+        flash("Mapbox token removed. Address suggestions are off.", "info")
+        return redirect(url_for("admin.api_health_view"))
+    value = (request.form.get("token") or "").strip()
+    if not mapbox.valid_token_shape(value):
+        flash("That doesn't look like a Mapbox token. It starts with pk. and is one long line.", "error")
+        return redirect(url_for("admin.api_health_view"))
+    try:
+        mapbox.search("Makati", limit=1, key=value)  # prove the token works BEFORE storing it
+    except mapbox.MapboxError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("admin.api_health_view"))
+    if row:
+        row.value = value
+    else:
+        db.session.add(StoreSetting(key="mapbox_token", value=value))
+    audit("mapbox.token_saved", "settings", "mapbox_token", "Mapbox token saved")
+    db.session.commit()
+    flash("Mapbox token saved. Address suggestions are on for checkout and saved addresses.", "success")
+    return redirect(url_for("admin.api_health_view"))
 
 
 @bp.post("/api-health/<name>/test")
@@ -187,6 +217,12 @@ def api_test(name):
             flash(f"Open Food Facts OK — search returned {count:,} matches.", "success")
         except off.OFFUnavailable as exc:
             flash(f"Open Food Facts unavailable: {exc}", "error")
+    elif name == api_health.MAPBOX:
+        try:
+            found = mapbox.search("Makati", limit=3)
+            flash(f"Mapbox OK — {len(found)} address suggestions for “Makati”.", "success")
+        except mapbox.MapboxError as exc:
+            flash(f"Mapbox unavailable: {exc}", "error")
     elif name == api_health.PEXELS:
         try:
             photos, total = pexels.search("fashion model", per_page=3)

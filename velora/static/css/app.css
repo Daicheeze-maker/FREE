@@ -973,3 +973,13 @@ details.disclosure[open] { padding-bottom: 8px; }
 .header__nav { gap: 0; }
 .header__nav .nav-link { padding: 8px 10px; white-space: nowrap; }
 @media (max-width: 1180px) and (min-width: 961px) { .header__nav .nav-link { padding: 8px 7px; font-size: 13.5px; } }
+
+/* Shop pages hide the top menu (the Collections list is on the left); keep its grid cell so the logo stays centred */
+.header__nav[hidden] { display: flex; visibility: hidden; }
+
+/* Address suggestions (Mapbox) */
+.addr-suggest { position: absolute; z-index: 30; left: 0; right: 0; top: 100%; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--surface, var(--bg)); border: 1px solid var(--line); border-radius: var(--r-md, 12px); box-shadow: var(--shadow-lg); max-height: 280px; overflow: auto; }
+.addr-suggest[hidden] { display: none; }
+.addr-suggest li[role=option] { padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; line-height: 1.35; }
+.addr-suggest li[role=option][aria-selected=true] { background: var(--bg-2); }
+.addr-suggest__credit { padding: 6px 12px 4px; font-size: 11px; color: var(--muted); }

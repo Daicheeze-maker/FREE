@@ -495,19 +495,6 @@
     if (json.ok) { form.reset(); if (hasGsap) gsap.fromTo(msg, { y: 6, opacity: 0 }, { y: 0, opacity: 1, duration: .4 }); }
   }));
 
-  /* --------------------------------------------- demo login quick-fill */
-  $$("[data-demo-login]").forEach((b) => b.addEventListener("click", () => {
-    const f = b.closest("main").querySelector("form");
-    // "Seller" buttons sign in the linked seller profile (keeps any ?next= already in the address bar)
-    const target = new URL(f.getAttribute("action") || location.href, location.href);
-    if (b.dataset.as) target.searchParams.set("as", b.dataset.as); else target.searchParams.delete("as");
-    f.setAttribute("action", target.pathname + target.search);
-    f.querySelector("[name=email]").value = b.dataset.email;
-    f.querySelector("[name=password]").value = b.dataset.password;
-    f.querySelector("[name=password]").focus();
-    if (hasGsap) gsap.fromTo(f.querySelectorAll(".input"), { backgroundColor: "rgba(227,154,53,.25)" }, { backgroundColor: "rgba(0,0,0,0)", duration: 1, clearProps: "backgroundColor" });
-  }));
-
   /* ================================================== ANIMATIONS */
   function revealCards(root) {
     const cards = $$("[data-reveal-item]", root || document);

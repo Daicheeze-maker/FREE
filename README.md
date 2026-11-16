@@ -44,20 +44,22 @@ python serve.py
 
 **Windows says `flask.exe` / `pip.exe` "was blocked by your organization's Device Guard policy"?** Some school and work PCs block programs inside `.venv\Scripts`. All the scripts here call everything through Python (`python -m flask …`, `python -m pip …`), which isn't blocked. Use the same form for any command in this README, e.g. `python -m flask --app wsgi reset-demo --yes-delete-everything`.
 
-### Demo accounts (seeded)
+### Accounts (you create them)
 
-| Role | Email | Password |
-|---|---|---|
-| Buyer 1 (Maya Santos) | `buyer1@velora.example` | `Buyer123!` (buyers can sign in with any password in this demo) |
-| Buyer 2 (Jonah Cruz) | `buyer2@velora.example` | `Buyer123!` |
-| Seller 1 / Seller 2 | the **seller profile of each buyer** | sign in as the buyer, open the account menu, choose **Switch to seller profile** |
-| Administrator | `admin@velora.example` | `Admin123!` |
+The store starts with **no accounts and no demo logins**. Click **Create account** (top right) and register. Your account is saved in the database (`instance/velora.db`) with a securely hashed password, and you sign in with the same email and password every time.
 
-That is **2 buyers + 2 sellers** (two people, each with a buyer profile and a linked seller profile) plus one admin. **Every buyer starts with ₱500,000 of demo credit** that is spent at checkout; an admin can reset it under *Admin → Users → (buyer) → Demo credit*.
+- Every new **buyer** starts with **₱500,000 of demo credit**, spent at checkout (an admin can reset it under *Admin → Users → (buyer) → Demo credit*).
+- Every buyer also gets a **linked seller profile**: open the account menu and choose **Switch to seller profile** (and back). What a buyer purchases shows up in the *Orders* of the seller profile, which can ship it and mark it delivered. Make a second account to get a second buyer + seller.
+- **An administrator** is created from the terminal (it is never self-registered):
 
-On the sign-in page every login has its own click-to-fill button, including **Seller 1** (Maya's shop profile) and **Seller 2** (Jonah's shop profile). Once signed in, the account menu has **Switch to seller / buyer profile**, so each pair is connected: what Maya buys shows up in her seller profile's *Orders*, and the seller can ship it and mark it delivered.
+  ```
+  python -m flask --app wsgi create-admin
+  ```
 
-The sign-in page has one-click buttons that fill these in. Change or disable them before any real deployment. Demo discount codes: `WELCOME10`, `STYLE500` (₱500 off ₱5,000+), `SEASON15` (limited uses), and `SUMMER25` (expired, to show validation).
+  It asks for an email, a name and a password. Sign in with them at the normal sign-in page.
+- Old copies of this project had sample accounts (`buyer1@velora.example`, …). `start.bat` / `start.sh` remove those automatically, together with their sample orders (an account that has a real order is kept).
+
+Discount codes: `WELCOME10`, `STYLE500` (₱500 off ₱5,000+), `SEASON15` (limited uses), and `SUMMER25` (expired, to show validation).
 
 ### Model photos: professional photos (free) or your own
 
@@ -86,7 +88,7 @@ Portrait photos (taller than wide) look best. Every image is checked, resized an
 
 Every product is in the collection that matches what it is (the menu's *Clothing* only holds clothes; sneakers are under *Shoes* and sunglasses under *Accessories*). A test checks this for every product.
 
-**Updating from an older version?** If your database only lacks the newest collections (for example Shoes and Accessories), `start.bat` / `start.sh` fix it automatically and **keep** your accounts, orders and photos (it prints what it changed). If it is much older (it still has Cars or the old accounts), they notice an out-of-date demo database (one that still has Cars or the old accounts) and ask *“Update to the new demo store now?”*. Answer `y` to load the new store (this replaces the local demo data); answer `n` to keep what you have. Your own stores (no `admin@velora.example`) are never touched. You can also run it yourself: `python -m flask --app wsgi upgrade-demo`, or force a full reset with `python -m flask --app wsgi reset-demo --yes-delete-everything`.
+**Updating from an older version?** If your database only lacks the newest collections (for example Shoes and Accessories), `start.bat` / `start.sh` fix it automatically and **keep** your accounts, orders and photos (it prints what it changed). If it is much older (it still has Cars), they notice an out-of-date demo database (one that still has Cars) and ask *“Update to the new demo store now?”*. Answer `y` to load the new store (this replaces the local demo data); answer `n` to keep what you have. Your own stores (without the demo products) are never touched. You can also run it yourself: `python -m flask --app wsgi upgrade-demo`, or force a full reset with `python -m flask --app wsgi reset-demo --yes-delete-everything`.
 
 ---
 
@@ -142,7 +144,7 @@ The SQLite database and uploaded images live in `instance/` by default (`instanc
 | Profile | How to get it | Dashboard | Can do |
 |---|---|---|---|
 | **Guest shopper** | Not signed in | Storefront | Browse, search, filter (aisle / maker / price / availability), sort (featured, newest, popular, price, rating), view products, reviews and nutrition, use a session bag, switch currency, register / sign in. No access to account, seller or admin pages (server-side redirects or 403). |
-| **Customer** | Self-registration, or sign in with any email and any password (the demo creates the account and a linked seller profile) | `/account/` — stats, live tracker for the active order, recent orders, notifications, wishlist, “waiting for your review”, recently viewed | Persistent bag (merged from the guest bag at login), wishlist, addresses, discount codes, address-free demo checkout, order history and tracking, cancel while *Pending/Confirmed*, review only **delivered** purchases (one per product), notifications, profile and password change. |
+| **Customer** | Self-registration (**Create account**); signs in with their own password. A linked seller profile is created with it | `/account/` — stats, live tracker for the active order, recent orders, notifications, wishlist, “waiting for your review”, recently viewed | Persistent bag (merged from the guest bag at login), wishlist, addresses, discount codes, address-free demo checkout, order history and tracking, cancel while *Pending/Confirmed*, review only **delivered** purchases (one per product), notifications, profile and password change. |
 | **Seller / store manager** | Assigned by an admin, or the linked seller profile every buyer gets (use *Switch to seller profile* in the account menu) | `/seller/` — revenue chart, KPIs, fulfilment queue, order pipeline, low-stock alerts with one-click restock, top sellers, latest feedback | **Model photos**, product CRUD, archive and restore, secure image uploads, categories, inventory, order processing with enforced status transitions, promotions and discount codes, review moderation and public replies, **Open Food Facts import**, CSV exports. This is a single-store catalog, not a multi-vendor marketplace. |
 | **Administrator** | Seeded, or created with `python -m flask --app wsgi create-admin` | `/admin/` (blue “Admin console” theme) — store KPIs, 30-day revenue, integrations status, audit feed, accounts by role, inventory value | Everything a seller can do, plus users and roles, enable/disable accounts, clear login locks, sales and inventory reports, store settings (shipping rules, low-stock threshold, announcement), **API health with live test buttons**, and a full **audit log**. |
 
@@ -169,6 +171,11 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 > **Note on verification:** this project was built in a sandbox with no access to either API, so the endpoints and response shapes follow the published docs and the automated tests mock them. Please run `python -m flask --app wsgi refresh-rates` and press the **API health → test** buttons once in your VM to confirm live connectivity. If a provider moves its base URL, change `OFF_BASE_URL` / `FRANKFURTER_BASE_URL` in `.env`.
 
 ---
+
+### Mapbox — `velora/services/mapbox.py` (address suggestions)
+- When someone types a street address (checkout, *My addresses*), the page asks **this server** (`GET /address-search?q=…`, signed-in users only), which calls Mapbox Geocoding v6 (`/search/geocode/v6/forward`, limited to the Philippines by default) and returns just street, city, province, postal code and country. The token never reaches the browser. Picking a suggestion fills the form; typing by hand always still works.
+- Token: put `MAPBOX_TOKEN=pk.…` in `.env`, or paste it once under **Admin → API health → Mapbox** (it is tested before it is saved and never shown again). A free public token (starts with `pk.`) comes from [account.mapbox.com](https://account.mapbox.com/access-tokens/). Without a token the address form has no suggestions and nothing else changes.
+- Errors (bad token, rate limit, offline) are recorded on the API health page and the form falls back to manual entry.
 
 ### Pexels — `velora/services/pexels.py` (photos for Seller studio → Find photos)
 - `GET {PEXELS_BASE_URL}/search?query=…&orientation=portrait` and `GET /photos/{id}` with your free key in the `Authorization` header (free plan: 200 requests/hour). Key from `.env` (`PEXELS_API_KEY`) or pasted once on the Find photos page (it's tested before it's saved and never shown again).
@@ -242,7 +249,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 192 tests. External APIs are mocked, so no network is needed. They cover:
+There are 201 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

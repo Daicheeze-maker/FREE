@@ -74,6 +74,7 @@ def _register_template_helpers(app):
     from .models import Category, WishlistItem, get_int_setting, get_setting
     from .money import fmt_minor
     from .services import cart as cart_service
+    from .services import mapbox as mapbox_service
     from .services.currency import PriceDisplay
 
     @app.context_processor
@@ -96,6 +97,7 @@ def _register_template_helpers(app):
             "free_ship_minor": get_int_setting("free_shipping_threshold_minor"),
             "currencies": app.config["DISPLAY_CURRENCIES"],
             "wishlist_ids": wish_ids,
+            "mapbox_ready": bool(mapbox_service.token()),
         }
 
     @app.template_filter("dt")
@@ -112,12 +114,18 @@ def _register_template_helpers(app):
 
     @app.template_global()
     def site_photo(slot):
-        """Uploaded model photo for a site slot, or the default stock image."""
+        """Photo for a site slot: the one staff chose, else a model photo from the catalog, else a neutral placeholder."""
         from flask import url_for
-        from .photos import SLOTS, setting_key
+        from .models import Product
+        from .photos import DEFAULT_SLOT_PRODUCTS, setting_key
         filename = get_setting(setting_key(slot))
         if filename:
             return url_for("main.media", filename=filename)
+        for slug in DEFAULT_SLOT_PRODUCTS.get(slot, ()):
+            product = Product.query.filter_by(slug=slug, status="active").first()
+            img = product.primary_image if product else None
+            if img is not None and (img.filename or img.url):
+                return image_src(img)
         return url_for("static", filename="img/model-placeholder.svg")
 
     @app.template_global()

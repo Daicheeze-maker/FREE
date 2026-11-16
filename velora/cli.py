@@ -18,25 +18,24 @@ DEMO_BUYERS = ("buyer1@velora.example", "buyer2@velora.example")
 
 
 def demo_status():
-    """Is the data in this database the CURRENT demo store?
+    """Is the data in this database the CURRENT demo catalog?
 
     'empty'    - nothing loaded yet (seed will load it)
-    'current'  - the up-to-date demo store
-    'stale'    - the current store from a slightly older release (e.g. no Shoes/Accessories yet): refreshed
+    'current'  - the up-to-date demo catalog
+    'stale'    - the demo catalog from a slightly older release (e.g. no Shoes/Accessories yet): refreshed
                  automatically WITHOUT deleting anything
-    'outdated' - an older version of the demo store (still has Cars, the old accounts, ...)
-    'custom'   - somebody's own store (no demo admin): never touched automatically
+    'outdated' - a much older version of the demo store (still has Cars): replaced only if you say yes
+    'custom'   - somebody's own store (none of the demo products): never touched automatically
     """
-    from .models import Category, Product, User
+    from .models import Category, Product
     from .seed import KNOWN_MOVES
     if Category.query.first() is None:
         return "empty"
-    if User.query.filter_by(email=DEMO_ADMIN).first() is None:
+    if Product.query.filter_by(slug="linen-wrap-midi-dress").first() is None:
         return "custom"
     has_cars = Category.query.filter_by(slug="cars").first() is not None
     has_bags = Category.query.filter_by(slug="bags").first() is not None
-    has_buyers = User.query.filter(User.email.in_(DEMO_BUYERS)).count() == len(DEMO_BUYERS)
-    if has_cars or not (has_bags and has_buyers):
+    if has_cars or not has_bags:
         return "outdated"
     wanted = {"shoes", "accessories"}
     have = {c.slug for c in Category.query.filter(Category.slug.in_(wanted))}
@@ -44,6 +43,38 @@ def demo_status():
         (p := Product.query.filter_by(slug=slug).first()) is None or p.category.slug == target
         for slug, target in KNOWN_MOVES.items())
     return "current" if (have == wanted and moved) else "stale"
+
+
+def remove_demo_accounts():
+    """Delete the sample accounts older versions created (buyer1/buyer2/admin @velora.example + their seller
+    profiles) together with their sample orders, reviews, addresses, wishlists and notifications.
+
+    An account is kept (and reported) if it has any order that is not a seeded sample order.
+    Returns (removed_emails, kept_emails).
+    """
+    from .models import (SELLER_SUFFIX, Address, Cart, CartItem, Notification, Order, ProductReview, User,
+                         WishlistItem)
+    emails = [DEMO_ADMIN, *DEMO_BUYERS]
+    emails += [e + SELLER_SUFFIX for e in DEMO_BUYERS]
+    removed, kept = [], []
+    for user in User.query.filter(User.email.in_(emails)).all():
+        orders = Order.query.filter_by(user_id=user.id).all()
+        if any(not (o.checkout_token or "").startswith("seed-") for o in orders):
+            kept.append(user.email)
+            continue
+        for o in orders:
+            db.session.delete(o)
+        ProductReview.query.filter_by(user_id=user.id).delete()
+        WishlistItem.query.filter_by(user_id=user.id).delete()
+        Notification.query.filter_by(user_id=user.id).delete()
+        Address.query.filter_by(user_id=user.id).delete()
+        for cart in Cart.query.filter_by(user_id=user.id).all():
+            CartItem.query.filter_by(cart_id=cart.id).delete()
+            db.session.delete(cart)
+        db.session.delete(user)
+        removed.append(user.email)
+    db.session.commit()
+    return removed, kept
 
 
 def wipe_and_reseed():
@@ -71,7 +102,7 @@ def register_cli(app):
         from .seed import seed
         init_database()
         if seed():
-            click.echo("Seeded demo data. Sign in with the demo accounts listed in README.md.")
+            click.echo("Loaded the store catalog. Create your own account on the site (Create account).")
         else:
             click.echo("Catalog already has data — seed skipped (nothing was changed).")
 
@@ -92,6 +123,11 @@ def register_cli(app):
         """If the demo store is an older version, offer to replace it with the current one."""
         import sys
         init_database()
+        removed, kept = remove_demo_accounts()
+        if removed:
+            click.echo(f" Removed {len(removed)} old sample account(s): {', '.join(removed)}")
+        if kept:
+            click.echo(f" Kept sample account(s) that have real orders: {', '.join(kept)}")
         status = demo_status()
         if status == "stale":
             from .seed import refresh_catalog
@@ -106,9 +142,8 @@ def register_cli(app):
         click.echo("")
         click.echo("=" * 70)
         click.echo(" Your store data is from an OLDER VERSION of Velora Market")
-        click.echo(" (it still has Cars, the old accounts and the old catalog).")
-        click.echo(" Updating loads the new demo store: 2 buyers + 2 sellers with PHP 500,000")
-        click.echo(" credit each, the Bags section, sizes and the map.")
+        click.echo(" (it still has Cars and the old catalog).")
+        click.echo(" Updating loads the new catalog: Bags, Shoes, Accessories, sizes and the map.")
         click.echo(" It REPLACES everything in the local database (accounts, orders, uploads' links).")
         click.echo("=" * 70)
         if not yes:

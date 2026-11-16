@@ -209,7 +209,7 @@ def test_fill_needs_a_key_and_staff_access(seller, client):
     assert "Add your free Pexels key first" in page(r)
     anon = client.application.test_client()
     assert anon.post("/seller/products/autofill-photos").status_code == 302
-    anon.post("/account/login", data={"email": "buyer2@velora.example", "password": "x"})
+    anon.post("/account/login", data={"email": "buyer2@velora.example", "password": "Buyer123!"})
     assert anon.post("/seller/products/autofill-photos").status_code == 403
 
 

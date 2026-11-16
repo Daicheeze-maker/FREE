@@ -20,8 +20,10 @@
 <header class="site-header" data-header>
   <div class="container header__row">
     <button class="icon-btn header__menu" type="button" data-open-drawer="mobile-nav" aria-label="Open menu" aria-controls="mobile-nav" aria-expanded="false">{{ icon('menu') }}</button>
-    <nav class="header__nav" aria-label="Primary">
-      {% set cat_by_slug = {} %}{% for c in nav_categories %}{% set _ = cat_by_slug.update({c.slug: c}) %}{% endfor %}
+    {# Shop pages already have the Collections list on the left, so the top menu is hidden there. #}
+    {% set hide_menu = request.endpoint == 'catalog.listing' %}
+    <nav class="header__nav" aria-label="Primary"{% if hide_menu %} hidden{% endif %}>
+{% if not hide_menu %}      {% set cat_by_slug = {} %}{% for c in nav_categories %}{% set _ = cat_by_slug.update({c.slug: c}) %}{% endfor %}
       {% set current_slug = (request.view_args or {}).get('slug') if request.endpoint == 'catalog.listing' else None %}
       <div class="dropdown" data-dropdown>
         <button class="nav-link dropdown__toggle {% if current_slug in ('women', 'men') %}is-active{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">Clothing {{ icon('chevron-down', 'ic--sm') }}</button>
@@ -37,6 +39,7 @@
       {% for slug, label in (('shoes', 'Shoes'), ('accessories', 'Accessories'), ('watches', 'Watches'), ('jewelry', 'Jewelry'), ('bags', 'Bags')) if slug in cat_by_slug %}
       <a href="{{ url_for('catalog.listing', slug=slug) }}" class="nav-link {% if current_slug == slug %}is-active{% endif %}" {% if current_slug == slug %}aria-current="page"{% endif %}>{{ label }}</a>
       {% endfor %}
+{% endif %}
     </nav>
     <a href="{{ url_for('main.home') }}" class="logo" aria-label="Velora Market home">velora<span class="logo__dot">.</span><small>market</small></a>
     <div class="header__actions">
@@ -188,6 +191,7 @@
 <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 <script src="{{ url_for('static', filename='js/motion.js') }}"></script>
+<script src="{{ url_for('static', filename='js/address-search.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

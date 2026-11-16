@@ -27,7 +27,7 @@ def test_demo_status_recognises_each_kind_of_database(tmp_path):
         Category.query.filter_by(slug="bags").one().slug = "cars"  # what the previous version had
         db.session.commit()
         assert demo_status() == "outdated"
-        db.session.delete(User.query.filter_by(email="admin@velora.example").one())  # someone's own store
+        db.session.delete(Product.query.filter_by(slug="linen-wrap-midi-dress").one())  # someone's own store
         db.session.commit()
         assert demo_status() == "custom"
 
@@ -46,8 +46,7 @@ def test_upgrade_demo_replaces_an_outdated_demo_store(tmp_path):
     with app.app_context():
         assert demo_status() == "current"
         assert Category.query.filter_by(slug="cars").first() is None
-        assert [u.email for u in User.query.filter_by(role="customer").order_by(User.id)] == [
-            "buyer1@velora.example", "buyer2@velora.example"]
+        assert User.query.count() == 0  # the store starts with no accounts: people register themselves
 
 
 def test_upgrade_demo_never_touches_current_or_custom_stores(tmp_path):
@@ -66,7 +65,7 @@ def test_upgrade_demo_never_touches_current_or_custom_stores(tmp_path):
     assert "OLDER VERSION" not in out and "loaded" not in out  # an up-to-date store isn't even mentioned
     with app.app_context():
         assert User.query.filter_by(email="marker@example.com").count() == 1  # current store: untouched
-        db.session.delete(User.query.filter_by(email="admin@velora.example").one())
+        db.session.delete(Product.query.filter_by(slug="linen-wrap-midi-dress").one())
         db.session.commit()
     runner.invoke(args=["upgrade-demo", "--yes"])
     with app.app_context():
@@ -88,19 +87,12 @@ def test_upgrade_demo_without_a_keyboard_only_explains(tmp_path):
         assert demo_status() == "outdated"  # nothing was deleted
 
 
-# ------------------------------------------------------ four logins, one click each
+# ------------------------------------------------------ buyer and linked seller profile
 
-def test_sign_in_page_lists_two_buyers_and_two_sellers(client):
-    html = client.get("/account/login").get_data(as_text=True)
-    assert html.count("data-demo-login") == 5 and html.count('data-as="seller"') == 2
-    for text in ("Buyer 1", "Buyer 2", "Seller 1", "Seller 2", "Administrator", "linked to Buyer 1", "linked to Buyer 2"):
-        assert text in html
-
-
-def test_one_click_seller_sign_in_opens_the_linked_seller_profile(client):
+def test_seller_sign_in_link_opens_the_linked_seller_profile(client):
     for buyer, name in (("buyer1@velora.example", "Maya"), ("buyer2@velora.example", "Jonah")):
         c = client.application.test_client()
-        r = c.post("/account/login?as=seller", data={"email": buyer, "password": "anything"})
+        r = c.post("/account/login?as=seller", data={"email": buyer, "password": "Buyer123!"})
         assert r.status_code == 302 and r.headers["Location"].endswith("/seller/")
         html = c.get("/seller/").get_data(as_text=True)
         assert "Store dashboard" in html and name in html
@@ -110,7 +102,7 @@ def test_one_click_seller_sign_in_opens_the_linked_seller_profile(client):
 
 
 def test_plain_sign_in_still_opens_the_buyer_profile(client):
-    r = client.post("/account/login", data={"email": "buyer1@velora.example", "password": "x"})
+    r = client.post("/account/login", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
     assert r.headers["Location"].endswith("/account/")
 
 
@@ -126,7 +118,7 @@ def _pay(c, buyer_email):
 def test_buyer_order_reaches_the_linked_seller_and_back(app):
     p = in_stock_product()
     buyer = app.test_client()
-    login(buyer, "buyer1@velora.example", "x")
+    login(buyer, "buyer1@velora.example", "Buyer123!")
     buyer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     r = _pay(buyer, "buyer1@velora.example")
     assert r.status_code == 302
@@ -149,18 +141,18 @@ def test_buyer_order_reaches_the_linked_seller_and_back(app):
 def test_the_other_seller_shares_the_store_but_the_other_buyer_is_separate(app):
     p = in_stock_product()
     b1 = app.test_client()
-    login(b1, "buyer1@velora.example", "x")
+    login(b1, "buyer1@velora.example", "Buyer123!")
     b1.post(f"/cart/add/{p.id}", data={"quantity": 1})
     _pay(b1, "buyer1@velora.example")
     order = Order.query.order_by(Order.id.desc()).first()
     start_b2 = get_user("buyer2@velora.example").balance_minor
 
     seller2 = app.test_client()  # Jonah's seller profile: one shared store, so it sees every order
-    seller2.post("/account/login?as=seller", data={"email": "buyer2@velora.example", "password": "x"})
+    seller2.post("/account/login?as=seller", data={"email": "buyer2@velora.example", "password": "Buyer123!"})
     assert order.number in seller2.get("/seller/orders").get_data(as_text=True)
 
     b2 = app.test_client()  # Jonah as a buyer: cannot see Maya's order, and his credit is untouched
-    login(b2, "buyer2@velora.example", "x")
+    login(b2, "buyer2@velora.example", "Buyer123!")
     assert b2.get(f"/account/orders/{order.number}").status_code == 404
     db.session.expire_all()
     assert get_user("buyer2@velora.example").balance_minor == start_b2 == 50_000_000
@@ -179,7 +171,7 @@ def test_each_buyer_has_their_own_credit_and_addresses(app):
 
 def test_account_menu_shows_the_buyers_credit_but_not_the_sellers(app):
     b = app.test_client()
-    login(b, "buyer1@velora.example", "x")
+    login(b, "buyer1@velora.example", "Buyer123!")
     assert "Credit ₱500,000.00" in b.get("/").get_data(as_text=True)
     b.post("/account/switch-profile")
     assert "Credit ₱" not in b.get("/seller/").get_data(as_text=True)  # credit belongs to the buyer profile

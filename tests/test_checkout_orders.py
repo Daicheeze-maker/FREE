@@ -251,7 +251,8 @@ def test_cannot_ship_to_another_customers_address(customer):
 
 
 def test_first_purchase_with_no_saved_address_must_enter_one(client):
-    assert login(client, "no.address@example.com", "x").status_code == 302
+    assert client.post("/account/register", data={"full_name": "No Address", "email": "no.address@example.com", "password": "Secret123",
+                                                  "confirm": "Secret123", "accept": "y"}).status_code == 302
     client.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
     html = client.get("/checkout").get_data(as_text=True)
     assert 'value="new" id="addr-choice-new" checked' in html  # the only option is pre-chosen
@@ -384,7 +385,8 @@ def test_order_status_model_rules():
 
 
 def test_new_address_form_keeps_name_and_phone_prefill_after_an_error(client):
-    assert login(client, "no.address@example.com", "x").status_code == 302
+    assert client.post("/account/register", data={"full_name": "No Address", "email": "no.address@example.com", "password": "Secret123",
+                                                  "confirm": "Secret123", "accept": "y"}).status_code == 302
     client.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
     token = _token(client)
     html = client.post("/checkout", data={"checkout_token": token}).get_data(as_text=True)  # nothing chosen

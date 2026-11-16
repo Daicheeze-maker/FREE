@@ -1,5 +1,6 @@
 from flask import (Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request,
                    send_from_directory, session, url_for)
+from flask_login import login_required
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
@@ -8,6 +9,7 @@ from ..forms import NewsletterForm
 from ..models import (Category, DiscountCode, NewsletterSubscription, Product, ProductReview, get_setting,
                       utcnow)
 from ..security import is_safe_redirect
+from ..services import mapbox
 from ..services.catalog import visible_products
 
 bp = Blueprint("main", __name__)
@@ -135,3 +137,16 @@ def page(slug):
         from ..photos import SLOTS, credit_key
         credits = [(SLOTS[s][0], get_setting(credit_key(s))) for s in SLOTS if get_setting(credit_key(s))]
     return render_template("main/page.html", slug=slug, title=PAGES[slug], pages=PAGES, photo_credits=credits)
+
+
+@bp.get("/address-search")
+@login_required
+def address_search():
+    """Address suggestions (Mapbox) for the address forms. Signed-in users only; the Mapbox token stays on the server."""
+    q = (request.args.get("q") or "").strip()[:120]
+    if not mapbox.token():
+        return jsonify(ok=False, results=[], error="Address suggestions are not set up.")
+    try:
+        return jsonify(ok=True, results=mapbox.search(q))
+    except mapbox.MapboxError:
+        return jsonify(ok=False, results=[], error="Address suggestions are unavailable right now. Type the address by hand.")

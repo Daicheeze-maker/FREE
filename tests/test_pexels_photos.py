@@ -91,7 +91,7 @@ def setting(key):
 
 def test_find_photos_is_for_staff_only(client):
     assert client.get("/seller/find-photos").status_code == 302  # guest -> sign in
-    client.post("/account/login", data={"email": "buyer1@velora.example", "password": "x"})
+    client.post("/account/login", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
     assert client.get("/seller/find-photos").status_code == 403  # buyer profile
     assert client.post("/seller/find-photos/use", data={}).status_code == 403
     assert client.post("/seller/photos/autofill").status_code == 403
@@ -275,9 +275,9 @@ def test_autofill_without_a_key_points_to_setup(seller):
 
 # ------------------------------------------------- placeholders and honest copy
 
-def test_site_spots_use_a_placeholder_until_a_real_photo_is_chosen(client):
+def test_site_spots_show_a_catalog_photo_until_a_real_photo_is_chosen(client):
     home = client.get("/").get_data(as_text=True)
-    assert "model-placeholder.svg" in home and "images.unsplash.com/photo-1529139574466" not in home
+    assert "model-placeholder.svg" not in home.split("hero__photo")[1][:300]  # real catalog photo, not a blank card
     assert client.get("/static/img/model-placeholder.svg").status_code == 200
 
 

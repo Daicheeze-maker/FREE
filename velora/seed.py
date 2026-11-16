@@ -282,8 +282,11 @@ def seed_settings():
             db.session.add(StoreSetting(key=k, value=v))
 
 
-def seed(force=False):
-    """Seed demo data into an empty database. Returns False if data already existed."""
+def seed(force=False, demo_accounts=False):
+    """Seed the catalog into an empty database. Returns False if data already existed.
+
+    No accounts are created: people register themselves. `demo_accounts=True` adds sample people and orders (tests).
+    """
     # Seed whenever the catalog is empty (even if someone already registered an account)
     if Category.query.first() is not None and not force:
         return False
@@ -301,6 +304,24 @@ def seed(force=False):
     db.session.add_all(products)
     db.session.flush()
 
+    db.session.add_all([
+        DiscountCode(code="WELCOME10", description="10% off your first order", kind="percent", value=10),
+        DiscountCode(code="STYLE500", description="₱500 off orders over ₱5,000", kind="fixed", value=50000,
+                     min_subtotal_minor=500000),
+        DiscountCode(code="SEASON15", description="Season sale — 15% off, limited uses", kind="percent", value=15,
+                     max_uses=100, used_count=37, ends_at=now + timedelta(days=21)),
+        DiscountCode(code="SUMMER25", description="Expired summer promo", kind="percent", value=25,
+                     ends_at=now - timedelta(days=40), is_active=True),
+    ])
+    if demo_accounts:
+        db.session.flush()
+        seed_demo_accounts(products, rng, now)
+    db.session.commit()
+    return True
+
+
+def seed_demo_accounts(products, rng, now):
+    """OPTIONAL sample people + purchases. Used by the automated tests only; the real store starts with none."""
     def user(email, name, role, pw):
         existing = User.query.filter_by(email=email).first()
         if existing:
@@ -328,16 +349,6 @@ def seed(force=False):
                                line1="32nd St corner 5th Ave", line2="BGC Corporate Center, 12F", city="Taguig",
                                region="Metro Manila", postal_code="1634"))
     customer = people[0]
-
-    db.session.add_all([
-        DiscountCode(code="WELCOME10", description="10% off your first order", kind="percent", value=10),
-        DiscountCode(code="STYLE500", description="₱500 off orders over ₱5,000", kind="fixed", value=50000,
-                     min_subtotal_minor=500000),
-        DiscountCode(code="SEASON15", description="Season sale — 15% off, limited uses", kind="percent", value=15,
-                     max_uses=100, used_count=37, ends_at=now + timedelta(days=21)),
-        DiscountCode(code="SUMMER25", description="Expired summer promo", kind="percent", value=25,
-                     ends_at=now - timedelta(days=40), is_active=True),
-    ])
 
     # Orders across all statuses over the last ~30 days, so dashboards show real records
     plan = ([OrderStatus.DELIVERED] * 14 + [OrderStatus.SHIPPED] * 3 + [OrderStatus.PROCESSING] * 3 +
@@ -406,4 +417,3 @@ def seed(force=False):
                          link="/shop/p/red-silk-slip-dress", icon="shirt", created_at=now - timedelta(days=1)),
         ])
     db.session.commit()
-    return True

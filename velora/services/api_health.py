@@ -9,6 +9,7 @@ from ..models import ApiStatus, utcnow
 OFF = "openfoodfacts"
 FRANKFURTER = "frankfurter"
 PEXELS = "pexels"
+MAPBOX = "mapbox"
 
 
 def _status(name):

@@ -21,7 +21,7 @@
     </div>
     {% else %}<p class="alert alert--info">{{ icon('info') }} You don't have any saved addresses yet. Add one to speed up checkout.</p>{% endif %}
   </div>
-  <form method="post" class="card" novalidate>
+  <form method="post" class="card" novalidate{% if mapbox_ready %} data-address-search="{{ url_for('main.address_search') }}"{% endif %}>
     <h2 style="font-size:18px">Add address</h2>
     {{ form.csrf_token }}
     {{ field(form.label, "Home, Office…") }}

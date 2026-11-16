@@ -23,7 +23,7 @@ def app(tmp_path):
     app.test_client_class = IsolatedClient
     with app.app_context():
         db.create_all()
-        seed()
+        seed(demo_accounts=True)
         yield app
         db.session.remove()
 

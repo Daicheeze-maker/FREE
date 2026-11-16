@@ -17,7 +17,7 @@
   <section class="card" style="padding:0;overflow:hidden">
     <div style="aspect-ratio:4/5;background:var(--bg-2);position:relative">
       <img src="{{ site_photo(key) }}" alt="{{ label }} photo" style="width:100%;height:100%;object-fit:cover">
-      <span class="badge {{ 'badge--accent' if custom else 'badge--line' }}" style="position:absolute;top:12px;left:12px">{{ 'Pexels photo' if credits[key] else 'Your photo' if custom else 'Placeholder' }}</span>
+      <span class="badge {{ 'badge--accent' if custom else 'badge--line' }}" style="position:absolute;top:12px;left:12px">{{ 'Pexels photo' if credits[key] else 'Your photo' if custom else 'Default photo' }}</span>
     </div>
     <div style="padding:16px;display:grid;gap:10px">
       <div><strong>{{ label }}</strong><br><small class="muted">{{ where }}</small>{% if credits[key] %}<br><small class="muted">{{ icon('camera', 'ic--sm') }} {{ credits[key] }}</small>{% endif %}</div>

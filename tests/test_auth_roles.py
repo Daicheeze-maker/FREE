@@ -35,76 +35,32 @@ def test_login_success_and_wrong_password(client):
     assert r.status_code == 302 and r.headers["Location"].endswith("/admin/")
 
 
-def test_buyer_signs_in_with_any_password(client):
-    assert login(client, "repeat@example.com", "first").status_code == 302
+def register(client, email, password="Secret123", name="Real Person"):
+    return client.post("/account/register", data={"email": email, "full_name": name, "password": password, "confirm": password, "accept": "y"})
+
+
+def test_buyer_must_use_the_right_password(client):
+    assert register(client, "repeat@example.com").status_code == 302
     client.post("/account/logout")
-    assert login(client, "repeat@example.com", "different").status_code == 302
+    assert login(client, "repeat@example.com", "different").status_code == 200
+    assert client.get("/account/").status_code == 302  # still signed out
+    assert login(client, "repeat@example.com", "Secret123").status_code == 302
     assert client.get("/account/").status_code == 200
 
 
-def test_login_creates_linked_buyer_and_seller_profiles(client):
-    login(client, "both@example.com", "x")
+def test_register_creates_saved_linked_buyer_and_seller_profiles(client):
+    register(client, "both@example.com")
     buyer = get_user("both@example.com")
     seller = get_user("both@example.com#seller")
     assert buyer.role == "customer" and seller.role == "seller"
     assert buyer.linked_profile.id == seller.id and seller.linked_profile.id == buyer.id
+    assert buyer.balance_minor == 50_000_000
     assert "Switch to seller profile" in client.get("/account/").get_data(as_text=True)
 
-    r = client.post("/account/switch-profile")
-    assert r.status_code == 302 and r.headers["Location"].endswith("/seller/")
-    assert client.get("/seller/").status_code == 200
-    assert "Switch to buyer profile" in client.get("/seller/").get_data(as_text=True)
 
-    r = client.post("/account/switch-profile")
-    assert r.headers["Location"].endswith("/account/")
-    assert client.get("/account/").status_code == 200
-
-
-def test_repeat_login_does_not_duplicate_profiles(client):
-    login(client, "once@example.com", "x")
-    client.post("/account/logout")
-    n = User.query.count()
-    login(client, "once@example.com", "x")
-    assert User.query.count() == n
-
-
-def test_typing_seller_suffix_signs_in_as_buyer(client):
-    login(client, "suffix@example.com#seller", "x")
-    assert get_user("suffix@example.com").role == "customer"
-    assert client.get("/account/").status_code == 200
-
-
-def test_admin_has_no_other_profile_to_switch_to(admin):
-    assert admin.post("/account/switch-profile").status_code == 404
-
-
-def test_two_buyers_and_two_sellers_are_seeded(app):
-    from velora.models import User
-    buyers = User.query.filter_by(role="customer").all()
-    sellers = User.query.filter_by(role="seller").all()
-    assert sorted(b.email for b in buyers) == ["buyer1@velora.example", "buyer2@velora.example"]
-    assert len(sellers) == 2 and all(s.linked_profile in buyers for s in sellers)
-    assert all(b.linked_profile is not None for b in buyers)
-    assert {b.balance_minor for b in buyers} == {50_000_000}  # PHP 500,000.00 each
-
-
-def test_seller_profile_can_switch_back_to_buyer(seller):
-    assert "Store dashboard" in seller.get("/seller/").get_data(as_text=True)
-    assert seller.post("/account/switch-profile").status_code == 302
-    assert seller.get("/seller/").status_code == 403  # back on the buyer profile
-
-
-def test_unknown_login_creates_customer(client):
-    r = login(client, "someone.random@example.com", "x")
-    assert r.status_code == 302 and "/account" in r.headers["Location"]
-    u = get_user("someone.random@example.com")
-    assert u.role == "customer" and u.full_name == "Someone Random"
-    assert client.get("/account/").status_code == 200
-
-
-def test_login_accepts_text_that_is_not_an_email(client):
-    assert login(client, "asdf", "x").status_code == 302
-    assert get_user("asdf").role == "customer"
+def test_unknown_email_is_not_auto_created(client):
+    assert login(client, "ghost@example.com", "whatever").status_code == 200
+    assert get_user("ghost@example.com") is None
 
 
 def test_auto_login_never_opens_staff_accounts(client):

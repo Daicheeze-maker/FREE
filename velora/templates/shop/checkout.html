@@ -32,7 +32,7 @@
               <span class="choice__card choice__card--new"><strong>{{ icon('plus', 'ic--sm') }} Deliver to a new address</strong>Enter a different address for this order.</span>
             </label>
           </div>
-          <div class="addr-new" id="addr-new">
+          <div class="addr-new" id="addr-new"{% if mapbox_ready %} data-address-search="{{ url_for('main.address_search') }}"{% endif %}>
             <div class="form-grid">
               {{ field(new_form.label, "Home, Office…") }}
               {{ field(new_form.full_name, "Who will receive it?", autocomplete="name") }}

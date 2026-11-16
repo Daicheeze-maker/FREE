@@ -13,6 +13,15 @@ SLOTS = {
     "register": ("Create-account page", "Photo on the registration screen", "stylish model portrait"),
 }
 
+# Until staff choose a photo, each slot shows the model photo of one of these products (first one that has a photo)
+DEFAULT_SLOT_PRODUCTS = {
+    "hero": ("red-silk-slip-dress", "cropped-leather-biker-jacket", "linen-wrap-midi-dress"),
+    "lookbook": ("relaxed-straight-jeans", "tailored-wool-suit", "linen-wrap-midi-dress"),
+    "promo": ("cropped-leather-biker-jacket", "relaxed-straight-jeans", "linen-wrap-midi-dress"),
+    "login": ("cropped-leather-biker-jacket", "tailored-wool-suit", "linen-wrap-midi-dress"),
+    "register": ("tailored-wool-suit", "red-silk-slip-dress", "linen-wrap-midi-dress"),
+}
+
 # What Find photos searches for when opened from a product (by collection slug)
 PRODUCT_QUERIES = {
     "women": "woman fashion model wearing dress",

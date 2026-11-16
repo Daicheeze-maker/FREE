@@ -153,7 +153,7 @@ def test_database_initialization_via_migrations(tmp_path):
 def test_cli_seed_is_non_destructive(tmp_path):
     app = create_app("testing", SQLALCHEMY_DATABASE_URI=f"sqlite:///{tmp_path / 'cli.db'}")
     runner = app.test_cli_runner()
-    assert "Seeded" in runner.invoke(args=["seed"]).output
+    assert "Loaded the store catalog" in runner.invoke(args=["seed"]).output
     assert "skipped" in runner.invoke(args=["seed"]).output
     assert runner.invoke(args=["reset-demo"]).exit_code != 0  # requires explicit flag
 
