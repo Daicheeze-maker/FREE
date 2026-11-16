@@ -42,7 +42,9 @@ def demo_status():
     moved = all(
         (p := Product.query.filter_by(slug=slug).first()) is None or p.category.slug == target
         for slug, target in KNOWN_MOVES.items())
-    return "current" if (have == wanted and moved) else "stale"
+    from .seed import ALT_PHOTOS
+    photoless = Product.query.filter(~Product.images.any(), Product.name.in_(list(ALT_PHOTOS))).count()
+    return "current" if (have == wanted and moved and not photoless) else "stale"
 
 
 def remove_demo_accounts():

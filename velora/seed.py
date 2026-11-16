@@ -214,6 +214,31 @@ REVIEWS = [
 ]
 
 
+# Products with no photo in the table above get these. The first that loads wins: the page tries the next one in the
+# browser if a photo is gone (see ALT_NEXT + the image fallback in app.js), and the start-up photo fill can replace any.
+ALT_PHOTOS = {
+    "Red Runner Sneakers": ["1542291026-7eec264c27ff", "1491553895911-0055eca6402d", "1600185365926-3a2ce3cdb9eb"],
+    "White Leather Court Sneakers": ["1595950653106-6c9ebd614d3a", "1525966222134-fcfa99b8ae77", "1460353581641-37baddab0fa2"],
+    "Suede Chelsea Boots": ["1608256246200-53e635b5b65f", "1542280756-74b2f55e73ab", "1520639888713-7851133b1ed0"],
+    "Classic Leather Loafers": ["1614252369475-531eba835eb1", "1533867617858-e7b97e060509", "1449505278894-297fdb3edbc1"],
+    "Block-Heel Leather Sandals": ["1603487742131-4160ec999306", "1543163521-1bf539c55dd2", "1515347619252-60a4bf4fff4f"],
+    "Tortoiseshell Sunglasses": ["1511499767150-a48a237f0083", "1473496169904-658ba7c44d8a", "1577803645773-f96470509666"],
+    "Aviator Sunglasses": ["1572635196237-14b3f281503f", "1577803645773-f96470509666", "1511499767150-a48a237f0083"],
+    "Italian Leather Belt": ["1624222247344-550fb60583dc", "1605733513597-a8f8341084e6", "1584917865442-de89df76afd3"],
+    "Printed Silk Scarf": ["1520903920243-00d872a2d1c9", "1601924994987-69e26d50dc26", "1566150905458-1bf1fc113f0d"],
+    "Leather Card Holder": ["1627123424574-724758594e93", "1606503825008-909a67e63c3d", "1548036328-c9fa89d128fa"],
+}
+
+
+def alt_next():
+    """{photo id: URL of the next candidate}: lets the browser move on when a photo has been removed from Unsplash."""
+    out = {}
+    for ids in ALT_PHOTOS.values():
+        for a, b in zip(ids, ids[1:]):
+            out.setdefault(a, U(b))
+    return out
+
+
 def _make_product(i, row, category, now, rng):
     name, brand, ci, price, compare, stock, size, origin, featured, sold, photos, short, desc, ingr = row
     p = Product(name=name, slug=slugify(name), sku=f"VM-{1000 + i}", brand=brand, category=category,
@@ -221,7 +246,7 @@ def _make_product(i, row, category, now, rng):
                 compare_at_minor=compare * 100 if compare else None, stock=stock, size_label=size,
                 origin=origin, is_featured=featured, sold_count=sold, ingredients=ingr, sizes=SIZES.get(name),
                 created_at=now - timedelta(days=60 - i * 2 if i < 18 else rng.randint(1, 12)))
-    for pos, pid in enumerate(photos):
+    for pos, pid in enumerate(photos or ALT_PHOTOS.get(name, [])[:1]):
         p.images.append(ProductImage(url=U(pid), alt=f"{name} — {short}", position=pos, credit="Unsplash"))
     return p
 
@@ -262,6 +287,11 @@ def refresh_catalog():
                 product.images.remove(img)
                 db.session.delete(img)
                 changes.append(f"removed the wrong photo from {product.name}")
+    for product in Product.query.filter(~Product.images.any()).all():
+        ids = ALT_PHOTOS.get(product.name)
+        if ids:
+            product.images.append(ProductImage(url=U(ids[0]), alt=product.name, position=0, credit="Unsplash"))
+            changes.append(f"added a photo to {product.name}")
     rng, now = random.Random(7), utcnow()
     existing = {p.slug for p in Product.query.all()}
     for i, row in enumerate(PRODUCTS):

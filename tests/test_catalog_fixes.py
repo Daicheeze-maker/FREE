@@ -56,9 +56,18 @@ def test_new_collections_have_real_items_with_sizes(app):
     assert Product.query.filter_by(slug="aviator-sunglasses").one().size_list == []
 
 
+def blank_demo_photos():
+    """Take away the photos of the ten products that start with a stand-in photo (what a store looked like before they had one)."""
+    from velora.seed import ALT_PHOTOS
+    ids = [p.id for p in Product.query.filter(Product.name.in_(list(ALT_PHOTOS)))]
+    ProductImage.query.filter(ProductImage.product_id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+    db.session.expire_all()
+
+
 def test_the_wrong_sunglasses_photo_is_gone(app):
     shades = Product.query.filter_by(slug="tortoiseshell-sunglasses").one()
-    assert shades.images == []  # the old one showed plain black glasses
+    assert shades.images and all("1572635196237" not in i.url for i in shades.images)  # the old one showed plain black glasses
 
 
 def test_menus_show_the_new_collections(client):
@@ -111,7 +120,7 @@ def test_refresh_fixes_an_older_catalog_and_keeps_everything_else(tmp_path):
         assert demo_status() == "current"
         assert names("men") == ["Heavyweight White Tee", "Tailored Wool Suit", "Utility Field Jacket"]
         assert len(names("shoes")) == 5 and len(names("accessories")) == 5
-        assert Product.query.filter_by(slug="tortoiseshell-sunglasses").one().images == []
+        assert all("1572635196237" not in i.url for i in Product.query.filter_by(slug="tortoiseshell-sunglasses").one().images)
         assert (Order.query.count(), User.query.count()) == before  # nothing deleted
         assert db.session.get(StoreSetting, "photo_hero").value == "mine.webp"
         assert [c.name for c in Category.query.order_by(Category.position)][2:4] == ["Shoes", "Accessories"]
@@ -151,6 +160,7 @@ def keyed(app):
 
 
 def test_fill_gives_photos_to_missing_and_broken_ones_and_leaves_working_ones(seller, keyed):
+    blank_demo_photos()
     tote = Product.query.filter_by(slug="structured-leather-tote").one()
     tote_url = tote.images[0].url
     broken = Product.query.filter_by(slug="linen-wrap-midi-dress").one()
@@ -172,6 +182,7 @@ def test_fill_gives_photos_to_missing_and_broken_ones_and_leaves_working_ones(se
 
 
 def test_products_with_no_photo_at_all_are_filled_first(seller, keyed):
+    blank_demo_photos()
     with fake_pexels([photo(3000 + i) for i in range(60)]) as calls, \
             __import__("unittest.mock").mock.patch("velora.services.photo_check.remote_ok", _working_remote()):
         seller.post("/seller/products/autofill-photos")
@@ -225,6 +236,7 @@ def test_fill_stops_politely_when_pexels_says_no(seller, keyed):
 
 
 def test_products_page_counts_products_without_a_photo(seller):
+    blank_demo_photos()
     html = seller.get("/seller/products").get_data(as_text=True)
     n = Product.query.filter(~Product.images.any()).count()
     assert n >= 9 and f"<strong>{n}</strong> products have no photo" in html  # the 2 misfits + 7 new ones... all listed

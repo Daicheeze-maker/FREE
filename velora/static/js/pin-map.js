@@ -37,6 +37,28 @@
     }
   };
 
+  // Fallbacks that run in the browser (it often has internet access the store's own server doesn't):
+  // OpenStreetMap Nominatim (street level), then BigDataCloud (city level, no key).
+  const t = (v) => (typeof v === "string" ? v.trim() : "");
+  async function browserLookup(lat, lng) {
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=en&lat=${lat}&lon=${lng}`, { headers: { Accept: "application/json" } });
+      const d = await r.json(), a = d.address || {};
+      const street = t(a.road || a.pedestrian || a.footway || a.neighbourhood || a.suburb);
+      if (street) return { label: t(d.display_name) || street, line1: (t(a.house_number) + " " + street).trim(),
+        city: t(a.city || a.town || a.municipality || a.village || a.city_district || a.county), region: t(a.state || a.region || a.province || a.state_district),
+        postal_code: t(a.postcode), country: t(a.country) };
+    } catch (_) { /* try the next one */ }
+    try {
+      const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+      const d = await r.json();
+      const city = t(d.city || d.locality);
+      if (city) return { label: [city, t(d.principalSubdivision), t(d.countryName)].filter(Boolean).join(", "), line1: "",
+        city, region: t(d.principalSubdivision), postal_code: t(d.postcode), country: t(d.countryName) };
+    } catch (_) { /* nothing worked */ }
+    return null;
+  }
+
   async function lookup(lat, lng) {
     const mine = ++seq;
     say("Finding the address at this spot…");
@@ -44,10 +66,19 @@
       const res = await fetch(`${box.dataset.reverse}?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}`, { headers: { "X-Requested-With": "fetch" }, credentials: "same-origin" });
       const data = await res.json();
       if (mine !== seq) return;
-      if (data.ok && data.result) { fill(data.result); say("Address filled in from your pin: " + data.result.label + ". Check it, then add your unit or building."); }
-      else if (data.ok) say("Pinned. We couldn't find a street address here, so please type it in.");
-      else say("Pinned. Address lookup is unavailable right now, so please type the address.");
-    } catch (e) { if (mine === seq) say("Pinned. Address lookup is unavailable right now, so please type the address."); }
+      if (data.ok && data.result) { done(data.result, true); return; }
+      throw new Error(data.ok ? "none" : "server");
+    } catch (e) {
+      if (mine !== seq) return;
+      const r = await browserLookup(lat, lng);
+      if (mine !== seq) return;
+      if (r) done(r, !!r.line1);
+      else say("Pinned. We couldn't look up an address for this spot (no internet, or nothing is mapped here), so please type it in.");
+    }
+    function done(r, street) {
+      fill(r);
+      say((street ? "Address filled in from your pin: " : "City filled in from your pin (no street found here): ") + r.label + ". Check it, then add your street, unit or building.");
+    }
   }
 
   function place(lat, lng, look) {

@@ -18,6 +18,11 @@ from .config import BASE_DIR, CONFIGS  # noqa: E402
 from .extensions import csrf, db, login_manager, migrate  # noqa: E402
 
 
+import time as _time  # noqa: E402
+
+ASSET_VERSION = str(int(_time.time()))  # changes on every restart, so browsers never keep stale JS/CSS
+
+
 def create_app(config_name=None, **overrides):
     config_name = config_name or os.environ.get("VELORA_ENV", "development")
     app = Flask(__name__, instance_path=str(BASE_DIR / "instance"))
@@ -73,6 +78,7 @@ def create_app(config_name=None, **overrides):
 def _register_template_helpers(app):
     from .models import Category, WishlistItem, get_int_setting, get_setting
     from .money import fmt_minor
+    from .seed import alt_next
     from .services import cart as cart_service
     from .services import mapbox as mapbox_service
     from .services.currency import PriceDisplay
@@ -99,6 +105,8 @@ def _register_template_helpers(app):
             "wishlist_ids": wish_ids,
             "mapbox_ready": bool(mapbox_service.token()),
             "brand": app.config["BRAND_NAME"],
+            "photo_alts": alt_next(),
+            "asset_v": ASSET_VERSION,
         }
 
     @app.template_filter("dt")

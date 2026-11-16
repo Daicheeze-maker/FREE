@@ -283,7 +283,7 @@ def test_site_spots_show_a_catalog_photo_until_a_real_photo_is_chosen(client):
 
 def test_the_wrong_sneaker_photo_is_gone(app):
     shoes = Product.query.filter_by(slug="red-runner-sneakers").one()
-    assert shoes.images == []  # blank until a real photo is chosen (the old one showed toe shoes)
+    assert shoes.images and all("toe" not in i.url for i in shoes.images)  # has a stand-in photo; the old one showed toe shoes
 
 
 def test_copy_no_longer_claims_the_team_models_the_photos(client):

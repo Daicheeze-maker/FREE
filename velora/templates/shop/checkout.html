@@ -74,5 +74,5 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
-<script src="{{ url_for('static', filename='js/pin-map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pin-map.js', v=asset_v) }}"></script>
 {% endblock %}

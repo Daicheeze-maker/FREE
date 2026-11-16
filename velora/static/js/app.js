@@ -30,8 +30,15 @@
 
   /* ---------------------------------------------- image fallback */
   const placeholder = document.body.dataset.placeholder;
+  let altNext = {};
+  try { altNext = JSON.parse(document.body.dataset.photoAlts || "{}"); } catch (_) { /* ignore */ }
   document.addEventListener("error", (e) => {
     const img = e.target;
+    // A product photo that has gone from its host: try the next candidate photo for that product first
+    if (img.tagName === "IMG" && !img.dataset.fallback && img.src) {
+      const key = Object.keys(altNext).find((k) => img.src.includes(k));
+      if (key) { img.src = altNext[key]; return; }
+    }
     // Map tiles are handled by the map itself (it shows an address card if they can't load)
     if (img.tagName === "IMG" && placeholder && !img.dataset.fallback && !img.closest(".leaflet-container")) {
       img.dataset.fallback = "1";

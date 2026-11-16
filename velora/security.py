@@ -66,7 +66,7 @@ def apply_security_headers(response):
     response.headers.setdefault(
         "Content-Security-Policy",
         "default-src 'self'; img-src 'self' https: data:; script-src 'self'; "
-        "style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://nominatim.openstreetmap.org https://api.bigdatacloud.net; "
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
     )
     return response

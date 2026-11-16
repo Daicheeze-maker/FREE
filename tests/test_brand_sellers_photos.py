@@ -182,3 +182,54 @@ def test_openverse_only_downloads_from_its_own_host(app):
                                image="https://evil.example/x.jpg", width=1, height=1)
     with pytest.raises(pexels.PexelsError):
         openverse.download(photo)
+
+
+# ---------------------------------------------------------------- every product has a picture
+
+def test_every_product_has_a_photo_in_a_fresh_store(client):
+    missing = [p.name for p in Product.query.all() if not p.images]
+    assert missing == []
+    for p in Product.query.all():
+        assert p.primary_image.url.startswith("https://images.unsplash.com/photo-"), p.name
+
+
+def test_shoes_and_accessories_pages_render_a_photo_for_every_card(client):
+    for slug in ("shoes", "accessories"):
+        page = client.get(f"/shop/c/{slug}").get_data(as_text=True)
+        cards = page.count('class="pcard"')
+        assert cards >= 5 and page.count("images.unsplash.com/photo-") >= cards, slug
+
+
+def test_photo_less_products_get_a_photo_on_refresh_without_touching_others(app):
+    from velora.seed import refresh_catalog
+    shoe = Product.query.filter_by(slug="suede-chelsea-boots").one()
+    keep = Product.query.filter_by(slug="linen-wrap-midi-dress").one()
+    ProductImage.query.filter_by(product_id=shoe.id).delete()
+    before = [i.url for i in keep.images]
+    db.session.commit()
+    changes = refresh_catalog()
+    db.session.expire_all()
+    assert "added a photo to Suede Chelsea Boots" in changes
+    assert Product.query.filter_by(slug="suede-chelsea-boots").one().images
+    assert [i.url for i in Product.query.filter_by(slug="linen-wrap-midi-dress").one().images] == before
+
+
+def test_page_carries_the_photo_fallback_chain_for_the_browser(client):
+    import html as h, json
+    page = client.get("/").get_data(as_text=True)
+    raw = re.search(r'data-photo-alts="([^"]*)"', page).group(1)
+    chain = json.loads(h.unescape(raw))
+    assert chain["1542291026-7eec264c27ff"].startswith("https://images.unsplash.com/photo-1491553895911")
+    assert len(chain) >= 15
+
+
+def test_static_scripts_are_versioned_so_browsers_never_keep_old_ones(client):
+    page = client.get("/").get_data(as_text=True)
+    assert re.search(r'js/app\.js\?v=\d+', page) and re.search(r'css/app\.css\?v=\d+', page)
+
+
+def test_pin_map_has_browser_fallbacks_and_csp_allows_them(client):
+    js = client.get("/static/js/pin-map.js").get_data(as_text=True)
+    assert "nominatim.openstreetmap.org" in js and "bigdatacloud" in js
+    csp = client.get("/").headers["Content-Security-Policy"]
+    assert "https://nominatim.openstreetmap.org" in csp and "script-src 'self'" in csp
