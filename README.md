@@ -61,6 +61,8 @@ The store starts with **no accounts and no demo logins**. Click **Create account
   python -m flask --app wsgi create-admin
   ```
 
+  On Windows just **double-click `create-admin.bat`** (it uses the project's own Python, so no "No module named flask").
+
   It asks for an email, a name and a password. Sign in with them at the normal sign-in page.
 - Old copies of this project had sample accounts (`buyer1@velora.example`, …). `start.bat` / `start.sh` remove those automatically, together with their sample orders (an account that has a real order is kept).
 
