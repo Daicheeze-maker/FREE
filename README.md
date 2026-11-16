@@ -55,6 +55,8 @@ python serve.py
 
 That is **2 buyers + 2 sellers** (two people, each with a buyer profile and a linked seller profile) plus one admin. **Every buyer starts with ₱500,000 of demo credit** that is spent at checkout; an admin can reset it under *Admin → Users → (buyer) → Demo credit*.
 
+On the sign-in page every login has its own click-to-fill button, including **Seller 1** (Maya's shop profile) and **Seller 2** (Jonah's shop profile). Once signed in, the account menu has **Switch to seller / buyer profile**, so each pair is connected: what Maya buys shows up in her seller profile's *Orders*, and the seller can ship it and mark it delivered.
+
 The sign-in page has one-click buttons that fill these in. Change or disable them before any real deployment. Demo discount codes: `WELCOME10`, `STYLE500` (₱500 off ₱5,000+), `SEASON15` (limited uses), and `SUMMER25` (expired, to show validation).
 
 ### Be the models: use your own photos
@@ -82,7 +84,7 @@ Portrait photos at least 1200 px tall look best. Every upload is checked, resize
 | Bags | structured leather tote, quilted chain crossbody, canvas backpack, evening clutch, weekender duffel |
 | Gifts & Gourmet | gift box, chocolate, coffee, candle — the natural home for Open Food Facts imports |
 
-If you created the database before this catalog existed, rebuild it with `python -m flask --app wsgi reset-demo --yes-delete-everything`. This deletes all data.
+**Updating from an older version?** `start.bat` / `start.sh` notice an out-of-date demo database (one that still has Cars or the old accounts) and ask *“Update to the new demo store now?”*. Answer `y` to load the new store (this replaces the local demo data); answer `n` to keep what you have. Your own stores (no `admin@velora.example`) are never touched. You can also run it yourself: `python -m flask --app wsgi upgrade-demo`, or force a full reset with `python -m flask --app wsgi reset-demo --yes-delete-everything`.
 
 ---
 
@@ -232,7 +234,7 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
 python -m pytest -q
 ```
 
-There are 139 tests. External APIs are mocked, so no network is needed. They cover:
+There are 150 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

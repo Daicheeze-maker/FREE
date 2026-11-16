@@ -7,5 +7,6 @@ call .venv\Scripts\activate.bat
 python -m flask --app wsgi init-db >nul
 REM Loads the demo products only if the catalog is empty (never deletes anything)
 python -m flask --app wsgi seed
+python -m flask --app wsgi upgrade-demo
 python serve.py
 endlocal

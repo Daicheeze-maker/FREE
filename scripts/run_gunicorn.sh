@@ -6,6 +6,7 @@ cd "$(dirname "$0")/.."
 export VELORA_ENV=${VELORA_ENV:-production}
 python -m flask --app wsgi init-db >/dev/null
 python -m flask --app wsgi seed   # loads demo products only if the catalog is empty
+python -m flask --app wsgi upgrade-demo
 exec gunicorn wsgi:app \
   --bind "${BIND:-127.0.0.1:8000}" \
   --workers "${WORKERS:-3}" \

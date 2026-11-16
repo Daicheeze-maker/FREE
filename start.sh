@@ -12,6 +12,7 @@ fi
 . .venv/bin/activate
 python -m flask --app wsgi init-db >/dev/null
 python -m flask --app wsgi seed >/dev/null
+python -m flask --app wsgi upgrade-demo
 
 export OPEN_BROWSER=${OPEN_BROWSER:-1}
 echo "Velora Market is starting at http://127.0.0.1:${PORT:-5000}  (Ctrl+C to stop)"

@@ -26,6 +26,7 @@ if not exist ".venv\Scripts\activate.bat" (
 call .venv\Scripts\activate.bat
 python -m flask --app wsgi init-db >nul
 python -m flask --app wsgi seed >nul
+python -m flask --app wsgi upgrade-demo
 
 set OPEN_BROWSER=1
 if "%PORT%"=="" set PORT=5000

@@ -13,6 +13,40 @@ def init_database():
     upgrade(directory=current_app.extensions["migrate"].directory)
 
 
+DEMO_ADMIN = "admin@velora.example"
+DEMO_BUYERS = ("buyer1@velora.example", "buyer2@velora.example")
+
+
+def demo_status():
+    """Is the data in this database the CURRENT demo store?
+
+    'empty'    - nothing loaded yet (seed will load it)
+    'current'  - the up-to-date demo store
+    'outdated' - an older version of the demo store (still has Cars, the old accounts, ...)
+    'custom'   - somebody's own store (no demo admin): never touched automatically
+    """
+    from .models import Category, User
+    if Category.query.first() is None:
+        return "empty"
+    if User.query.filter_by(email=DEMO_ADMIN).first() is None:
+        return "custom"
+    has_cars = Category.query.filter_by(slug="cars").first() is not None
+    has_bags = Category.query.filter_by(slug="bags").first() is not None
+    has_buyers = User.query.filter(User.email.in_(DEMO_BUYERS)).count() == len(DEMO_BUYERS)
+    return "current" if (has_bags and has_buyers and not has_cars) else "outdated"
+
+
+def wipe_and_reseed():
+    """Drop every table and load the current demo store. DESTROYS all data in the database."""
+    from .seed import seed
+    db.session.remove()
+    db.drop_all()
+    db.session.execute(db.text("DROP TABLE IF EXISTS alembic_version"))
+    db.session.commit()
+    init_database()
+    seed()
+
+
 def register_cli(app):
     @app.cli.command("init-db")
     def init_db_cmd():
@@ -39,13 +73,38 @@ def register_cli(app):
             raise click.ClickException("reset-demo is disabled when VELORA_ENV=production.")
         if not yes_delete_everything:
             raise click.ClickException("Pass --yes-delete-everything to confirm deleting ALL data.")
-        from .seed import seed
-        db.drop_all()
-        db.session.execute(db.text("DROP TABLE IF EXISTS alembic_version"))
-        db.session.commit()
-        init_database()
-        seed()
+        wipe_and_reseed()
         click.echo("Demo database reset and re-seeded.")
+
+    @app.cli.command("upgrade-demo")
+    @click.option("--yes", is_flag=True, help="Update without asking.")
+    def upgrade_demo_cmd(yes):
+        """If the demo store is an older version, offer to replace it with the current one."""
+        import sys
+        init_database()
+        if demo_status() != "outdated":
+            return  # up to date, empty, or someone's own store: nothing to do (and nothing printed)
+        if current_app.config.get("ENV_NAME") == "production":
+            click.echo("Demo data is outdated, but it is never replaced automatically in production.")
+            return
+        click.echo("")
+        click.echo("=" * 70)
+        click.echo(" Your store data is from an OLDER VERSION of Velora Market")
+        click.echo(" (it still has Cars, the old accounts and the old catalog).")
+        click.echo(" Updating loads the new demo store: 2 buyers + 2 sellers with PHP 500,000")
+        click.echo(" credit each, the Bags section, sizes and the map.")
+        click.echo(" It REPLACES everything in the local database (accounts, orders, uploads' links).")
+        click.echo("=" * 70)
+        if not yes:
+            if not sys.stdin.isatty():
+                click.echo(" Run this in a terminal to update:  python -m flask --app wsgi upgrade-demo")
+                return
+            if not click.confirm(" Update to the new demo store now?", default=False):
+                click.echo(" OK, keeping your current data (you will still see the old catalog).")
+                return
+        wipe_and_reseed()
+        click.echo(" Done: the new demo store is loaded.")
+        click.echo("")
 
     @app.cli.command("create-admin")
     @click.option("--email", prompt=True)

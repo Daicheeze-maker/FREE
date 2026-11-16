@@ -101,6 +101,14 @@ def login():
                 session["recently_viewed"] = recent
             login_user(user, remember=form.remember.data)
             cart_service.merge_session_cart_into(user)
+            if request.args.get("as") == "seller" and user.role == ROLE_CUSTOMER:
+                # "Sign in as the seller profile": the same person's linked seller profile
+                seller = user.linked_profile
+                if seller is not None and seller.is_active_account:
+                    logout_user()
+                    login_user(seller, remember=form.remember.data)
+                    flash(f"Welcome back, {seller.first_name}. You're using your seller profile.", "success")
+                    return redirect(home_for(seller))
             flash(f"Welcome back, {user.first_name}.", "success")
             nxt = request.args.get("next")
             return redirect(nxt if is_safe_redirect(nxt) else home_for(user))
