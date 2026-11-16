@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon, empty %}
-{% block title %}Your bag · Velora Market{% endblock %}
+{% block title %}Your bag · {{ brand }}{% endblock %}
 {% block content %}
 <div class="container">
   <header class="page-head"><h1>Your bag</h1>{% if lines %}<p>{{ lines|sum(attribute='quantity') }} item{{ '' if lines|sum(attribute='quantity') == 1 else 's' }} · Reserved for you until checkout. Stock is re-checked when you place your order.</p>{% endif %}</header>

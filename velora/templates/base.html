@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Velora Market — clothing, watches, jewelry & bags{% endblock %}</title>
-  <meta name="description" content="{% block description %}Velora Market: clothing, watches, fine jewelry and bags.{% endblock %}">
+  <title>{% block title %}{{ brand }} — clothing, watches, jewelry & bags{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ brand }}: clothing, watches, fine jewelry and bags.{% endblock %}">
   <meta name="theme-color" content="#F5F1EA">
   <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
   <link rel="preload" href="{{ url_for('static', filename='fonts/inter.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -41,7 +41,7 @@
       {% endfor %}
 {% endif %}
     </nav>
-    <a href="{{ url_for('main.home') }}" class="logo" aria-label="Velora Market home">velora<span class="logo__dot">.</span><small>market</small></a>
+    <a href="{{ url_for('main.home') }}" class="logo" aria-label="{{ brand }} home">{{ brand|lower }}<span class="logo__dot">.</span><small>market</small></a>
     <div class="header__actions">
       <form class="search" action="{{ url_for('catalog.listing') }}" method="get" role="search">
         {{ icon('search') }}
@@ -109,7 +109,7 @@
 </header>
 
 <aside class="drawer drawer--left" id="mobile-nav" aria-label="Menu" aria-hidden="true" data-drawer>
-  <div class="drawer__head"><a href="{{ url_for('main.home') }}" class="logo">velora<span class="logo__dot">.</span></a><button class="icon-btn" type="button" data-close-drawer aria-label="Close menu">{{ icon('x') }}</button></div>
+  <div class="drawer__head"><a href="{{ url_for('main.home') }}" class="logo">{{ brand|lower }}<span class="logo__dot">.</span></a><button class="icon-btn" type="button" data-close-drawer aria-label="Close menu">{{ icon('x') }}</button></div>
   <div class="drawer__body mobile-nav">
     <form action="{{ url_for('catalog.listing') }}" method="get" class="search search--block" role="search">{{ icon('search') }}<label class="sr-only" for="m-search">Search</label><input id="m-search" type="search" name="q" placeholder="Search products" maxlength="100"></form>
     <a href="{{ url_for('catalog.listing', slug='women') }}">{{ icon('shirt') }} Clothing · Women {{ icon('arrow-right') }}</a>
@@ -132,13 +132,16 @@
 </aside>
 
 <main id="main" tabindex="-1">
+  {% if request.endpoint and request.endpoint not in ('main.home', 'auth.login', 'auth.register', 'shop.checkout') %}
+  <div class="container backrow"><a class="back-link" href="{{ url_for('main.home') }}" data-back>{{ icon('arrow-left', 'ic--sm') }} Back</a></div>
+  {% endif %}
   {% block content %}{% endblock %}
 </main>
 
 <footer class="site-footer">
   <div class="container footer__grid">
     <div class="footer__brand">
-      <a href="{{ url_for('main.home') }}" class="logo logo--lg">velora<span class="logo__dot">.</span></a>
+      <a href="{{ url_for('main.home') }}" class="logo logo--lg">{{ brand|lower }}<span class="logo__dot">.</span></a>
       <p>Clothing, watches, fine jewelry and bags — curated in Manila.</p>
       <p class="footer__contact">{{ icon('mail') }} <a href="mailto:{{ support_email }}">{{ support_email }}</a><br>{{ icon('clock') }} Mon–Sat, 9:00–18:00 PHT</p>
     </div>
@@ -156,7 +159,7 @@
     </ul></div>
   </div>
   <div class="container footer__base">
-    <span>© {{ 2026 }} Velora Market · demo store, no real payments are processed.</span>
+    <span>© {{ 2026 }} {{ brand }} · demo store, no real payments are processed.</span>
     <span>Product data partly from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a> (ODbL) · Rates by <a href="https://frankfurter.dev" rel="noopener" target="_blank">Frankfurter</a> · Photos: Unsplash &amp; <a href="https://www.pexels.com" rel="noopener" target="_blank">Pexels</a> contributors</span>
   </div>
 </footer>

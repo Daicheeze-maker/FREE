@@ -47,6 +47,7 @@ class RegisterForm(FlaskForm):
     email = EmailField("Email", validators=[DataRequired(), Email(), Length(max=255)], filters=[strip])
     password = PasswordField("Password", validators=[DataRequired(), PasswordStrength(), Length(max=128)])
     confirm = PasswordField("Confirm password", validators=[DataRequired(), EqualTo("password", "Passwords must match.")])
+    account_type = RadioField("I want to", choices=[("buyer", "Shop (buyer account)"), ("seller", "Sell (seller account)")], default="buyer", validators=[Optional()])
     accept = BooleanField("I agree to the terms and privacy policy", validators=[DataRequired("Please accept to continue.")])
 
 

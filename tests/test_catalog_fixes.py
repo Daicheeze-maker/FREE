@@ -1,5 +1,8 @@
 """Every product in the right collection, a safe refresh for older databases, and filling missing photos."""
 import re
+from unittest.mock import patch
+
+import requests
 
 import pytest
 
@@ -204,9 +207,11 @@ def test_fill_does_nothing_when_every_photo_works(seller, keyed):
     assert "already has a photo that loads" in page(r) and calls == []
 
 
-def test_fill_needs_a_key_and_staff_access(seller, client):
-    r = seller.post("/seller/products/autofill-photos", follow_redirects=True)
-    assert "Add your free Pexels key first" in page(r)
+def test_fill_works_without_a_key_when_online_and_is_staff_only(seller, client):
+    with patch("velora.services.openverse.requests.get", side_effect=requests.ConnectionError("offline")), \
+            patch("velora.services.photo_check.check_remote", return_value={}):
+        r = seller.post("/seller/products/autofill-photos", follow_redirects=True)
+    assert "Couldn't reach the free photo source" in page(r)  # no key needed; just needs the internet
     anon = client.application.test_client()
     assert anon.post("/seller/products/autofill-photos").status_code == 302
     anon.post("/account/login", data={"email": "buyer2@velora.example", "password": "Buyer123!"})
@@ -216,7 +221,7 @@ def test_fill_needs_a_key_and_staff_access(seller, client):
 def test_fill_stops_politely_when_pexels_says_no(seller, keyed):
     with fake_pexels(status=429), __import__("unittest.mock").mock.patch("velora.services.photo_check.remote_ok", _working_remote()):
         r = seller.post("/seller/products/autofill-photos", follow_redirects=True)
-    assert "Stopped after 0 product(s)" in page(r)
+    assert "free limit is 200 searches" in page(r)
 
 
 def test_products_page_counts_products_without_a_photo(seller):

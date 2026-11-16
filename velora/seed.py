@@ -33,11 +33,11 @@ CATEGORIES = [
 #  short description, description, materials/specs/ingredients)
 PRODUCTS = [
     # Women
-    ("Linen Wrap Midi Dress", "Velora Studio", 0, 2490, 2990, 18, "XS–XL", "Made in Manila, PH", True, 210,
+    ("Linen Wrap Midi Dress", "Aurelune Studio", 0, 2490, 2990, 18, "XS–XL", "Made in Manila, PH", True, 210,
      ["1515372039744-b8f02a3ae446"], "Breathable linen · adjustable wrap tie",
      "A wrap midi in washed linen that moves with you from brunch to evening. Adjustable tie waist, flutter sleeves and a hem that sits just below the knee.",
      "100% linen. Machine wash cold, line dry, warm iron."),
-    ("Red Silk Slip Dress", "Velora Studio", 0, 3890, None, 6, "XS–L", "Made in Manila, PH", True, 140,
+    ("Red Silk Slip Dress", "Aurelune Studio", 0, 3890, None, 6, "XS–L", "Made in Manila, PH", True, 140,
      ["1496747611176-843222e1e57c"], "Bias-cut mulberry silk · statement red",
      "Cut on the bias so it skims rather than clings, in a saturated red mulberry silk with fine adjustable straps.",
      "100% mulberry silk (19 momme). Dry clean or gentle hand wash."),
@@ -54,7 +54,7 @@ PRODUCTS = [
      ["1507679799987-c73779587ccf"], "Two-piece · half-canvas construction",
      "A modern two-piece in fine Italian wool with a half-canvas jacket, slim lapels and flat-front trousers. Free hemming.",
      "Jacket & trousers: 100% wool. Lining: cupro. Dry clean only."),
-    ("Heavyweight White Tee", "Velora Studio", 1, 790, None, 60, "S–XXL", "Made in Manila, PH", False, 320,
+    ("Heavyweight White Tee", "Aurelune Studio", 1, 790, None, 60, "S–XXL", "Made in Manila, PH", False, 320,
      ["1521572163474-6864f9cf17ab"], "240 gsm cotton · boxy fit",
      "The tee we wear under everything: dense, smooth 240 gsm cotton that keeps its shape wash after wash.",
      "100% combed cotton. Machine wash cold."),
@@ -134,7 +134,7 @@ PRODUCTS = [
      "A 40-litre weekender that fits airline cabin limits, with a ventilated shoe compartment, shoulder strap and trolley sleeve.",
      "Waxed canvas, leather handles, brass hardware."),
     # Gifts & Gourmet
-    ("Luxury Gift Box", "Velora Gifting", 7, 1450, None, 30, "Medium box", "Packed in Manila, PH", True, 140,
+    ("Luxury Gift Box", "Aurelune Gifting", 7, 1450, None, 30, "Medium box", "Packed in Manila, PH", True, 140,
      ["1549465220-1a8b9238cd48"], "Hand-wrapped · personal note included",
      "We wrap your purchase in our signature box with tissue, ribbon and a handwritten note.",
      "Rigid recycled-board box, cotton ribbon."),
@@ -142,11 +142,11 @@ PRODUCTS = [
      ["1511381939415-e44015466834"], "Bean-to-bar · red fruit & molasses",
      "Made from fermented Davao cacao roasted and stone-ground in small batches.",
      "Cacao beans, cane sugar, cocoa butter"),
-    ("Single-Origin Coffee Beans", "Velora Roastery", 7, 685, None, 40, "250 g", "Benguet, PH", False, 186,
+    ("Single-Origin Coffee Beans", "Aurelune Roastery", 7, 685, None, 40, "250 g", "Benguet, PH", False, 186,
      ["1447933601403-0c6688de566e"], "Brown sugar, orange & almond",
      "Highland Arabica from the Cordilleras, roasted weekly. The perfect add-on gift.",
      "100% Arabica coffee beans"),
-    ("Scented Soy Candle", "Velora Home", 7, 890, None, 28, "220 g · 45 hr burn", "Manila, PH", False, 65,
+    ("Scented Soy Candle", "Aurelune Home", 7, 890, None, 28, "220 g · 45 hr burn", "Manila, PH", False, 65,
      ["1603006905003-be475563bc59"], "Hinoki & fig · reusable vessel",
      "Clean-burning soy wax scented with Japanese cypress and green fig.",
      "Soy wax, cotton wick, fragrance oils"),
@@ -411,7 +411,7 @@ def seed_demo_accounts(products, rng, now):
         if not Cart.query.filter_by(user_id=buyer.id).first():
             db.session.add(Cart(user_id=buyer.id))
         db.session.add_all([
-            Notification(user_id=buyer.id, title="Welcome to Velora Market", body="Use WELCOME10 for 10% off.",
+            Notification(user_id=buyer.id, title="Welcome to Aurelune", body="Use WELCOME10 for 10% off.",
                          link="/shop/", icon="sparkles", is_read=True, created_at=now - timedelta(days=30)),
             Notification(user_id=buyer.id, title="The Red Silk Slip Dress is back", body="Restocked in sizes XS–L.",
                          link="/shop/p/red-silk-slip-dress", icon="shirt", created_at=now - timedelta(days=1)),

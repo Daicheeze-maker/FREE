@@ -1,13 +1,13 @@
 @echo off
 REM ===========================================================================
-REM  Velora Market: DOUBLE-CLICK THIS FILE to start the store.
+REM  Aurelune: DOUBLE-CLICK THIS FILE to start the store.
 REM  First run: sets everything up automatically (1-2 minutes, needs internet).
 REM  After that: starts in a few seconds and opens your browser.
 REM  To stop the store, press Ctrl+C in this window (or just close it).
 REM ===========================================================================
 setlocal
 cd /d "%~dp0"
-title Velora Market
+title Aurelune
 
 if not exist ".venv\Scripts\activate.bat" (
   echo.
@@ -27,11 +27,12 @@ call .venv\Scripts\activate.bat
 python -m flask --app wsgi init-db >nul
 python -m flask --app wsgi seed >nul
 python -m flask --app wsgi upgrade-demo
+python -m flask --app wsgi fill-photos
 
 set OPEN_BROWSER=1
 if "%PORT%"=="" set PORT=5000
 echo.
-echo  Velora Market is starting at  http://127.0.0.1:%PORT%
+echo  Aurelune is starting at  http://127.0.0.1:%PORT%
 echo  Your browser will open by itself. Press Ctrl+C here to stop the store.
 echo.
 python serve.py

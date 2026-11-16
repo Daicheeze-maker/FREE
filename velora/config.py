@@ -24,7 +24,8 @@ def _path(name, default):
 
 
 class Config:
-    APP_NAME = "Velora Market"
+    BRAND_NAME = os.environ.get("STORE_NAME", "Aurelune").strip() or "Aurelune"
+    APP_NAME = BRAND_NAME
     SECRET_KEY = os.environ.get("SECRET_KEY") or ""
     ENV_NAME = os.environ.get("VELORA_ENV", "development")
 
@@ -70,6 +71,7 @@ class Config:
     MAPBOX_TOKEN = os.environ.get("MAPBOX_TOKEN", "")
     MAPBOX_BASE_URL = os.environ.get("MAPBOX_BASE_URL", "https://api.mapbox.com")
     MAPBOX_COUNTRY = os.environ.get("MAPBOX_COUNTRY", "ph")  # limit address suggestions to this country ("" = worldwide)
+    OPENVERSE_BASE_URL = os.environ.get("OPENVERSE_BASE_URL", "https://api.openverse.org")
     PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
     PEXELS_BASE_URL = os.environ.get("PEXELS_BASE_URL", "https://api.pexels.com/v1")
     PEXELS_IMAGE_HOSTS = [h.strip() for h in os.environ.get("PEXELS_IMAGE_HOSTS", "images.pexels.com").split(",") if h.strip()]

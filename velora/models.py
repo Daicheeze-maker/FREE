@@ -138,7 +138,7 @@ class Product(TimestampMixin, db.Model):
     name = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(220), nullable=False, unique=True, index=True)
     sku = db.Column(db.String(64), nullable=False, unique=True)
-    brand = db.Column(db.String(120), nullable=False, default="Velora", index=True)
+    brand = db.Column(db.String(120), nullable=False, default="Aurelune", index=True)
     category_id = db.Column(db.Integer, db.ForeignKey("category.id", ondelete="RESTRICT"), nullable=False, index=True)
     short_description = db.Column(db.String(300), nullable=False, default="")
     description = db.Column(db.Text, nullable=False, default="")
@@ -487,8 +487,8 @@ DEFAULT_SETTINGS = {
     "free_shipping_threshold_minor": "250000",  # ₱2,500.00
     "low_stock_threshold": "8",
     "store_announcement": "Free delivery on orders over ₱2,500 · 30-day free returns on clothing & accessories",
-    "support_email": "care@veloramarket.example",
-    "store_name": "Velora Market Flagship",
+    "support_email": "care@aurelune.example",
+    "store_name": "Aurelune Flagship Store",
     "store_address": "32nd Street corner 5th Avenue, Bonifacio Global City, Taguig, Metro Manila",
     "store_hours": "Mon–Sat 10:00–20:00 · Sun 11:00–18:00",
     "store_lat": "14.5507",

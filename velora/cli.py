@@ -141,7 +141,7 @@ def register_cli(app):
             return
         click.echo("")
         click.echo("=" * 70)
-        click.echo(" Your store data is from an OLDER VERSION of Velora Market")
+        click.echo(" Your store data is from an OLDER VERSION of Aurelune")
         click.echo(" (it still has Cars and the old catalog).")
         click.echo(" Updating loads the new catalog: Bags, Shoes, Accessories, sizes and the map.")
         click.echo(" It REPLACES everything in the local database (accounts, orders, uploads' links).")
@@ -190,6 +190,26 @@ def register_cli(app):
         click.echo(f"Updated {report['slots']} site photo(s) and {report['products']} product(s).")
         for line in report["skipped"]:
             click.echo(f"  skipped {line}")
+
+    @app.cli.command("fill-photos")
+    @click.option("--limit", default=30, show_default=True)
+    def fill_photos_cmd(limit):
+        """Give products with a missing or broken photo a matching one from the internet (never fails the start-up)."""
+        from .services import photo_fill, pexels
+        try:
+            res = photo_fill.fill_products(limit=limit)
+        except pexels.PexelsError:
+            click.echo(" Product photos: no internet right now, so none were added. They are filled in next time.")
+            return
+        except Exception as exc:  # start-up must never break because of photos
+            click.echo(f" Product photos skipped ({type(exc).__name__}).")
+            return
+        if res.done:
+            click.echo(f" Added photos to {len(res.done)} product(s) from {res.source}.")
+        if res.error:
+            click.echo(f" Stopped early: {res.error}")
+        if res.left:
+            click.echo(f" {res.left} more product(s) still need photos; they are filled in on the next start.")
 
     @app.cli.command("check-images")
     def check_images():

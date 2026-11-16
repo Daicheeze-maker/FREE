@@ -996,3 +996,11 @@ details.disclosure[open] { padding-bottom: 8px; }
 .back-link:hover { color: var(--ink); }
 .auth__alt { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); text-align: center; }
 .auth__alt p { margin: 0 0 10px; color: var(--muted); }
+
+.backrow { padding-top: 18px; }
+.backrow .back-link { margin-bottom: 0; }
+.console-content > .back-link { margin-bottom: 14px; }
+
+.account-type { border: 0; padding: 0; margin: 0 0 14px; min-width: 0; }
+.account-type legend { padding: 0; margin-bottom: 8px; }
+.choice-grid--2 { grid-template-columns: 1fr 1fr; }

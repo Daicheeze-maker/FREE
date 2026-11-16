@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon, field %}
-{% block title %}Checkout · Velora Market{% endblock %}
+{% block title %}Checkout · {{ brand }}{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
 {% block content %}
 <div class="container">

@@ -1,4 +1,4 @@
-/* Velora Market — motion layer. Decoration only: the site works the same if this never runs. */
+/* Aurelune — motion layer. Decoration only: the site works the same if this never runs. */
 (function () {
   "use strict";
 

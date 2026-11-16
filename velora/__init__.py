@@ -1,4 +1,4 @@
-"""Velora Market — application factory."""
+"""Aurelune (package name: velora) — application factory."""
 import logging
 import os
 import secrets
@@ -98,6 +98,7 @@ def _register_template_helpers(app):
             "currencies": app.config["DISPLAY_CURRENCIES"],
             "wishlist_ids": wish_ids,
             "mapbox_ready": bool(mapbox_service.token()),
+            "brand": app.config["BRAND_NAME"],
         }
 
     @app.template_filter("dt")

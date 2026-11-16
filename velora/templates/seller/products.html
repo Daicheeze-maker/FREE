@@ -11,12 +11,11 @@
 <section class="card">
   <div class="row row--between">
     <div><strong>{{ icon('image') }} Product photos</strong><br>
-      <span class="muted" style="font-size:13.5px">{% if no_photo %}<strong>{{ no_photo }}</strong> product{{ '' if no_photo == 1 else 's' }} ha{{ 's' if no_photo == 1 else 've' }} no photo. {% endif %}The button also checks every photo link and replaces the ones that don't load, with a matching photo for each product (for example “tortoiseshell sunglasses”).</span></div>
+      <span class="muted" style="font-size:13.5px">{% if no_photo %}<strong>{{ no_photo }}</strong> product{{ '' if no_photo == 1 else 's' }} ha{{ 's' if no_photo == 1 else 've' }} no photo. {% endif %}The button also checks every photo link and replaces the ones that don't load, with a matching photo from the internet for each product (for example “tortoiseshell sunglasses”). No account needed. It also runs by itself when the store starts.</span></div>
     <div class="row">
       {% if no_photo %}<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.products', nophoto=1) }}">Show them</a>{% endif %}
-      {% if pexels_ready %}
       <form method="post" action="{{ url_for('seller.products_autofill_photos') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--accent" type="submit" data-loading-text="Finding photos… this can take a minute">{{ icon('wand-sparkles', 'ic--sm') }} Fill missing &amp; broken photos</button></form>
-      {% else %}<a class="btn btn--accent" href="{{ url_for('seller.find_photos') }}">{{ icon('key-round', 'ic--sm') }} Set up free Pexels photos</a>{% endif %}
+      {% if not pexels_ready %}<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.find_photos') }}">{{ icon('key-round', 'ic--sm') }} Better model photos (free Pexels key)</a>{% endif %}
     </div>
   </div>
 </section>

@@ -3,7 +3,7 @@
 {% block title %}API health · Admin{% endblock %}
 {% block page_title %}External API health{% endblock %}
 {% block content %}
-<p class="alert alert--info">{{ icon('info') }} <span>Velora uses Open Food Facts (imports) and Frankfurter (currency), plus optional Pexels (photos), Mapbox (address suggestions) and OpenStreetMap (map). All are optional at runtime: the catalog, cart and checkout keep working offline. Statistics below are recorded from real requests made by this server.</span></p>
+<p class="alert alert--info">{{ icon('info') }} <span>{{ brand }} uses Open Food Facts (imports) and Frankfurter (currency), plus optional Pexels (photos), Mapbox (address suggestions) and OpenStreetMap (map). All are optional at runtime: the catalog, cart and checkout keep working offline. Statistics below are recorded from real requests made by this server.</span></p>
 <div class="health">
   {% for key, label, desc, docs in [(OFF, 'Open Food Facts', 'Product search & import: names, images, ingredients, allergens, Nutri-Score and nutrition per 100 g.', 'https://world.openfoodfacts.org/data'), (FX, 'Frankfurter', 'Daily ECB reference exchange rates for display-only price conversion (PHP base).', 'https://frankfurter.dev/'), (PEXELS, 'Pexels', 'Free professional model photos picked in Seller studio → Find photos. Needs a free key' ~ ('' if pexels_ready else ' (not added yet).'), 'https://www.pexels.com/api/')] %}
   {% set a = apis.get(key) %}

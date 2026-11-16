@@ -35,9 +35,11 @@ class PexelsPhoto:
     width: int
     height: int
 
+    credit_text: str = ""  # set by other photo sources (Openverse); Pexels builds its own
+
     @property
     def credit(self):
-        return f"Photo by {self.photographer} on Pexels"[:200]
+        return self.credit_text or f"Photo by {self.photographer} on Pexels"[:200]
 
 
 def api_key():

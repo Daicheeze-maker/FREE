@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon, skeleton_grid %}
-{% block title %}{% if q %}“{{ q }}” · {% endif %}{{ category.name if category else 'Shop all' }} · Velora Market{% endblock %}
+{% block title %}{% if q %}“{{ q }}” · {% endif %}{{ category.name if category else 'Shop all' }} · {{ brand }}{% endblock %}
 {% block content %}
 <div class="container">
   <header class="page-head">

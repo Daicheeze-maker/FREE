@@ -20,7 +20,8 @@ from ..photos import SLOTS, credit_key, product_query, setting_key
 from ..money import to_major
 from ..security import audit, roles_required
 from ..services import openfoodfacts as off
-from ..services import pexels, photo_check
+from ..services import pexels, photo_check, photo_fill
+from ..services.photo_fill import apply_photo as _apply_photo, pick_photo as _pick_photo
 from ..services import reports
 from ..services.catalog import next_sku, slugify, unique_slug
 from ..services.orders import change_status
@@ -493,7 +494,7 @@ def export(kind):
     db.session.commit()
     stamp = utcnow().strftime("%Y%m%d")
     return Response(body, mimetype="text/csv",
-                    headers={"Content-Disposition": f"attachment; filename=velora-{kind}-{stamp}.csv"})
+                    headers={"Content-Disposition": f"attachment; filename=aurelune-{kind}-{stamp}.csv"})
 
 
 # ------------------------------------------------------------- model photos
@@ -559,38 +560,6 @@ def _target(raw):
         if product is not None:
             return "product", product, product.name, product_query(product)
     return None
-
-
-def _apply_photo(target, filename, credit):
-    """Make `filename` the photo for a site spot, or the cover image of a product."""
-    kind, obj = target[0], target[1]
-    if kind == "slot":
-        for key, value in ((setting_key(obj), filename), (credit_key(obj), credit)):
-            row = db.session.get(StoreSetting, key)
-            if row is None:
-                db.session.add(StoreSetting(key=key, value=value))
-                continue
-            if key == setting_key(obj):
-                delete_upload(row.value)  # drop the photo this one replaces
-            row.value = value
-    else:
-        image = ProductImage(filename=filename, alt=obj.name, credit=credit)
-        ordered = [image] + list(obj.images)  # the new photo becomes the cover
-        obj.images.append(image)
-        for pos, img in enumerate(ordered):
-            img.position = pos
-        obj.images.sort(key=lambda i: i.position)
-
-
-def _pick_photo(query, used):
-    """The best unused Pexels photo for a search: a portrait one if possible, looking at two pages of results."""
-    candidates = []
-    for page in (1, 2):
-        photos, total = pexels.search(query, page=page, per_page=15)
-        candidates += [p for p in photos if p.id not in used and p.id not in {c.id for c in candidates}]
-        if any(p.height >= p.width * 1.2 for p in candidates) or page * 15 >= total:
-            break
-    return next((p for p in candidates if p.height >= p.width * 1.2), None) or (candidates[0] if candidates else None)
 
 
 @bp.route("/find-photos")
@@ -696,41 +665,22 @@ def pexels_key():
 
 @bp.post("/products/autofill-photos")
 def products_autofill_photos():
-    """Give every product with a missing or broken photo a right-looking one from Pexels."""
-    if not pexels.api_key():
-        flash("Add your free Pexels key first, then photos can be filled in.", "info")
-        return redirect(url_for("seller.find_photos"))
-    products = Product.query.filter(Product.status != PRODUCT_ARCHIVED).order_by(Product.name).all()
-    status = photo_check.check_remote(img.url for p in products for img in p.images if img.url and not img.filename)
-    need = [p for p in products if not photo_check.working_images(p, status)]
-    need.sort(key=lambda p: (bool(p.images), p.name))  # products with no photo at all come first, then broken ones
-    if not need:
+    """Give every product with a missing or broken photo a right-looking one from the internet."""
+    try:
+        result = photo_fill.fill_products(limit=30)
+    except pexels.PexelsError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("seller.products"))
+    if not result.needed:
         flash("Every product already has a photo that loads. Nothing to fill in.", "success")
         return redirect(url_for("seller.products"))
-    used, done, skipped = set(), [], []
-    try:
-        for product in need[:30]:  # keeps one click well inside Pexels' free hourly limit
-            pick = _pick_photo(product_query(product), used)
-            if pick is None:
-                skipped.append(product.name)
-                continue
-            filename = save_image_bytes(pexels.download(pick))
-            for img in [i for i in product.images if i not in photo_check.working_images(product, status)]:
-                product.images.remove(img)  # dead links go
-                db.session.delete(img)
-            _apply_photo(("product", product), filename, pick.credit)
-            used.add(pick.id)
-            audit("photo.pexels", "product", product.id, f"{product.name} ← Pexels #{pick.id} (fill missing)")
-            db.session.commit()
-            done.append(product.name)
-    except (pexels.PexelsError, UploadError) as exc:
-        db.session.rollback()
-        flash(f"Stopped after {len(done)} product(s): {exc}", "error")
+    if result.error:
+        flash(f"Stopped after {len(result.done)} product(s): {result.error}", "error")
         return redirect(url_for("seller.products"))
-    msg = f"Added photos to {len(done)} product(s)."
-    if len(need) > 30:
-        msg += f" {len(need) - 30} more are left. Press the button again."
-    if skipped:
-        msg += f" No photo found for: {', '.join(skipped)}."
+    msg = f"Added photos to {len(result.done)} product(s) (from {result.source})."
+    if result.left:
+        msg += f" {result.left} more are left. Press the button again."
+    if result.skipped:
+        msg += f" No photo found for: {', '.join(result.skipped)}."
     flash(msg + " Look them over, and use “Find a model photo” on any you want to swap.", "success")
     return redirect(url_for("seller.products"))

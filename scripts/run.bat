@@ -1,5 +1,5 @@
 @echo off
-REM Start Velora with Waitress on Windows.
+REM Start Aurelune with Waitress on Windows.
 REM To allow other devices:  set HOST=0.0.0.0  then run this script (and open the firewall port, see README).
 setlocal
 cd /d "%~dp0\.."

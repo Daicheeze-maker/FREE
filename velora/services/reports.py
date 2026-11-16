@@ -92,6 +92,8 @@ def kpis():
         "active_products": Product.query.filter_by(status=PRODUCT_ACTIVE).count(),
         "awaiting": order_count(statuses=[OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PROCESSING]),
         "low_stock": len(low_stock()),
+        "active_sellers": User.query.filter(User.role == "seller", User.is_active_account.is_(True), User.last_login_at >= d30).count(),
+        "sellers_total": User.query.filter_by(role="seller").count(),
     }
 
 

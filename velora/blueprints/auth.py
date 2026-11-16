@@ -147,11 +147,20 @@ def register():
                 session[cart_service.SESSION_KEY] = guest_cart
                 cart_service.merge_session_cart_into(user)
             from ..services.orders import notify
-            notify(user.id, "Welcome to Velora Market", "Use WELCOME10 for 10% off your first order.",
+            notify(user.id, f"Welcome to {current_app.config['BRAND_NAME']}", "Use WELCOME10 for 10% off your first order.",
                    url_for("catalog.listing"), icon="sparkles")
             _ensure_seller_profile(user)
             db.session.commit()
-            flash("Your account is ready. Welcome to Velora!", "success")
+            if (form.account_type.data or "buyer") == "seller":
+                # They chose to sell: open the linked seller profile and go straight to Seller studio
+                seller = user.linked_profile
+                logout_user()
+                login_user(seller)
+                seller.last_login_at = utcnow()
+                db.session.commit()
+                flash(f"Your seller account is ready. Welcome to your studio, {seller.first_name}! You can switch to your buyer profile any time from the sidebar.", "success")
+                return redirect(url_for("seller.dashboard"))
+            flash(f"Your account is ready. Welcome to {current_app.config['BRAND_NAME']}!", "success")
             nxt = request.args.get("next")
             return redirect(nxt if is_safe_redirect(nxt) else url_for("account.dashboard"))
     return render_template("auth/register.html", form=form)
@@ -165,6 +174,8 @@ def switch_profile():
         abort(404)
     logout_user()
     login_user(other)
+    other.last_login_at = utcnow()
+    db.session.commit()
     flash(f"You're now using your {'seller' if other.role == ROLE_SELLER else 'buyer'} profile.", "success")
     return redirect(home_for(other))
 

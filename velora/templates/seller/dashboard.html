@@ -1,6 +1,6 @@
 {% extends "console.html" %}
 {% from "_macros.html" import icon, stat, status_badge, bar_chart, stars %}
-{% block title %}Seller studio · Velora{% endblock %}
+{% block title %}Seller studio · {{ brand }}{% endblock %}
 {% block crumbs %}<p class="crumbs">Good {{ 'morning' if today.hour < 12 else 'afternoon' if today.hour < 18 else 'evening' }}, {{ current_user.first_name }}</p>{% endblock %}
 {% block page_title %}Store dashboard{% endblock %}
 {% block actions %}

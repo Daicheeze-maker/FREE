@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon, product_card, price, stars, field %}
-{% block title %}{{ product.name }} · {{ product.brand }} · Velora Market{% endblock %}
+{% block title %}{{ product.name }} · {{ product.brand }} · {{ brand }}{% endblock %}
 {% block description %}{{ product.short_description }}{% endblock %}
 {% block content %}
 <div class="container">
@@ -149,7 +149,7 @@
           {{ stars(r.rating) }}
           <h4>{{ r.title }}</h4>
           <p>{{ r.body }}</p>
-          {% if r.staff_reply %}<div class="review__reply"><strong>Velora team:</strong> {{ r.staff_reply }}</div>{% endif %}
+          {% if r.staff_reply %}<div class="review__reply"><strong>{{ brand }} team:</strong> {{ r.staff_reply }}</div>{% endif %}
         </article>
         {% else %}
         <p class="muted">No reviews yet. Buyers can review once their order is delivered.</p>

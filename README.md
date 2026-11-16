@@ -1,4 +1,4 @@
-# Velora Market
+# Aurelune
 
 A full-stack demo e-commerce store for **clothing, watches, jewelry and bags** (plus a small gifts & gourmet aisle). It's built with **Python 3.11+ / Flask / SQLAlchemy / SQLite** and has four role-based experiences: guest, customer, seller and administrator. It integrates two real external APIs, **Open Food Facts** and **Frankfurter**, and adds smooth GSAP animation.
 
@@ -26,7 +26,7 @@ bash start.sh               # first run sets everything up; then opens http://12
    - Every time after that it starts in a few seconds.
    - Press **Ctrl+C** in its window to stop the store.
 
-In **VS Code** you can also press **F5** (Run → *Run Velora Market*) or use **Terminal → Run Build Task** (Ctrl+Shift+B), which runs `start.bat`.
+In **VS Code** you can also press **F5** (Run → *Run Aurelune*) or use **Terminal → Run Build Task** (Ctrl+Shift+B), which runs `start.bat`.
 
 Prefer typing commands? In a terminal inside the project folder: `.\start.bat` (PowerShell) or `start.bat` (Command Prompt). The older `scripts\setup.bat` and `scripts\run.bat` still work too.
 
@@ -44,11 +44,16 @@ python serve.py
 
 **Windows says `flask.exe` / `pip.exe` "was blocked by your organization's Device Guard policy"?** Some school and work PCs block programs inside `.venv\Scripts`. All the scripts here call everything through Python (`python -m flask …`, `python -m pip …`), which isn't blocked. Use the same form for any command in this README, e.g. `python -m flask --app wsgi reset-demo --yes-delete-everything`.
 
+### Store name
+
+The store is called **Aurelune**. To use another name, put `STORE_NAME=Your Name` in `.env` (logo, page titles, emails and welcome messages follow it).
+
 ### Accounts (you create them)
 
 The store starts with **no accounts and no demo logins**. Click **Create account** (top right) and register. Your account is saved in the database (`instance/velora.db`) with a securely hashed password, and you sign in with the same email and password every time.
 
 - Every new **buyer** starts with **₱500,000 of demo credit**, spent at checkout (an admin can reset it under *Admin → Users → (buyer) → Demo credit*).
+- On **Create account** you choose **Shop** or **Sell**. *Sell* signs you in to your seller profile and opens **Seller studio**. **Admins** see every seller (and when they last signed in) under **Admin → Active sellers**.
 - Every buyer also gets a **linked seller profile**: open the account menu and choose **Switch to seller profile** (and back). What a buyer purchases shows up in the *Orders* of the seller profile, which can ship it and mark it delivered. Make a second account to get a second buyer + seller.
 - **An administrator** is created from the terminal (it is never self-registered):
 
@@ -178,6 +183,9 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 - **Pin your location:** checkout and *My addresses* also show a map (Leaflet + OpenStreetMap). Click it, drag the pin, or press *Use my current location* and the server asks Mapbox (`GET /address-reverse`, reverse geocoding) which address is there and fills the form. Without a Mapbox token the pin still works, but you type the address yourself.
 - Errors (bad token, rate limit, offline) are recorded on the API health page and the form falls back to manual entry.
 
+### Openverse — `velora/services/openverse.py` (automatic product photos, no key)
+- `start.bat` / `start.sh` run `fill-photos`, and Seller studio → Products has **Fill missing & broken photos**. Both give every product without a working photo a matching one from the internet: Pexels if you added a key, otherwise [Openverse](https://api.openverse.org) (free openly licensed photos, no account). Photos are downloaded through Openverse's own thumbnail endpoint only, re-encoded, stored locally, and their licence credit is saved. If you are offline nothing breaks; it simply tries again next start.
+
 ### Pexels — `velora/services/pexels.py` (photos for Seller studio → Find photos)
 - `GET {PEXELS_BASE_URL}/search?query=…&orientation=portrait` and `GET /photos/{id}` with your free key in the `Authorization` header (free plan: 200 requests/hour). Key from `.env` (`PEXELS_API_KEY`) or pasted once on the Find photos page (it's tested before it's saved and never shown again).
 - A photo is chosen **by id**: the server re-fetches its details from Pexels, so nothing from the browser (a URL, a credit) is trusted. Only images from Pexels' own host (`images.pexels.com`, https) can be downloaded, with a size cap; the image is verified, re-encoded to WebP and stored locally.
@@ -250,7 +258,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 206 tests. External APIs are mocked, so no network is needed. They cover:
+There are 225 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

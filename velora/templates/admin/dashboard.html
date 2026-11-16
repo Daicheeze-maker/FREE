@@ -1,6 +1,6 @@
 {% extends "console.html" %}
 {% from "_macros.html" import icon, stat, status_badge, bar_chart %}
-{% block title %}Admin console · Velora{% endblock %}
+{% block title %}Admin console · {{ brand }}{% endblock %}
 {% block crumbs %}<p class="crumbs">{{ icon('shield-check', 'ic--sm') }} Elevated access · actions are audited</p>{% endblock %}
 {% block page_title %}Store-wide overview{% endblock %}
 {% block actions %}
@@ -11,6 +11,7 @@
 <div class="stats">
   {{ stat('Lifetime revenue', fmt_base(k.revenue_total), fmt_base(k.revenue_30) ~ ' in last 30 days', 'landmark', 'stat--dark') }}
   {{ stat('Customers', k.customers, '+' ~ k.new_customers_30 ~ ' in 30 days', 'users') }}
+  <a href="{{ url_for('admin.sellers') }}" style="text-decoration:none;color:inherit">{{ stat('Active sellers', k.active_sellers, k.sellers_total ~ ' seller profiles in total', 'store') }}</a>
   {{ stat('Active products', k.active_products, k.low_stock ~ ' low on stock', 'boxes') }}
   {{ stat('Open orders', k.awaiting, k.orders_30 ~ ' orders in 30 days', 'package') }}
 </div>

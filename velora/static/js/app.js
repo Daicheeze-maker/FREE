@@ -1,4 +1,4 @@
-/* Velora Market — progressive enhancement. Every feature here also works without JS
+/* Aurelune — progressive enhancement. Every feature here also works without JS
    (forms post normally); scripts only add speed, feedback and motion. */
 (function () {
   "use strict";

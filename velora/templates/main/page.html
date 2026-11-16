@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon %}
-{% block title %}{{ title }} · Velora Market{% endblock %}
+{% block title %}{{ title }} · {{ brand }}{% endblock %}
 {% block content %}
 <div class="container">
   <header class="page-head">
@@ -10,7 +10,7 @@
   <div class="cart-layout">
     <article class="prose card">
       {% if slug == 'about' %}
-        <p>Velora Market is a small Manila team with a big wardrobe. We curate clothing, watches, fine jewelry and bags, and we show every piece on professional models so you can see how it looks when worn.</p>
+        <p>{{ brand }} is a small Manila team with a big wardrobe. We curate clothing, watches, fine jewelry and bags, and we show every piece on professional models so you can see how it looks when worn.</p>
         {% if photo_credits %}<h2>Photo credits</h2><ul>{% for label, credit in photo_credits %}<li>{{ label }}: {{ credit }} (<a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a>)</li>{% endfor %}</ul>{% endif %}
         <h2>What we stand for</h2>
         <ul><li>Real fashion photography, so you can see how a piece looks when worn.</li><li>Authentic watches and certified jewelry.</li><li>Real reviews from verified buyers only.</li></ul>
@@ -26,7 +26,7 @@
         <p>We collect only what's needed to fulfil your orders: your name, email, delivery addresses and order history. Passwords are stored as salted hashes, never in plain text.</p>
         <p>This is a demonstration store: payments are simulated and we never collect card numbers, CVVs or bank credentials. Newsletter subscribers can ask to be removed at any time.</p>
       {% elif slug == 'terms' %}
-        <p>Velora Market is a demonstration e-commerce application. No real goods are sold and no money changes hands. Prices shown in currencies other than PHP are estimates based on published reference rates and are not the amount charged.</p>
+        <p>{{ brand }} is a demonstration e-commerce application. No real goods are sold and no money changes hands. Prices shown in currencies other than PHP are estimates based on published reference rates and are not the amount charged.</p>
       {% elif slug == 'faq' %}
         <h2>Is payment real?</h2><p>No — every order is paid with demo credit (each buyer starts with ₱500,000). Nothing is charged.</p>
         <h2>Why are some prices marked “≈”?</h2><p>If you pick a display currency other than PHP we convert using daily reference rates from the European Central Bank via the Frankfurter API. You're always charged in PHP.</p>

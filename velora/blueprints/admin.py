@@ -7,7 +7,7 @@ from sqlalchemy import or_
 
 from ..extensions import db
 from ..forms import SettingsForm, UserAdminForm
-from ..models import (ROLE_ADMIN, ROLES, STARTING_CREDIT_MINOR, ApiStatus, AuditLog, ExchangeRateCache, NewsletterSubscription, Order,
+from ..models import (ROLE_ADMIN, ROLES, SELLER_SUFFIX, STARTING_CREDIT_MINOR, ApiStatus, AuditLog, ExchangeRateCache, NewsletterSubscription, Order,
                       StoreSetting, User, get_int_setting, get_setting, utcnow)
 from ..money import to_major
 from ..security import audit, roles_required
@@ -58,6 +58,21 @@ def users():
     order_counts = dict(db.session.query(Order.user_id, db.func.count(Order.id)).group_by(Order.user_id).all())
     return render_template("admin/users.html", pagination=pagination, q=q, role=role, state=state, roles=ROLES,
                            order_counts=order_counts, now=utcnow())
+
+
+@bp.route("/sellers")
+def sellers():
+    """Every seller profile, newest sign-in first. "Active" = signed in during the last 30 days."""
+    now = utcnow()
+    rows = User.query.filter_by(role="seller").order_by(User.last_login_at.is_(None), User.last_login_at.desc(), User.created_at.desc()).all()
+    cutoff = now - timedelta(days=30)
+    owners = {u.email: u for u in User.query.filter_by(role="customer").all()}
+    handled = dict(db.session.query(AuditLog.actor_id, db.func.count(AuditLog.id)).filter(AuditLog.action.like("order.%")).group_by(AuditLog.actor_id).all())
+    sellers_ = [{"user": u, "owner": owners.get(u.email.removesuffix(SELLER_SUFFIX)),
+                 "active": bool(u.is_active_account and u.last_login_at and u.last_login_at >= cutoff),
+                 "actions": handled.get(u.id, 0)} for u in rows]
+    return render_template("admin/sellers.html", sellers=sellers_, now=now,
+                           active=sum(1 for s in sellers_ if s["active"]))
 
 
 @bp.route("/users/<int:user_id>", methods=["GET", "POST"])
