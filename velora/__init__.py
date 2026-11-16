@@ -118,7 +118,7 @@ def _register_template_helpers(app):
         filename = get_setting(setting_key(slot))
         if filename:
             return url_for("main.media", filename=filename)
-        return SLOTS[slot][2]
+        return url_for("static", filename="img/model-placeholder.svg")
 
     @app.template_global()
     def image_src(img):

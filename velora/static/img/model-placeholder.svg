@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Model photo coming soon">
+  <rect width="800" height="1000" fill="#EDE7DC"/>
+  <circle cx="620" cy="190" r="170" fill="#E0EDE6"/>
+  <circle cx="150" cy="860" r="120" fill="#FBEBD2"/>
+  <g fill="none" stroke="#1F6B52" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" transform="translate(400 470)">
+    <circle cx="0" cy="-150" r="46"/>
+    <path d="M-30 -104 C-110 -80 -135 10 -140 130 M30 -104 C110 -80 135 10 140 130"/>
+    <path d="M-60 -78 L-96 150 H96 L60 -78"/>
+  </g>
+  <text x="400" y="760" text-anchor="middle" font-family="Georgia, serif" font-size="40" fill="#77726A">velora.</text>
+  <text x="400" y="812" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" letter-spacing="4" fill="#9A948A">MODEL PHOTO COMING SOON</text>
+</svg>

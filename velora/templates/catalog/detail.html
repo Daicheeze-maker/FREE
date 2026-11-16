@@ -16,6 +16,7 @@
       <div class="gallery__main">
         <img src="{{ image_src(product.primary_image) }}" alt="{{ product.primary_image.alt if product.primary_image else product.name }}" data-gallery-main width="800" height="1000" fetchpriority="high">
       </div>
+      {% set cover = product.primary_image %}{% if cover and cover.credit and 'Pexels' in cover.credit %}<p class="photo-credit">{{ icon('camera', 'ic--sm') }} {{ cover.credit }}</p>{% endif %}
       {% if product.images|length > 1 %}
       <div class="gallery__thumbs" role="group" aria-label="Product images">
         {% for img in product.images %}

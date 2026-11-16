@@ -1,0 +1,86 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}Find photos · Seller studio{% endblock %}
+{% block crumbs %}<nav class="crumbs"><a href="{{ url_for('seller.photos') }}">Model photos</a>{{ icon('chevron-right', 'ic--sm') }}<span>Find photos</span></nav>{% endblock %}
+{% block page_title %}Find professional model photos{% endblock %}
+{% block content %}
+<p class="alert alert--info">{{ icon('camera') }}<span>Free professional photography from <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a>. Pick a photo and it is <strong>saved inside your store</strong>, so it never breaks. The photographer is credited on the site.</span></p>
+
+{% if not ready %}
+<section class="card">
+  <h2 style="font-size:17px">{{ icon('key-round') }} One-time setup: add your free Pexels key</h2>
+  <ol style="margin:0 0 18px 18px;padding:0;display:grid;gap:6px;font-size:14.5px">
+    <li>Open <a href="https://www.pexels.com/api/" target="_blank" rel="noopener">pexels.com/api</a> and sign up (free, takes a minute).</li>
+    <li>Click <em>Your API Key</em> and copy the long line of letters and numbers.</li>
+    <li>Paste it below and press <strong>Save key</strong>.</li>
+  </ol>
+  <form method="post" action="{{ url_for('seller.pexels_key') }}" class="row" style="flex-wrap:nowrap">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="sr-only" for="pk">Pexels API key</label>
+    <input id="pk" class="input" name="key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your Pexels key" required style="flex:1">
+    <button class="btn btn--accent" type="submit" data-loading-text="Checking…">{{ icon('check', 'ic--sm') }} Save key</button>
+  </form>
+  <p class="field__hint" style="margin-top:10px">Stored only in your store's own database and never shown again. Prefer a file? Put <code>PEXELS_API_KEY=…</code> in your <code>.env</code> and restart.</p>
+</section>
+{% elif not target %}
+<section class="card">
+  <h2 style="font-size:17px">{{ icon('crosshair') }} What do you want a photo for?</h2>
+  <form method="get" class="row" style="flex-wrap:nowrap">
+    <label class="sr-only" for="tg">Photo for</label>
+    <select id="tg" class="input select" name="target" required style="flex:1">
+      <optgroup label="Site photos">{% for key, (label, where, query) in slots.items() %}<option value="slot:{{ key }}">{{ label }}: {{ where }}</option>{% endfor %}</optgroup>
+      <optgroup label="Product cover photo">{% for p in products %}<option value="product:{{ p.id }}">{{ p.name }}</option>{% endfor %}</optgroup>
+    </select>
+    <button class="btn btn--accent" type="submit">{{ icon('search', 'ic--sm') }} Find photos</button>
+  </form>
+</section>
+{% else %}
+<section class="card">
+  <div class="card__head"><h2>{{ icon('crosshair') }} Choosing a photo for: <strong>{{ target[2] }}</strong></h2><a class="btn btn--link btn--sm" href="{{ url_for('seller.find_photos') }}">Change</a></div>
+  <form method="get" class="filters-bar" role="search">
+    <input type="hidden" name="target" value="{{ target_raw }}">
+    <label class="sr-only" for="fq">Search photos</label>
+    <input id="fq" class="input search-input" type="search" name="q" value="{{ q }}" maxlength="100" placeholder="e.g. fashion model portrait" style="flex:1" required>
+    <button class="btn btn--accent" type="submit" data-loading-text="Searching…">{{ icon('search', 'ic--sm') }} Search</button>
+  </form>
+  <div class="pill-tabs" style="margin-top:12px">{% for s in suggestions %}<a class="chip" href="{{ url_for('seller.find_photos', target=target_raw, q=s) }}">{{ s }}</a>{% endfor %}</div>
+</section>
+
+{% if error %}
+<div class="alert alert--error" role="alert">{{ icon('wifi-off') }}<div><strong>Couldn't get photos.</strong><br>{{ error }}</div></div>
+{% elif results %}
+<p class="muted" style="margin:0">{{ '{:,}'.format(total) }} photos for “{{ q }}”. Portrait photos work best.</p>
+<div class="photo-results">
+  {% for r in results %}
+  <article class="photo-card">
+    <img src="{{ r.thumb }}" alt="{{ r.alt }}" loading="lazy" width="{{ r.width }}" height="{{ r.height }}">
+    <div class="photo-card__body">
+      <span class="muted" style="font-size:12.5px">{{ icon('camera', 'ic--sm') }} {{ r.photographer }}</span>
+      <form method="post" action="{{ url_for('seller.find_photos_use') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="target" value="{{ target_raw }}"><input type="hidden" name="photo_id" value="{{ r.id }}">
+        <input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="page" value="{{ page }}">
+        <button class="btn btn--dark btn--sm btn--block" type="submit" data-loading-text="Saving…">{{ icon('check', 'ic--sm') }} Use this photo</button>
+      </form>
+      {% if r.page_url %}<a class="btn btn--link btn--sm" href="{{ r.page_url }}" target="_blank" rel="noopener">View on Pexels</a>{% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+<div class="row" style="justify-content:center">
+  {% if page > 1 %}<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.find_photos', target=target_raw, q=q, page=page - 1) }}">{{ icon('arrow-left', 'ic--sm') }} Previous</a>{% endif %}
+  {% if has_next %}<a class="btn btn--ghost btn--sm" href="{{ url_for('seller.find_photos', target=target_raw, q=q, page=page + 1) }}">Next {{ icon('arrow-right', 'ic--sm') }}</a>{% endif %}
+</div>
+{% else %}
+<div class="card" style="text-align:center"><p class="muted" style="margin:0">No photos for “{{ q }}”. Try a simpler search like “fashion model”.</p></div>
+{% endif %}
+{% endif %}
+
+{% if ready and not config.PEXELS_API_KEY %}
+<form method="post" action="{{ url_for('seller.pexels_key') }}" data-confirm="Remove your saved Pexels key? You can add it again later." data-confirm-title="Remove key?" style="margin-top:6px">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="remove">
+  <button class="btn btn--link btn--sm" type="submit">{{ icon('key-round', 'ic--sm') }} Remove saved Pexels key</button>
+</form>
+{% endif %}
+<p class="muted" style="font-size:12.5px">Photos provided by <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a>. Free to use under the <a href="https://www.pexels.com/license/" target="_blank" rel="noopener">Pexels license</a>.</p>
+{% endblock %}

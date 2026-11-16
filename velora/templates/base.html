@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Velora Market — clothing, watches, jewelry & bags{% endblock %}</title>
-  <meta name="description" content="{% block description %}Velora Market: clothing, watches, fine jewelry and bags, modelled by our own team.{% endblock %}">
+  <meta name="description" content="{% block description %}Velora Market: clothing, watches, fine jewelry and bags.{% endblock %}">
   <meta name="theme-color" content="#F5F1EA">
   <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
   <link rel="preload" href="{{ url_for('static', filename='fonts/inter.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -134,7 +134,7 @@
   <div class="container footer__grid">
     <div class="footer__brand">
       <a href="{{ url_for('main.home') }}" class="logo logo--lg">velora<span class="logo__dot">.</span></a>
-      <p>Clothing, watches, fine jewelry and bags — curated in Manila and modelled by our own team.</p>
+      <p>Clothing, watches, fine jewelry and bags — curated in Manila.</p>
       <p class="footer__contact">{{ icon('mail') }} <a href="mailto:{{ support_email }}">{{ support_email }}</a><br>{{ icon('clock') }} Mon–Sat, 9:00–18:00 PHT</p>
     </div>
     <div><h4>Shop</h4><ul>{% for c in nav_categories %}<li><a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ c.name }}</a></li>{% endfor %}</ul></div>
@@ -152,7 +152,7 @@
   </div>
   <div class="container footer__base">
     <span>© {{ 2026 }} Velora Market · demo store, no real payments are processed.</span>
-    <span>Product data partly from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a> (ODbL) · Rates by <a href="https://frankfurter.dev" rel="noopener" target="_blank">Frankfurter</a> · Stock photos via Unsplash</span>
+    <span>Product data partly from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a> (ODbL) · Rates by <a href="https://frankfurter.dev" rel="noopener" target="_blank">Frankfurter</a> · Photos: Unsplash &amp; <a href="https://www.pexels.com" rel="noopener" target="_blank">Pexels</a> contributors</span>
   </div>
 </footer>
 

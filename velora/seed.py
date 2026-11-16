@@ -19,7 +19,7 @@ def U(photo_id, w=900):
 
 
 CATEGORIES = [
-    ("Women", "shirt", "Dresses, denim, outerwear and bags — modelled by our own team."),
+    ("Women", "shirt", "Dresses, denim and outerwear."),
     ("Men", "shirt", "Tailoring, tees, jackets, sneakers and eyewear."),
     ("Watches", "watch", "Everyday automatics, chronographs and smart watches."),
     ("Jewelry", "gem", "Gold, silver, pearls and diamonds for every day and big days."),
@@ -61,7 +61,7 @@ PRODUCTS = [
      "A four-pocket field jacket in water-resistant cotton canvas with a corduroy collar.",
      "Cotton canvas with water-repellent finish. Cold wash."),
     ("Red Runner Sneakers", "Stride Lab", 1, 4590, None, 3, "EU 39–46", "Imported", True, 230,
-     ["1542291026-7eec264c27ff", "1549298916-b41d501d3772"], "Cushioned runner · breathable mesh",
+     [], "Cushioned runner · breathable mesh",
      "A lightweight everyday runner with a breathable mesh upper and responsive foam midsole.",
      "Mesh and synthetic upper, rubber outsole."),
     ("Tortoiseshell Sunglasses", "Optica", 1, 2890, None, 0, "One size", "Imported", False, 66,
@@ -265,7 +265,7 @@ def seed(force=False):
         for p in picks:
             q = rng.randint(1, 2)
             o.items.append(OrderItem(product_id=p.id, product_name=p.name, product_sku=p.sku, product_brand=p.brand,
-                                     image_url=p.images[0].url, unit_price_minor=p.price_minor, quantity=q,
+                                     image_url=p.images[0].url if p.images else None, unit_price_minor=p.price_minor, quantity=q,
                                      size=rng.choice(p.size_list) if p.size_list else None,
                                      line_total_minor=p.price_minor * q))
             sub += p.price_minor * q

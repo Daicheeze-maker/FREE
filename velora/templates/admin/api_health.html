@@ -5,11 +5,11 @@
 {% block content %}
 <p class="alert alert--info">{{ icon('info') }} <span>Velora uses exactly two external APIs. Both are optional at runtime: the catalog, cart and checkout keep working offline. Statistics below are recorded from real requests made by this server.</span></p>
 <div class="health">
-  {% for key, label, desc, docs in [(OFF, 'Open Food Facts', 'Product search & import: names, images, ingredients, allergens, Nutri-Score and nutrition per 100 g.', 'https://world.openfoodfacts.org/data'), (FX, 'Frankfurter', 'Daily ECB reference exchange rates for display-only price conversion (PHP base).', 'https://frankfurter.dev/')] %}
+  {% for key, label, desc, docs in [(OFF, 'Open Food Facts', 'Product search & import: names, images, ingredients, allergens, Nutri-Score and nutrition per 100 g.', 'https://world.openfoodfacts.org/data'), (FX, 'Frankfurter', 'Daily ECB reference exchange rates for display-only price conversion (PHP base).', 'https://frankfurter.dev/'), (PEXELS, 'Pexels', 'Free professional model photos picked in Seller studio → Find photos. Needs a free key' ~ ('' if pexels_ready else ' (not added yet).'), 'https://www.pexels.com/api/')] %}
   {% set a = apis.get(key) %}
   <section class="card health-card">
     <div class="card__head" style="margin:0">
-      <h2>{{ icon('database' if key == OFF else 'coins') }} {{ label }}</h2>
+      <h2>{{ icon('database' if key == OFF else 'camera' if key == PEXELS else 'coins') }} {{ label }}</h2>
       {% if not a or (not a.last_success_at and not a.last_error_at) %}<span class="health-card__state"><span class="pulse-dot pulse-dot--unknown"></span> No calls yet</span>
       {% elif a.healthy %}<span class="health-card__state" style="color:var(--ok)"><span class="pulse-dot"></span> Operational</span>
       {% else %}<span class="health-card__state" style="color:var(--danger)"><span class="pulse-dot pulse-dot--bad"></span> Last call failed</span>{% endif %}

@@ -39,7 +39,8 @@ def home():
                   .filter(Product.status == "active").group_by(Product.category_id).all())
     # The hero ad sits next to a model photo, so feature a clothing item (best-selling dress or top).
     clothing = {c.id for c in categories if c.slug in ("women", "men")}
-    hero = next((p for p in featured if p.category_id in clothing), None) or (featured[0] if featured else None)
+    hero = (next((p for p in featured if p.category_id in clothing and p.images), None)
+            or next((p for p in featured if p.images), None) or (featured[0] if featured else None))
     review_count = ProductReview.query.filter_by(is_hidden=False).count()
     avg_rating = db.session.query(db.func.avg(ProductReview.rating)).filter(ProductReview.is_hidden.is_(False)).scalar()
     avg_rating = round(float(avg_rating), 1) if avg_rating else None
@@ -129,4 +130,8 @@ PAGES = {
 def page(slug):
     if slug not in PAGES:
         abort(404)
-    return render_template("main/page.html", slug=slug, title=PAGES[slug], pages=PAGES)
+    credits = []
+    if slug == "about":
+        from ..photos import SLOTS, credit_key
+        credits = [(SLOTS[s][0], get_setting(credit_key(s))) for s in SLOTS if get_setting(credit_key(s))]
+    return render_template("main/page.html", slug=slug, title=PAGES[slug], pages=PAGES, photo_credits=credits)

@@ -13,6 +13,7 @@ from ..money import to_major
 from ..security import audit, roles_required
 from ..services import api_health, currency, reports
 from ..services import openfoodfacts as off
+from ..services import pexels
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -168,7 +169,8 @@ def api_health_view():
     apis = {a.name: a for a in ApiStatus.query.all()}
     rates = ExchangeRateCache.query.order_by(ExchangeRateCache.target).all()
     return render_template("admin/api_health.html", apis=apis, rates=rates, now=utcnow(),
-                           OFF=api_health.OFF, FX=api_health.FRANKFURTER)
+                           OFF=api_health.OFF, FX=api_health.FRANKFURTER, PEXELS=api_health.PEXELS,
+                           pexels_ready=bool(pexels.api_key()))
 
 
 @bp.post("/api-health/<name>/test")
@@ -185,6 +187,12 @@ def api_test(name):
             flash(f"Open Food Facts OK — search returned {count:,} matches.", "success")
         except off.OFFUnavailable as exc:
             flash(f"Open Food Facts unavailable: {exc}", "error")
+    elif name == api_health.PEXELS:
+        try:
+            photos, total = pexels.search("fashion model", per_page=3)
+            flash(f"Pexels OK — {total:,} model photos found.", "success")
+        except pexels.PexelsError as exc:
+            flash(f"Pexels unavailable: {exc}", "error")
     else:
         abort(404)
     audit("api.test", "api", name, "Manual connectivity test", commit=True)

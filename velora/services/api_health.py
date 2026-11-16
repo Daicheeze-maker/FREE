@@ -8,6 +8,7 @@ from ..models import ApiStatus, utcnow
 
 OFF = "openfoodfacts"
 FRANKFURTER = "frankfurter"
+PEXELS = "pexels"
 
 
 def _status(name):

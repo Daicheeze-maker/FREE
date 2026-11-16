@@ -10,9 +10,10 @@
   <div class="cart-layout">
     <article class="prose card">
       {% if slug == 'about' %}
-        <p>Velora Market is a small Manila team with a big wardrobe. We curate clothing, watches, fine jewelry and bags — and instead of hiring an agency, <strong>we model every piece ourselves</strong>. What you see on the site is how it really looks on real people.</p>
+        <p>Velora Market is a small Manila team with a big wardrobe. We curate clothing, watches, fine jewelry and bags, and we show every piece on professional models so you can see how it looks when worn.</p>
+        {% if photo_credits %}<h2>Photo credits</h2><ul>{% for label, credit in photo_credits %}<li>{{ label }}: {{ credit }} (<a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a>)</li>{% endfor %}</ul>{% endif %}
         <h2>What we stand for</h2>
-        <ul><li>Honest photos, worn by our own team.</li><li>Authentic watches and certified jewelry.</li><li>Real reviews from verified buyers only.</li></ul>
+        <ul><li>Real fashion photography, so you can see how a piece looks when worn.</li><li>Authentic watches and certified jewelry.</li><li>Real reviews from verified buyers only.</li></ul>
       {% elif slug == 'shipping' %}
         <p>We deliver across the Philippines. Metro Manila orders placed before 2pm usually arrive within 48 hours; provincial deliveries take 3–7 business days. Watches and jewelry ship insured.</p>
         <h2>Rates</h2>
@@ -29,7 +30,7 @@
       {% elif slug == 'faq' %}
         <h2>Is payment real?</h2><p>No — every order is paid with demo credit (each buyer starts with ₱500,000). Nothing is charged.</p>
         <h2>Why are some prices marked “≈”?</h2><p>If you pick a display currency other than PHP we convert using daily reference rates from the European Central Bank via the Frankfurter API. You're always charged in PHP.</p>
-        <h2>Who are the models?</h2><p>Our own team! Every product photo is styled and modelled in-house.</p>
+        <h2>Who are the models in the photos?</h2><p>The model photos come from Pexels, a free library of professional photography. Photographers are credited on the About page and under product photos.</p>
         <h2>Where does nutrition data come from?</h2><p>Gourmet gift items can be enriched with data from Open Food Facts, a free, collaborative food products database.</p>
       {% else %}
         <p>We're here Monday to Saturday, 9:00–18:00 Philippine time.</p>

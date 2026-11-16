@@ -3,6 +3,7 @@
 Sellers and administrators can both use these tools. This is a single-store catalog,
 not a multi-vendor marketplace.
 """
+import re
 from datetime import timedelta
 
 from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
@@ -15,14 +16,15 @@ from ..forms import (CategoryForm, DiscountForm, OFFImportForm, OFFSearchForm, O
                      StaffReplyForm)
 from ..models import (PRODUCT_ACTIVE, PRODUCT_ARCHIVED, PRODUCT_DRAFT, PRODUCT_STATUSES, Category, DiscountCode,
                       Order, OrderStatus, Product, ProductImage, ProductReview, StoreSetting, utcnow)
-from ..photos import SLOTS, setting_key
+from ..photos import PRODUCT_QUERIES, SLOTS, credit_key, setting_key
 from ..money import to_major
 from ..security import audit, roles_required
 from ..services import openfoodfacts as off
+from ..services import pexels
 from ..services import reports
 from ..services.catalog import next_sku, slugify, unique_slug
 from ..services.orders import change_status
-from ..services.uploads import UploadError, delete_upload, save_product_image
+from ..services.uploads import UploadError, delete_upload, save_image_bytes, save_product_image
 
 bp = Blueprint("seller", __name__, url_prefix="/seller")
 staff = roles_required("seller", "admin")
@@ -495,7 +497,9 @@ def export(kind):
 @bp.route("/photos")
 def photos():
     current = {slot: db.session.get(StoreSetting, setting_key(slot)) for slot in SLOTS}
-    return render_template("seller/photos.html", slots=SLOTS, current=current)
+    credits = {slot: (db.session.get(StoreSetting, credit_key(slot)) or StoreSetting(key="", value="")).value for slot in SLOTS}
+    return render_template("seller/photos.html", slots=SLOTS, current=current, credits=credits,
+                           pexels_ready=bool(pexels.api_key()))
 
 
 @bp.post("/photos/<slot>")
@@ -513,6 +517,9 @@ def photo_upload(slot):
         row.value = name
     else:
         db.session.add(StoreSetting(key=setting_key(slot), value=name))
+    own_credit = db.session.get(StoreSetting, credit_key(slot))
+    if own_credit:
+        db.session.delete(own_credit)  # your own photo has no Pexels credit
     audit("photo.update", "photo", slot, SLOTS[slot][0])
     db.session.commit()
     flash(f"{SLOTS[slot][0]} photo updated.", "success")
@@ -527,7 +534,148 @@ def photo_reset(slot):
     if row:
         delete_upload(row.value)
         db.session.delete(row)
+        old_credit = db.session.get(StoreSetting, credit_key(slot))
+        if old_credit:
+            db.session.delete(old_credit)
         audit("photo.reset", "photo", slot, SLOTS[slot][0])
         db.session.commit()
-    flash(f"{SLOTS[slot][0]} is back to the default photo.", "info")
+    flash(f"{SLOTS[slot][0]} is back to the placeholder.", "info")
     return redirect(url_for("seller.photos"))
+
+
+# ------------------------------------------------- Find photos (Pexels)
+
+def _target(raw):
+    """('slot', slot, label, query) or ('product', Product, name, query) from a ?target= value, else None."""
+    kind, _, ident = (raw or "").partition(":")
+    if kind == "slot" and ident in SLOTS:
+        return "slot", ident, SLOTS[ident][0], SLOTS[ident][2]
+    if kind == "product" and ident.isdigit():
+        product = db.session.get(Product, int(ident))
+        if product is not None:
+            return "product", product, product.name, PRODUCT_QUERIES.get(product.category.slug, "fashion model")
+    return None
+
+
+def _apply_photo(target, filename, credit):
+    """Make `filename` the photo for a site spot, or the cover image of a product."""
+    kind, obj = target[0], target[1]
+    if kind == "slot":
+        for key, value in ((setting_key(obj), filename), (credit_key(obj), credit)):
+            row = db.session.get(StoreSetting, key)
+            if row is None:
+                db.session.add(StoreSetting(key=key, value=value))
+                continue
+            if key == setting_key(obj):
+                delete_upload(row.value)  # drop the photo this one replaces
+            row.value = value
+    else:
+        image = ProductImage(filename=filename, alt=obj.name, credit=credit)
+        ordered = [image] + list(obj.images)  # the new photo becomes the cover
+        obj.images.append(image)
+        for pos, img in enumerate(ordered):
+            img.position = pos
+        obj.images.sort(key=lambda i: i.position)
+
+
+@bp.route("/find-photos")
+def find_photos():
+    target = _target(request.args.get("target"))
+    ready = bool(pexels.api_key())
+    q = (request.args.get("q") or "").strip()[:100]
+    page = max(1, request.args.get("page", 1, type=int))
+    results, total, error = [], 0, None
+    if target and ready:
+        q = q or target[3]
+        try:
+            results, total = pexels.search(q, page)
+        except pexels.PexelsError as exc:
+            error = str(exc)
+    products = Product.query.filter(Product.status != PRODUCT_ARCHIVED).order_by(Product.name).all()
+    return render_template("seller/find_photos.html", target=target, target_raw=request.args.get("target", ""), q=q,
+                           page=page, results=results, total=total, error=error, ready=ready, slots=SLOTS,
+                           products=products, has_next=page * 18 < total,
+                           suggestions=["fashion model portrait", "male model studio", "fashion editorial woman",
+                                        "street style model", "wristwatch model", "jewelry model", "handbag model"])
+
+
+@bp.post("/find-photos/use")
+def find_photos_use():
+    target = _target(request.form.get("target"))
+    back = url_for("seller.find_photos", target=request.form.get("target", ""), q=request.form.get("q", ""),
+                   page=request.form.get("page", 1, type=int))
+    photo_id = request.form.get("photo_id", type=int)
+    if target is None or not photo_id:
+        abort(400)
+    try:
+        photo = pexels.get_photo(photo_id)  # re-fetched from Pexels by id: nothing from the browser is trusted
+        filename = save_image_bytes(pexels.download(photo))
+    except (pexels.PexelsError, UploadError) as exc:
+        flash(str(exc), "error")
+        return redirect(back)
+    _apply_photo(target, filename, photo.credit)
+    audit("photo.pexels", "photo", request.form.get("target"), f"{target[2]} ← Pexels #{photo.id} by {photo.photographer}")
+    db.session.commit()
+    flash(f"Photo added to {target[2]}. {photo.credit}.", "success")
+    if target[0] == "product":
+        return redirect(url_for("seller.product_edit", product_id=target[1].id))
+    return redirect(url_for("seller.photos"))
+
+
+@bp.post("/photos/autofill")
+def photos_autofill():
+    if not pexels.api_key():
+        flash("Add your free Pexels key first, then auto-fill will work.", "info")
+        return redirect(url_for("seller.find_photos"))
+    todo = [slot for slot in SLOTS if db.session.get(StoreSetting, setting_key(slot)) is None]
+    if not todo:
+        flash("All five site photos are already set. Reset one to fill it again.", "info")
+        return redirect(url_for("seller.photos"))
+    used, filled = set(), 0
+    try:
+        for slot in todo:
+            photos, _ = pexels.search(SLOTS[slot][2], per_page=20)
+            fresh = [p for p in photos if p.id not in used]
+            pick = next((p for p in fresh if p.height >= p.width * 1.2), None) or (fresh[0] if fresh else None)
+            if pick is None:
+                continue
+            _apply_photo(("slot", slot), save_image_bytes(pexels.download(pick)), pick.credit)
+            used.add(pick.id)
+            audit("photo.pexels", "photo", f"slot:{slot}", f"{SLOTS[slot][0]} ← Pexels #{pick.id} (auto-fill)")
+            db.session.commit()
+            filled += 1
+    except (pexels.PexelsError, UploadError) as exc:
+        db.session.rollback()
+        flash(f"Stopped after {filled} photo(s): {exc}", "error")
+        return redirect(url_for("seller.photos"))
+    flash(f"Filled {filled} site photo(s) with professional model photos. Don't like one? Use “Find a photo” on its card.", "success")
+    return redirect(url_for("seller.photos"))
+
+
+@bp.post("/pexels-key")
+def pexels_key():
+    row = db.session.get(StoreSetting, "pexels_api_key")
+    if request.form.get("action") == "remove":
+        if row:
+            db.session.delete(row)
+            audit("pexels.key_removed", "settings", "pexels_api_key", "Pexels key removed")
+            db.session.commit()
+        flash("Pexels key removed.", "info")
+        return redirect(request.referrer or url_for("seller.find_photos"))
+    key = (request.form.get("key") or "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9]{20,100}", key):
+        flash("That doesn't look like a Pexels key. It's one long line of letters and numbers.", "error")
+        return redirect(request.referrer or url_for("seller.find_photos"))
+    try:
+        pexels.search("fashion model", per_page=1, key=key)  # prove the key works BEFORE storing it
+    except pexels.PexelsError as exc:
+        flash(str(exc), "error")
+        return redirect(request.referrer or url_for("seller.find_photos"))
+    if row:
+        row.value = key
+    else:
+        db.session.add(StoreSetting(key="pexels_api_key", value=key))
+    audit("pexels.key_saved", "settings", "pexels_api_key", "Pexels key saved")
+    db.session.commit()
+    flash("Pexels key saved. You can search for photos now.", "success")
+    return redirect(request.referrer or url_for("seller.find_photos"))

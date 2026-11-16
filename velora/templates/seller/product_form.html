@@ -50,6 +50,7 @@
         {{ field(form.image_url, "https://…") }}
         <div class="span-2">{{ field(form.make_cover) }}</div>
       </div>
+      {% if product %}<p style="margin:0 0 10px"><a class="btn btn--dark btn--sm" href="{{ url_for('seller.find_photos', target='product:' ~ product.id) }}">{{ icon('search', 'ic--sm') }} Find a model photo</a></p>{% endif %}
       <p class="field__hint">{{ icon('camera', 'ic--sm') }} Modelling it yourselves? Upload your own photo here and keep “cover image” ticked so it becomes the main product photo.</p>
     </section>
   </div>

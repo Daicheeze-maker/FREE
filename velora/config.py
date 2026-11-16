@@ -66,6 +66,13 @@ class Config:
     FX_CACHE_HOURS = float(os.environ.get("FX_CACHE_HOURS", "6"))
     API_RETRY_BACKOFF_MINUTES = float(os.environ.get("API_RETRY_BACKOFF_MINUTES", "10"))
 
+    # Pexels (free professional photos, used by Seller studio -> Find photos). Key: https://www.pexels.com/api/
+    PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
+    PEXELS_BASE_URL = os.environ.get("PEXELS_BASE_URL", "https://api.pexels.com/v1")
+    PEXELS_IMAGE_HOSTS = [h.strip() for h in os.environ.get("PEXELS_IMAGE_HOSTS", "images.pexels.com").split(",") if h.strip()]
+    PEXELS_ALLOW_HTTP_HOSTS = [h.strip() for h in os.environ.get("PEXELS_ALLOW_HTTP_HOSTS", "").split(",") if h.strip()]
+    PHOTO_DOWNLOAD_MAX_MB = int(os.environ.get("PHOTO_DOWNLOAD_MAX_MB", "12"))
+
 
 class DevelopmentConfig(Config):
     DEBUG = False  # never expose the Werkzeug debugger by default, even in dev

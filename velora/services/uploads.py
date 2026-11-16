@@ -23,8 +23,13 @@ def save_product_image(file_storage):
     data = file_storage.stream.read(current_app.config["MAX_CONTENT_LENGTH"] + 1)
     if len(data) > current_app.config["MAX_CONTENT_LENGTH"]:
         raise UploadError("Image is too large.")
+    return save_image_bytes(data)
+
+
+def save_image_bytes(data):
+    """Validate raw image bytes, re-encode them to WebP and store them; returns the stored filename."""
     if not data:
-        raise UploadError("The uploaded file is empty.")
+        raise UploadError("The image is empty.")
     import io
     try:
         with Image.open(io.BytesIO(data)) as probe:

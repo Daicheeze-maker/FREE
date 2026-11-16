@@ -1,6 +1,6 @@
 # Velora Market
 
-A full-stack demo e-commerce store for **clothing, watches, jewelry and cars** (plus a small gifts & gourmet aisle), **modelled by our own team**. It's built with **Python 3.11+ / Flask / SQLAlchemy / SQLite** and has four role-based experiences: guest, customer, seller and administrator. It integrates two real external APIs, **Open Food Facts** and **Frankfurter**, and adds smooth GSAP animation.
+A full-stack demo e-commerce store for **clothing, watches, jewelry and bags** (plus a small gifts & gourmet aisle). It's built with **Python 3.11+ / Flask / SQLAlchemy / SQLite** and has four role-based experiences: guest, customer, seller and administrator. It integrates two real external APIs, **Open Food Facts** and **Frankfurter**, and adds smooth GSAP animation.
 
 It runs directly on Windows 10/11 or Ubuntu, on bare metal or inside a virtual machine. Docker is not needed.
 
@@ -59,19 +59,17 @@ On the sign-in page every login has its own click-to-fill button, including **Se
 
 The sign-in page has one-click buttons that fill these in. Change or disable them before any real deployment. Demo discount codes: `WELCOME10`, `STYLE500` (₱500 off ₱5,000+), `SEASON15` (limited uses), and `SUMMER25` (expired, to show validation).
 
-### Be the models: use your own photos
+### Model photos: professional photos (free) or your own
 
-The store ships with stock photos so it looks finished right away. To put **yourselves** in the photos:
+The five big site photos (homepage hero, lookbook tile, sale banner, sign-in and register pages) start as **placeholders**, and so does any product without a photo. Sign in as a seller and open **Seller studio → Model photos**:
 
-- **Site photos** (homepage hero, lookbook tile, sale banner, sign-in and register pages): sign in as the seller or admin and open **Seller studio → Model photos**. Upload one picture per spot, or reset it to the default.
-- **Product photos:** open **Seller studio → Products → (product)**, upload your photo and keep **“Use the new photo as the cover image”** ticked.
-- **Many photos at once:** drop files into `model-photos/` (instructions and every product's folder name are in `model-photos/README.txt`), then run:
+- **Find professional model photos (free, from Pexels):**
+  1. One-time: click **Set up free Pexels photos**, sign up at [pexels.com/api](https://www.pexels.com/api/) (free, one minute), copy your key and paste it into the page. (Or put `PEXELS_API_KEY=…` in `.env`.)
+  2. Click **Auto-fill with model photos** to fill every empty spot in one click, or use **Find a photo** on a spot to search and pick one yourself. For a product, open it under *Products* and click **Find a model photo**.
+  3. Each pick is **downloaded into your store** (`instance/uploads/`), so it never breaks, and the photographer is credited on the product page and the About page.
+- **Use your own photos:** upload one per spot on the same page, or on a product's edit page (keep “Use the new photo as the cover image” ticked). For many at once, drop files into `model-photos/` (see `model-photos/README.txt`) and run `python -m flask --app wsgi load-model-photos`.
 
-```bash
-python -m flask --app wsgi load-model-photos
-```
-
-Portrait photos at least 1200 px tall look best. Every upload is checked, resized, converted to WebP and stored in `instance/uploads/`.
+Portrait photos (taller than wide) look best. Every image is checked, resized and converted to WebP. Pexels photos are free to use under the [Pexels license](https://www.pexels.com/license/); don't use a stock model's photo to suggest that person endorses your store.
 
 ### The collections
 
@@ -150,7 +148,7 @@ Roles are stored only in the database. Registration has no role field, so a subm
 
 ## 4. External API integrations
 
-Both are real HTTP integrations made with `requests`. Each call is recorded on the admin **API health** page (last success, latency, error count, last error). The admin can trigger a live test there.
+These are real HTTP integrations made with `requests` (Open Food Facts and Frankfurter run in the store; Pexels is used only by staff to pick photos). Each call is recorded on the admin **API health** page (last success, latency, error count, last error). The admin can trigger a live test there.
 
 ### Open Food Facts — `velora/services/openfoodfacts.py`
 - **Search:** `GET {OFF_BASE_URL}/cgi/search.pl?search_terms=…&search_simple=1&action=process&json=1&page=&page_size=&fields=…`
@@ -167,6 +165,12 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
 > **Note on verification:** this project was built in a sandbox with no access to either API, so the endpoints and response shapes follow the published docs and the automated tests mock them. Please run `python -m flask --app wsgi refresh-rates` and press the **API health → test** buttons once in your VM to confirm live connectivity. If a provider moves its base URL, change `OFF_BASE_URL` / `FRANKFURTER_BASE_URL` in `.env`.
 
 ---
+
+### Pexels — `velora/services/pexels.py` (photos for Seller studio → Find photos)
+- `GET {PEXELS_BASE_URL}/search?query=…&orientation=portrait` and `GET /photos/{id}` with your free key in the `Authorization` header (free plan: 200 requests/hour). Key from `.env` (`PEXELS_API_KEY`) or pasted once on the Find photos page (it's tested before it's saved and never shown again).
+- A photo is chosen **by id**: the server re-fetches its details from Pexels, so nothing from the browser (a URL, a credit) is trusted. Only images from Pexels' own host (`images.pexels.com`, https) can be downloaded, with a size cap; the image is verified, re-encoded to WebP and stored locally.
+- Credits ("Photo by … on Pexels") are saved with the photo. Pexels also shows on the admin **API health** page with a test button.
+- If Pexels is unreachable the store is unaffected: photos already chosen are local files.
 
 ### OpenStreetMap + Leaflet — the "Visit our store" map ad
 - The homepage has a store ad with an interactive map (marker, popup with address and hours, "Get directions" links). It uses **Leaflet** (vendored in `velora/static/vendor/leaflet`, no CDN) with free **OpenStreetMap** tiles. No API key. The "© OpenStreetMap contributors" credit is shown on the map.
@@ -234,7 +238,7 @@ Both are real HTTP integrations made with `requests`. Each call is recorded on t
 python -m pytest -q
 ```
 
-There are 150 tests. External APIs are mocked, so no network is needed. They cover:
+There are 174 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**
