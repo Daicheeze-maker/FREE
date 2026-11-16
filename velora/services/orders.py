@@ -101,9 +101,9 @@ def place_order(user, payment_method, checkout_token, discount_code=None, notes=
                 remaining -= share
             img = p.primary_image
             order.items.append(OrderItem(
-                product_id=p.id, product_name=p.name, product_sku=p.sku, product_brand=p.brand, size=line.size or None,
+                product_id=p.id, product_name=p.name, product_sku=p.sku, product_brand=p.brand, size=line.label or None,
                 image_url=(img.url if img and img.url else (url_for("main.media", filename=img.filename) if img and img.filename else None)),
-                unit_price_minor=p.price_minor, quantity=line.quantity, discount_minor=share,
+                unit_price_minor=line.unit_price_minor, quantity=line.quantity, discount_minor=share,
                 line_total_minor=line.line_total_minor - share,
             ))
         if discount:

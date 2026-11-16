@@ -214,12 +214,12 @@ def _nav(page):
 
 
 def test_top_menu_is_hidden_on_shop_pages_but_shown_elsewhere(client):
-    shop = client.get("/shop/c/jewelry").get_data(as_text=True)
-    assert "hidden>" in shop.split('class="header__nav"')[1][:60] and "Watches" not in _nav(shop)
+    shop = client.get("/shop/c/dress-watches").get_data(as_text=True)
+    assert "hidden>" in shop.split('class="header__nav"')[1][:60] and "Dive Watches" not in _nav(shop)
     assert "Collections" in shop  # the left list is how you move between collections there
-    for url in ("/", "/about"):
+    for url in ("/", "/pages/about"):
         page = client.get(url).get_data(as_text=True)
-        assert all(w in _nav(page) for w in ("Clothing", "Watches", "Jewelry", "Bags")), url
+        assert all(w in _nav(page) for w in ("Dress Watches", "Smart Watches", "Ladies Watches")), url
 
 
 # ------------------------------------------------------------------ sign-in layout, pin map, stale links
@@ -273,11 +273,11 @@ def test_address_reverse_turns_a_pin_into_an_address(app, client):
 
 
 def test_stale_next_link_does_not_land_on_a_404_after_signing_in(client):
-    r = client.post("/account/login?next=/shop/c/cars-that-are-gone", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
+    r = client.post("/account/login?next=/shop/c/straps-that-are-gone", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
     assert r.headers["Location"].endswith("/account/")
     client.post("/account/logout")
-    r = client.post("/account/login?next=/shop/c/bags", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
-    assert r.headers["Location"].endswith("/shop/c/bags")
+    r = client.post("/account/login?next=/shop/c/dive-watches", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
+    assert r.headers["Location"].endswith("/shop/c/dive-watches")
 
 
 NOMINATIM = {"lat": "14.5547", "lon": "121.0244", "display_name": "6750, Ayala Avenue, Makati, Metro Manila, 1226, Philippines",

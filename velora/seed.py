@@ -1,15 +1,16 @@
-"""Repeatable demo data (fashion, watches, jewelry, bags and gifts). Safe to run more than once: it only seeds an empty database.
+"""Repeatable demo data: a watch store. Safe to run more than once: it only seeds an empty database.
 
-Photos are hot-linked from Unsplash (free to use under the Unsplash License). If any URL
-fails to load, the storefront swaps in a local placeholder automatically.
+Photos are hot-linked from Unsplash (free to use under the Unsplash License). Every watch lists a few candidate photos:
+the first is stored, and the browser moves on to the next one by itself if a photo has gone from Unsplash.
+If none loads, the storefront swaps in a local placeholder. `fill-photos` can replace any of them.
 """
 import random
 import secrets
 from datetime import timedelta
 
 from .extensions import db
-from .models import (DEFAULT_SETTINGS, SELLER_SUFFIX, STARTING_CREDIT_MINOR, Address, Cart, Category, DiscountCode, Notification, Order, OrderItem,
-                     OrderStatus, PaymentRecord, Product, ProductImage, ProductReview, StoreSetting, User,
+from .models import (DEFAULT_SETTINGS, SELLER_SUFFIX, STARTING_CREDIT_MINOR, Address, Cart, CartItem, Category, DiscountCode, Notification, Order,
+                     OrderItem, OrderStatus, PaymentRecord, Product, ProductImage, ProductReview, StoreSetting, User,
                      WishlistItem, utcnow)
 from .services.catalog import slugify
 
@@ -19,249 +20,159 @@ def U(photo_id, w=900):
 
 
 CATEGORIES = [
-    ("Women", "shirt", "Dresses, denim and outerwear."),
-    ("Men", "shirt", "Tailoring, tees and jackets."),
-    ("Shoes", "footprints", "Sneakers, boots, loafers and sandals."),
-    ("Accessories", "glasses", "Sunglasses, belts, scarves and small leather goods."),
-    ("Watches", "watch", "Everyday automatics, chronographs and smart watches."),
-    ("Jewelry", "gem", "Gold, silver, pearls and diamonds for every day and big days."),
-    ("Bags", "shopping-bag", "Totes, crossbodies, backpacks and travel bags for every day."),
-    ("Gifts & Gourmet", "gift", "Gift boxes, fine chocolate and coffee, including products imported from Open Food Facts."),
+    ("Dress Watches", "watch", "Slim, polished watches for work, weddings and big nights."),
+    ("Dive Watches", "waves", "Water-resistant automatics built for the sea and the city."),
+    ("Chronographs", "timer", "Stopwatch subdials, tachymeters and racing style."),
+    ("Field & Pilot", "compass", "Rugged, legible watches on canvas, leather or steel."),
+    ("Smart Watches", "smartphone", "Fitness, GPS and hybrid watches that do more than tell time."),
+    ("Ladies Watches", "gem", "Rose gold, pearl and crystal watches in smaller case sizes."),
 ]
 
-# (name, brand, category idx, price ₱, compare_at, stock, size/variant, origin, featured, sold, photo ids,
-#  short description, description, materials/specs/ingredients)
+# Verified-working photos (they loaded on real screens) end each chain, so every watch always ends on a real watch photo.
+V1, V2, V3, V4, V5 = ("1523275335684-37898b6baf30", "1522312346375-d1a52e2b99b3", "1524592094714-0f0654e20314",
+                      "1547996160-81dfa63595aa", "1434056886845-dac89ffe9b56")
+
+DRESS_COLORS, SPORT_COLORS, SMART_COLORS = "Silver,Gold,Rose Gold", "Black,Blue,Green", "Midnight,Starlight,Rose Gold"
+STRAP_COLORS = "Black,Brown,Tan"
+
+# (name, brand, category idx, price ₱, compare_at, stock, note, origin, featured, sold, photo ids (first one is stored),
+#  short description, description, specs, case sizes, colours, engraving fee ₱ or None)
 PRODUCTS = [
-    # Women
-    ("Linen Wrap Midi Dress", "Aurelune Studio", 0, 2490, 2990, 18, "XS–XL", "Made in Manila, PH", True, 210,
-     ["1515372039744-b8f02a3ae446"], "Breathable linen · adjustable wrap tie",
-     "A wrap midi in washed linen that moves with you from brunch to evening. Adjustable tie waist, flutter sleeves and a hem that sits just below the knee.",
-     "100% linen. Machine wash cold, line dry, warm iron."),
-    ("Red Silk Slip Dress", "Aurelune Studio", 0, 3890, None, 6, "XS–L", "Made in Manila, PH", True, 140,
-     ["1496747611176-843222e1e57c"], "Bias-cut mulberry silk · statement red",
-     "Cut on the bias so it skims rather than clings, in a saturated red mulberry silk with fine adjustable straps.",
-     "100% mulberry silk (19 momme). Dry clean or gentle hand wash."),
-    ("Cropped Leather Biker Jacket", "Atelier Noir", 0, 6950, None, 9, "XS–L", "Made in Marikina, PH", True, 98,
-     ["1551028719-00167b16eac5"], "Soft lambskin · asymmetric zip",
-     "Our best-selling jacket in buttery lambskin with a cropped cut, asymmetric zip and quilted shoulders.",
-     "Lambskin leather, viscose lining. Specialist leather clean only."),
-    ("Relaxed Straight Jeans", "Denim Dept.", 0, 1990, None, 30, "24–34", "Made in Laguna, PH", False, 175,
-     ["1542272604-787c3835535d"], "Rigid cotton denim · high rise",
-     "A relaxed, straight-leg jean in rigid denim that softens beautifully with wear.",
-     "100% cotton denim, 13 oz. Wash inside out, cold."),
-    # Men
-    ("Tailored Wool Suit", "Maison Lune", 1, 12900, 14900, 7, "36–46", "Tailored in Manila, PH", True, 54,
-     ["1507679799987-c73779587ccf"], "Two-piece · half-canvas construction",
-     "A modern two-piece in fine Italian wool with a half-canvas jacket, slim lapels and flat-front trousers. Free hemming.",
-     "Jacket & trousers: 100% wool. Lining: cupro. Dry clean only."),
-    ("Heavyweight White Tee", "Aurelune Studio", 1, 790, None, 60, "S–XXL", "Made in Manila, PH", False, 320,
-     ["1521572163474-6864f9cf17ab"], "240 gsm cotton · boxy fit",
-     "The tee we wear under everything: dense, smooth 240 gsm cotton that keeps its shape wash after wash.",
-     "100% combed cotton. Machine wash cold."),
-    ("Utility Field Jacket", "Denim Dept.", 1, 4290, None, 15, "S–XL", "Made in Laguna, PH", False, 76,
-     ["1591047139829-d91aecb6caea"], "Four pockets · water-resistant cotton",
-     "A four-pocket field jacket in water-resistant cotton canvas with a corduroy collar.",
-     "Cotton canvas with water-repellent finish. Cold wash."),
-    ("Red Runner Sneakers", "Stride Lab", 2, 4590, None, 3, "EU 39–46", "Imported", True, 230,
-     [], "Cushioned runner · breathable mesh",
-     "A lightweight everyday runner with a breathable mesh upper and responsive foam midsole.",
-     "Mesh and synthetic upper, rubber outsole."),
-    ("Tortoiseshell Sunglasses", "Optica", 3, 2890, None, 0, "One size", "Imported", False, 66,
-     [], "Acetate frames · UV400 lenses",
-     "Classic acetate frames in warm tortoiseshell with polarised UV400 lenses and a protective case.",
-     "Cellulose acetate frame, polarised lenses."),
-    # Watches
-    ("Minimalist Leather Strap Watch", "Horloge & Co", 4, 8900, None, 20, "38 mm", "Swiss movement", True, 150,
-     ["1523275335684-37898b6baf30"], "Sapphire glass · Italian leather strap",
-     "A clean, minimal dial with sapphire crystal and a quick-release Italian leather strap. Water resistant to 50 m.",
-     "Case: 316L stainless steel. Movement: Swiss quartz. Water resistance: 5 ATM. 2-year warranty."),
-    ("Chronograph Steel Watch", "Horloge & Co", 4, 24500, 27900, 5, "42 mm", "Swiss movement", True, 61,
-     ["1522312346375-d1a52e2b99b3"], "Three-register chronograph · steel bracelet",
-     "A sporty three-register chronograph on a brushed steel bracelet with tachymeter bezel.",
-     "Case & bracelet: 316L steel. Movement: chronograph. Water resistance: 10 ATM. 2-year warranty."),
-    ("Classic Gold-Tone Dress Watch", "Horloge & Co", 4, 15800, None, 8, "36 mm", "Swiss movement", False, 44,
-     ["1524592094714-0f0654e20314"], "Slim case · dress strap",
-     "A slim gold-tone dress watch that slides under a shirt cuff — made for weddings and big nights.",
-     "Gold-tone PVD steel case. Movement: Swiss quartz. Water resistance: 3 ATM."),
-    ("Diver Automatic 200m", "Tidewater", 4, 38900, None, 4, "41 mm", "Japanese automatic", False, 22,
-     ["1547996160-81dfa63595aa"], "Automatic · 200 m water resistant",
-     "A rugged automatic diver with a unidirectional ceramic bezel and luminous hands.",
-     "Movement: automatic, 41 h reserve. Water resistance: 20 ATM. Sapphire crystal."),
-    ("Smart Fitness Watch", "Pulse", 4, 11900, None, 25, "44 mm", "Imported", False, 130,
-     ["1434056886845-dac89ffe9b56"], "Heart rate · GPS · 7-day battery",
-     "Track workouts, sleep and heart rate, get notifications and pay with your wrist. Pairs with iOS and Android.",
-     "Aluminium case, silicone band. GPS, heart-rate sensor. 7-day battery."),
-    # Jewelry
-    ("18k Gold Stacking Rings (Set of 3)", "Lumière", 5, 6800, None, 14, "Sizes 5–9", "Handmade in Meycauayan, PH", True, 120,
-     ["1605100804763-247f67b3557e"], "Solid 18k gold · stack or wear alone",
-     "Three fine bands — plain, twisted and beaded — in solid 18k gold, handmade by jewelers in Meycauayan.",
-     "Solid 18k yellow gold. Comes in a gift box with a care cloth."),
-    ("Freshwater Pearl Drop Earrings", "Lumière", 5, 3450, None, 22, "Pair", "Handmade in Meycauayan, PH", False, 95,
-     ["1535632066927-ab7c9ab60908"], "Baroque pearls · gold vermeil hooks",
-     "Lustrous baroque freshwater pearls on gold-vermeil hooks — each pair slightly different.",
-     "Freshwater pearls, 18k gold vermeil on sterling silver."),
-    ("Diamond Solitaire Pendant", "Lumière", 5, 28500, None, 3, "0.25 ct · 45 cm chain", "Certified stone", True, 31,
-     ["1599643478518-a784e5dc4c8f"], "Certified 0.25 ct diamond · white gold",
-     "A brilliant-cut 0.25 ct diamond in a four-claw white-gold setting on a fine adjustable chain.",
-     "14k white gold. Diamond: 0.25 ct, G colour, VS2 clarity, with certificate."),
-    ("Sterling Silver Chain Bracelet", "Lumière", 5, 2450, None, 40, "17 cm + 2 cm extender", "Handmade in Meycauayan, PH", False, 80,
-     ["1611591437281-460bfbe1220a"], "925 silver · lobster clasp",
-     "A chunky curb-chain bracelet in polished 925 sterling silver.",
-     "925 sterling silver, rhodium plated to resist tarnish."),
-    ("Signature Jewelry Gift Set", "Lumière", 5, 9800, 11500, 10, "Ring + earrings + necklace", "Handmade in Meycauayan, PH", False, 47,
-     ["1515562141207-7a88fb7ce338"], "Three-piece set · gift boxed",
-     "Our most-gifted set: a delicate ring, studs and a fine necklace, presented in a keepsake box.",
-     "18k gold vermeil on sterling silver, cubic zirconia."),
-    # Bags
-    ("Structured Leather Tote", "Atelier Noir", 6, 5450, None, 12, "One size · fits a 14\" laptop", "Made in Marikina, PH", True, 88,
-     ["1584917865442-de89df76afd3"], "Full-grain leather · inner zip pocket",
-     "A clean-lined everyday tote in full-grain leather that holds its shape, with an inner zip pocket and magnetic closure.",
-     "Full-grain cowhide, cotton twill lining. Wipe clean with a soft dry cloth."),
-    ("Quilted Chain Crossbody", "Atelier Noir", 6, 6950, None, 9, "One size · 24 × 14 cm", "Made in Marikina, PH", True, 120,
-     ["1548036328-c9fa89d128fa"], "Quilted leather · gold chain strap",
-     "A black quilted crossbody with a gold-tone chain strap and magnetic flap — small enough for evenings, roomy enough for your phone, cards and keys.",
-     "Quilted lambskin leather, gold-tone hardware, microfibre lining."),
-    ("Everyday Canvas Backpack", "Trailhead", 6, 3290, None, 25, "One size · 22 L", "Imported", False, 140,
-     ["1553062407-98eeb64c6a62"], "Water-resistant canvas · padded laptop sleeve",
-     "A roomy 22-litre backpack in water-resistant canvas with a padded 15-inch laptop sleeve, two side pockets and leather-trimmed straps.",
-     "Water-resistant cotton canvas, leather trim, YKK zips."),
-    ("Evening Leather Clutch", "Atelier Noir", 6, 2890, 3290, 14, "One size · 25 × 14 cm", "Made in Marikina, PH", False, 60,
-     ["1566150905458-1bf1fc113f0d"], "Slim clutch · detachable wrist strap",
-     "A slim envelope clutch in smooth leather that fits a phone and essentials, with a detachable wrist strap.",
-     "Smooth calf leather, suede lining."),
-    ("Weekender Duffel Bag", "Trailhead", 6, 4950, None, 8, "One size · 40 L", "Imported", False, 42,
-     ["1590874103328-eac38a683ce7"], "Carry-on size · shoe compartment",
-     "A 40-litre weekender that fits airline cabin limits, with a ventilated shoe compartment, shoulder strap and trolley sleeve.",
-     "Waxed canvas, leather handles, brass hardware."),
-    # Gifts & Gourmet
-    ("Luxury Gift Box", "Aurelune Gifting", 7, 1450, None, 30, "Medium box", "Packed in Manila, PH", True, 140,
-     ["1549465220-1a8b9238cd48"], "Hand-wrapped · personal note included",
-     "We wrap your purchase in our signature box with tissue, ribbon and a handwritten note.",
-     "Rigid recycled-board box, cotton ribbon."),
-    ("72% Dark Chocolate Bar", "Cacao Collective", 7, 245, None, 80, "60 g bar", "Davao, PH", False, 300,
-     ["1511381939415-e44015466834"], "Bean-to-bar · red fruit & molasses",
-     "Made from fermented Davao cacao roasted and stone-ground in small batches.",
-     "Cacao beans, cane sugar, cocoa butter"),
-    ("Single-Origin Coffee Beans", "Aurelune Roastery", 7, 685, None, 40, "250 g", "Benguet, PH", False, 186,
-     ["1447933601403-0c6688de566e"], "Brown sugar, orange & almond",
-     "Highland Arabica from the Cordilleras, roasted weekly. The perfect add-on gift.",
-     "100% Arabica coffee beans"),
-    ("Scented Soy Candle", "Aurelune Home", 7, 890, None, 28, "220 g · 45 hr burn", "Manila, PH", False, 65,
-     ["1603006905003-be475563bc59"], "Hinoki & fig · reusable vessel",
-     "Clean-burning soy wax scented with Japanese cypress and green fig.",
-     "Soy wax, cotton wick, fragrance oils"),
-    # Shoes (added after the first release, so they sit at the end to keep every SKU stable)
-    ("White Leather Court Sneakers", "Stride Lab", 2, 3890, None, 22, "Cushioned insole", "Imported", False, 110,
-     [], "Full-grain leather · minimalist court style",
-     "A clean white court sneaker in full-grain leather with a cushioned insole and a durable rubber cupsole.",
-     "Leather upper, textile lining, rubber outsole."),
-    ("Suede Chelsea Boots", "Atelier Noir", 2, 6490, 7490, 11, "Stitched, resoleable sole", "Made in Marikina, PH", False, 64,
-     [], "Soft suede · elastic side panels",
-     "Pull-on Chelsea boots in soft suede with elastic side panels, a leather-lined interior and a stitched, resoleable sole.",
-     "Suede upper, leather lining and sole."),
-    ("Classic Leather Loafers", "Atelier Noir", 2, 5290, None, 14, "Hand-finished", "Made in Marikina, PH", False, 72,
-     [], "Polished leather · cushioned footbed",
-     "Timeless penny loafers in polished calf leather with a cushioned footbed for all-day wear.",
-     "Calf leather upper and lining, leather sole."),
-    ("Block-Heel Leather Sandals", "Atelier Noir", 2, 3690, None, 16, "5 cm block heel", "Made in Marikina, PH", False, 58,
-     [], "Ankle strap · stable block heel",
-     "Easy-to-walk-in sandals with an adjustable ankle strap and a 5 cm block heel.",
-     "Leather upper, padded insole, rubber outsole."),
-    # Accessories
-    ("Aviator Sunglasses", "Optica", 3, 2490, None, 20, "UV400 · metal frame", "Imported", False, 84,
-     [], "Gold metal frame · green lenses",
-     "Classic aviators with a lightweight gold-tone metal frame and UV400 polarised lenses. Comes with a case.",
-     "Metal frame, polarised lenses."),
-    ("Italian Leather Belt", "Atelier Noir", 3, 1890, None, 30, "3.5 cm wide", "Made in Italy", False, 96,
-     [], "Full-grain leather · brushed buckle",
-     "A full-grain leather belt with a brushed metal buckle that works with jeans and tailoring alike.",
-     "Full-grain leather, brushed steel buckle."),
-    ("Printed Silk Scarf", "Maison Lune", 3, 1590, None, 25, "70 × 70 cm", "Made in Italy", False, 51,
-     [], "Pure silk twill · hand-rolled edges",
-     "A pure silk twill scarf with hand-rolled edges, to wear at the neck, in your hair or tied to a bag.",
-     "100% silk twill. Dry clean only."),
-    ("Leather Card Holder", "Atelier Noir", 3, 1290, None, 40, "Holds 6 cards", "Made in Marikina, PH", False, 134,
-     [], "Slim leather · 6 card slots",
-     "A slim leather card holder with six card slots and a central pocket for folded notes.",
-     "Full-grain cowhide."),
+    ("Minimalist Leather Strap Watch", "Horloge & Co", 0, 6990, None, 24, "Quartz · 3 ATM", "Swiss movement", True, 260,
+     [V1], "Clean dial · genuine leather strap",
+     "An everyday dress watch with a clean, uncluttered dial, slim case and a genuine leather strap that softens with wear.",
+     "Stainless steel case, sapphire-coated glass, leather strap, Swiss quartz movement.", "36 mm,40 mm", DRESS_COLORS, 500),
+    ("Classic Gold-Tone Dress Watch", "Maison Lune", 0, 8490, 9990, 15, "Quartz · 3 ATM", "Swiss movement", True, 190,
+     [V3], "Slim case · gold-tone finish",
+     "A slim gold-tone dress watch that slides under a shirt cuff, made for weddings and big nights.",
+     "Gold-tone steel case, mineral crystal, calfskin strap.", "34 mm,38 mm", "Gold,Rose Gold,Silver", 500),
+    ("Moonphase Automatic Dress Watch", "Horloge & Co", 0, 24900, 28900, 3, "Automatic · 5 ATM", "Swiss movement", False, 64,
+     ["1508685096489-7aacd43bd3b1", "1524805444758-089113d48a6d", V3], "Moonphase subdial · automatic",
+     "A self-winding dress watch with a moonphase subdial and exhibition case back, finished by hand.",
+     "Stainless steel, sapphire crystal, automatic movement with 40 h power reserve.", "39 mm,42 mm", "Silver,Gold,Black", 800),
+    ("Slim Skeleton Watch", "Maison Lune", 0, 18500, None, 6, "Manual wind · 3 ATM", "Swiss movement", False, 41,
+     ["1587836374828-4dbafa94cf0e", "1542496658-e33a6d0d50f6", V1], "Open-worked dial · see the movement",
+     "An open-worked dial that shows the movement at work, on a slim case and a hand-stitched strap.",
+     "Stainless steel, sapphire crystal, hand-wound skeleton movement.", "38 mm,41 mm", "Silver,Gold,Rose Gold", 800),
+
+    ("Diver Automatic 200m", "Tidewater", 1, 14990, None, 18, "Automatic · 200 m", "Japan movement", True, 210,
+     [V4], "200 m water resistant · luminous dial",
+     "A proper dive watch: screw-down crown, unidirectional bezel and a luminous dial you can read in the dark.",
+     "Stainless steel case, sapphire crystal, automatic movement, rubber or steel strap.", "40 mm,42 mm,44 mm", SPORT_COLORS, 600),
+    ("Deep Blue Titanium Diver", "Tidewater", 1, 32500, 36900, 7, "Automatic · 300 m", "Swiss movement", False, 52,
+     ["1539874754764-5a96559165b0", "1612817159949-195b6eb9e31a", V4], "Titanium case · 300 m",
+     "A light, hard-wearing titanium diver rated to 300 m with a ceramic bezel and a helium escape valve.",
+     "Grade 2 titanium, ceramic bezel, sapphire crystal, automatic movement.", "42 mm,44 mm", "Blue,Black,Grey", 800),
+    ("Pro Dive Rubber Strap Watch", "Tidewater", 1, 9990, None, 22, "Quartz · 200 m", "Japan movement", False, 138,
+     ["1619134778706-7015533a6150", "1560343090-f0409e92791a", V4], "Quartz diver · soft rubber strap",
+     "A value dive watch with a rotating bezel and a soft rubber strap that is comfortable all day, in or out of the water.",
+     "Stainless steel, mineral crystal, rubber strap, quartz movement.", "40 mm,44 mm", "Black,Blue,Green", 500),
+
+    ("Chronograph Steel Watch", "Northfield", 2, 11500, None, 20, "Quartz · 5 ATM", "Japan movement", True, 175,
+     [V2], "Three subdials · steel bracelet",
+     "A sporty stainless steel chronograph with three subdials, a date window and a solid link bracelet.",
+     "Stainless steel case and bracelet, mineral crystal, quartz chronograph movement.", "40 mm,42 mm,44 mm", "Steel,Black,Blue", 600),
+    ("Racing Chronograph Leather", "Northfield", 2, 13900, 15900, 12, "Quartz · 10 ATM", "Japan movement", False, 96,
+     ["1622434641406-a158123450f9", "1585123334904-845d60e97b29", V2], "Racing dial · perforated leather strap",
+     "A racing-inspired chronograph with a contrast dial and a perforated leather strap.",
+     "Stainless steel, sapphire-coated glass, leather strap, quartz chronograph movement.", "42 mm,44 mm", "Black,Brown,Blue", 600),
+    ("Tachymeter Sport Chrono", "Pulse", 2, 9490, None, 26, "Quartz · 10 ATM", "Japan movement", False, 112,
+     ["1594534475808-b18fc33b045e", "1533139143976-30e4d0a0f6e0", V2], "Tachymeter bezel · silicone strap",
+     "A lightweight sport chronograph with a tachymeter bezel and a quick-change silicone strap.",
+     "Steel case, mineral crystal, silicone strap, quartz chronograph movement.", "41 mm,45 mm", "Black,Blue,Red", None),
+
+    ("Field Automatic Watch", "Northfield", 3, 12500, None, 14, "Automatic · 10 ATM", "Japan movement", False, 77,
+     ["1548171916-c8fd1c9d4e5a", "1560343090-f0409e92791a", V1], "Legible dial · canvas strap",
+     "A no-nonsense field watch with a high-contrast, legible dial and a washable canvas strap.",
+     "Stainless steel, hardened crystal, canvas strap, automatic movement.", "38 mm,40 mm", "Green,Black,Tan", 600),
+    ("Pilot Aviator Watch", "Horloge & Co", 3, 15900, 17900, 10, "Automatic · 10 ATM", "Swiss movement", True, 88,
+     ["1542496658-e33a6d0d50f6", "1587836374828-4dbafa94cf0e", V2], "Large crown · big numerals",
+     "An aviator-style watch with big numerals, an oversize crown that works with gloves and a soft leather strap.",
+     "Stainless steel, sapphire crystal, leather strap, automatic movement.", "40 mm,43 mm", "Black,Brown,Blue", 700),
+    ("Explorer Canvas Strap Watch", "Pulse", 3, 7990, None, 28, "Quartz · 10 ATM", "Japan movement", False, 143,
+     ["1585123334904-845d60e97b29", "1508685096489-7aacd43bd3b1", V1], "Date window · luminous hands",
+     "A hard-wearing everyday explorer with a date window, luminous hands and a canvas strap.",
+     "Stainless steel, mineral crystal, canvas strap, quartz movement.", "38 mm,42 mm", "Green,Tan,Black", 500),
+
+    ("Smart Fitness Watch", "Pulse", 4, 8990, None, 40, "Heart rate · GPS · 5 ATM", "Imported", True, 305,
+     [V5], "Heart rate, sleep and workout tracking",
+     "A smart fitness watch with heart-rate and sleep tracking, built-in GPS, phone notifications and a 7-day battery.",
+     "Aluminium case, AMOLED display, silicone strap. Works with Android and iPhone.", "40 mm,44 mm", SMART_COLORS, 500),
+    ("Smart Hybrid Watch", "Pulse", 4, 6490, None, 30, "Hybrid · 6-month battery", "Imported", False, 121,
+     ["1546868871-7041f2a55e12", "1579586337278-3befd40fd17a", V5], "Analog dial · smart alerts",
+     "A hybrid that looks like a classic analog watch but counts steps, tracks sleep and buzzes for calls, with a 6-month battery.",
+     "Stainless steel, mineral crystal, leather strap, replaceable battery.", "38 mm,42 mm", "Black,Silver,Rose Gold", 500),
+    ("Smart GPS Sport Watch", "Pulse", 4, 14990, 16990, 16, "GPS · multi-sport · 10 ATM", "Imported", False, 67,
+     ["1579586337278-3befd40fd17a", "1546868871-7041f2a55e12", V5], "Multi-sport GPS · 2-week battery",
+     "A rugged multi-sport GPS watch with route maps, 24 sport modes and a two-week battery.",
+     "Fibre-reinforced case, sapphire glass, silicone strap.", "42 mm,47 mm", "Black,Blue,Green", None),
+
+    ("Rose Gold Bracelet Watch", "Maison Lune", 5, 9990, 11990, 18, "Quartz · 3 ATM", "Swiss movement", True, 168,
+     ["1612817159949-195b6eb9e31a", "1594534475808-b18fc33b045e", V3], "Rose gold-tone · slim bracelet",
+     "A dainty rose gold-tone bracelet watch with a mother-of-pearl dial.",
+     "Rose gold-tone steel, sapphire-coated glass, quartz movement.", "28 mm,32 mm", "Rose Gold,Gold,Silver", 500),
+    ("Pearl Dial Ladies Watch", "Maison Lune", 5, 11900, None, 12, "Quartz · 3 ATM", "Swiss movement", False, 74,
+     ["1533139143976-30e4d0a0f6e0", "1619134778706-7015533a6150", V3], "Mother-of-pearl dial · leather strap",
+     "A softly glowing mother-of-pearl dial on a slim case and a soft leather strap.",
+     "Stainless steel, sapphire-coated glass, leather strap.", "30 mm,34 mm", "Silver,Gold,Rose Gold", 500),
+    ("Petite Mesh Watch", "Horloge & Co", 5, 5990, None, 25, "Quartz · 3 ATM", "Japan movement", False, 133,
+     ["1539874754764-5a96559165b0", "1622434641406-a158123450f9", V1], "Milanese mesh · petite case",
+     "A petite case on an adjustable Milanese mesh strap that fits any wrist without tools.",
+     "Stainless steel case and mesh strap, mineral crystal.", "26 mm,30 mm", "Silver,Gold,Rose Gold", None),
+    ("Crystal Bezel Watch", "Maison Lune", 5, 13500, 15500, 0, "Quartz · 5 ATM", "Swiss movement", False, 58,
+     ["1560343090-f0409e92791a", "1508685096489-7aacd43bd3b1", V3], "Crystal-set bezel · bracelet",
+     "A crystal-set bezel that catches the light, on a polished link bracelet.",
+     "Stainless steel, crystals, sapphire-coated glass, quartz movement.", "30 mm,33 mm", "Silver,Gold,Rose Gold", 700),
 ]
 
-# Products a shopper must choose a size for (everything else has no sizes)
-SIZES = {
-    "Linen Wrap Midi Dress": "XS,S,M,L,XL",
-    "Red Silk Slip Dress": "XS,S,M,L",
-    "Cropped Leather Biker Jacket": "XS,S,M,L",
-    "Relaxed Straight Jeans": "24,26,28,30,32,34",
-    "Tailored Wool Suit": "36,38,40,42,44,46",
-    "Heavyweight White Tee": "S,M,L,XL,XXL",
-    "Utility Field Jacket": "S,M,L,XL",
-    "Red Runner Sneakers": "39,40,41,42,43,44,45,46",
-    "White Leather Court Sneakers": "36,37,38,39,40,41,42,43,44,45,46",
-    "Suede Chelsea Boots": "39,40,41,42,43,44,45,46",
-    "Classic Leather Loafers": "39,40,41,42,43,44,45,46",
-    "Block-Heel Leather Sandals": "36,37,38,39,40,41",
-    "Italian Leather Belt": "85,90,95,100,105",
-    "18k Gold Stacking Rings (Set of 3)": "5,6,7,8,9",
-}
-
-REVIEWS = [
-    (5, "My new favourite piece", "The quality is even better in person. I've worn it three times this week."),
-    (4, "Lovely, runs slightly small", "Beautiful finish and packaging. I'd size up if you're between sizes."),
-    (5, "Worth every peso", "Exactly as described and delivery was quick. Looks like the photos."),
-    (5, "Gift-worthy", "Bought one for myself and one as a gift. Everyone asked where it was from."),
-    (3, "Good, not perfect", "Well made, but the colour is a little different from my screen. Service was great."),
-    (4, "Solid repeat purchase", "Third order now. Consistent and well packed every time."),
-]
-
-
-# Products with no photo in the table above get these. The first that loads wins: the page tries the next one in the
-# browser if a photo is gone (see ALT_NEXT + the image fallback in app.js), and the start-up photo fill can replace any.
-ALT_PHOTOS = {
-    "Red Runner Sneakers": ["1542291026-7eec264c27ff", "1491553895911-0055eca6402d", "1600185365926-3a2ce3cdb9eb"],
-    "White Leather Court Sneakers": ["1595950653106-6c9ebd614d3a", "1525966222134-fcfa99b8ae77", "1460353581641-37baddab0fa2"],
-    "Suede Chelsea Boots": ["1608256246200-53e635b5b65f", "1542280756-74b2f55e73ab", "1520639888713-7851133b1ed0"],
-    "Classic Leather Loafers": ["1614252369475-531eba835eb1", "1533867617858-e7b97e060509", "1449505278894-297fdb3edbc1"],
-    "Block-Heel Leather Sandals": ["1603487742131-4160ec999306", "1543163521-1bf539c55dd2", "1515347619252-60a4bf4fff4f"],
-    "Tortoiseshell Sunglasses": ["1511499767150-a48a237f0083", "1473496169904-658ba7c44d8a", "1577803645773-f96470509666"],
-    "Aviator Sunglasses": ["1572635196237-14b3f281503f", "1577803645773-f96470509666", "1511499767150-a48a237f0083"],
-    "Italian Leather Belt": ["1624222247344-550fb60583dc", "1605733513597-a8f8341084e6", "1584917865442-de89df76afd3"],
-    "Printed Silk Scarf": ["1520903920243-00d872a2d1c9", "1601924994987-69e26d50dc26", "1566150905458-1bf1fc113f0d"],
-    "Leather Card Holder": ["1627123424574-724758594e93", "1606503825008-909a67e63c3d", "1548036328-c9fa89d128fa"],
-}
+WATCH_SLUGS = {slugify(row[0]) for row in PRODUCTS}
 
 
 def alt_next():
-    """{photo id: URL of the next candidate}: lets the browser move on when a photo has been removed from Unsplash."""
+    """{photo id: URL of the next candidate}: lets the browser move on when a photo has been removed from its host."""
     out = {}
-    for ids in ALT_PHOTOS.values():
+    for row in PRODUCTS:
+        ids = row[10]
         for a, b in zip(ids, ids[1:]):
             out.setdefault(a, U(b))
     return out
 
 
 def _make_product(i, row, category, now, rng):
-    name, brand, ci, price, compare, stock, size, origin, featured, sold, photos, short, desc, ingr = row
+    name, brand, ci, price, compare, stock, note, origin, featured, sold, photos, short, desc, specs, sizes, colors, engraving = row
     p = Product(name=name, slug=slugify(name), sku=f"VM-{1000 + i}", brand=brand, category=category,
                 short_description=short, description=desc, price_minor=price * 100,
-                compare_at_minor=compare * 100 if compare else None, stock=stock, size_label=size,
-                origin=origin, is_featured=featured, sold_count=sold, ingredients=ingr, sizes=SIZES.get(name),
-                created_at=now - timedelta(days=60 - i * 2 if i < 18 else rng.randint(1, 12)))
-    for pos, pid in enumerate(photos or ALT_PHOTOS.get(name, [])[:1]):
+                compare_at_minor=compare * 100 if compare else None, stock=stock, size_label=note,
+                origin=origin, is_featured=featured, sold_count=sold, ingredients=specs, sizes=sizes or None,
+                colors=colors or None, engraving_fee_minor=engraving * 100 if engraving is not None else None,
+                engraving_max=20, created_at=now - timedelta(days=60 - i * 2 if i < 18 else rng.randint(1, 12)))
+    for pos, pid in enumerate(photos[:1]):
         p.images.append(ProductImage(url=U(pid), alt=f"{name} — {short}", position=pos, credit="Unsplash"))
     return p
 
 
-# Products that were in the wrong collection in an earlier release: slug -> where they belong now
-KNOWN_MOVES = {"red-runner-sneakers": "shoes", "tortoiseshell-sunglasses": "accessories"}
-WRONG_PHOTO_IDS = ("1572635196237-14b3f281503f",)  # showed plain black sunglasses on the tortoiseshell listing
+REVIEWS = [
+    (5, "Looks even better on the wrist", "The finish is lovely in person and it keeps good time. Packaging felt premium too."),
+    (4, "Great watch, check the size", "Beautiful watch. I went one case size up from my old one and it was the right call."),
+    (5, "Worth every peso", "Exactly as described and delivery was quick. Looks like the photos."),
+    (5, "Perfect engraved gift", "Added an engraving for my dad's birthday. It arrived beautifully done and he loves it."),
+    (3, "Good, not perfect", "Well made, but the dial colour is a little different from my screen. Service was great."),
+    (4, "Solid repeat purchase", "Third watch from here now. Consistent and well packed every time."),
+]
+
+
+# Collections an earlier release sold (fashion, jewelry, bags, gifts, cars). They are removed when the store becomes a watch store.
+OLD_COLLECTIONS = {"women", "men", "shoes", "accessories", "jewelry", "bags", "gifts-gourmet", "cars"}
 
 
 def refresh_catalog():
-    """Bring an existing demo catalog up to date WITHOUT deleting anything.
+    """Turn an existing store into the current watch store WITHOUT touching accounts, orders, settings or uploaded photos.
 
-    Accounts, orders, uploaded photos, settings and the Pexels key all stay. Idempotent. Returns a list of
-    human-readable changes (empty if nothing was needed).
+    Fashion, jewelry, bags and gift products (and their collections) are removed; order history keeps its snapshots.
+    Watches get their collections, sizes, colours and engraving; missing watches and photos are added. Idempotent.
+    Returns a list of human-readable changes (empty if nothing was needed).
     """
+    from .services.uploads import delete_upload
     changes = []
     cats = {c.slug: c for c in Category.query.all()}
     for pos, (name, icon, desc) in enumerate(CATEGORIES):
@@ -272,36 +183,60 @@ def refresh_catalog():
             db.session.add(cat)
             cats[slug] = cat
             changes.append(f"added the {name} collection")
-        elif cat.position != pos:
-            cat.position = pos
+        else:
+            cat.position, cat.icon, cat.description = pos, icon, desc
     db.session.flush()
-    for slug, target in KNOWN_MOVES.items():
-        product = Product.query.filter_by(slug=slug).first()
-        if product is not None and product.category_id != cats[target].id:
-            product.category = cats[target]
-            changes.append(f"moved {product.name} to {cats[target].name}")
-    for slug in ("tortoiseshell-sunglasses",):
-        product = Product.query.filter_by(slug=slug).first()
-        for img in list(product.images if product else []):
-            if img.url and any(bad in img.url for bad in WRONG_PHOTO_IDS):
-                product.images.remove(img)
-                db.session.delete(img)
-                changes.append(f"removed the wrong photo from {product.name}")
-    for product in Product.query.filter(~Product.images.any()).all():
-        ids = ALT_PHOTOS.get(product.name)
-        if ids:
-            product.images.append(ProductImage(url=U(ids[0]), alt=product.name, position=0, credit="Unsplash"))
-            changes.append(f"added a photo to {product.name}")
+
+    # Fashion, jewelry, bags and gift products go (the old "Watches" collection's own products stay)
+    gone = [p for p in Product.query.all() if p.category.slug in OLD_COLLECTIONS]
+    if gone:
+        ids = [p.id for p in gone]
+        OrderItem.query.filter(OrderItem.product_id.in_(ids)).update({OrderItem.product_id: None}, synchronize_session=False)
+        CartItem.query.filter(CartItem.product_id.in_(ids)).delete(synchronize_session=False)
+        WishlistItem.query.filter(WishlistItem.product_id.in_(ids)).delete(synchronize_session=False)
+        for p in gone:
+            for img in p.images:
+                if img.filename:
+                    delete_upload(img.filename)
+            db.session.delete(p)
+        db.session.flush()
+        changes.append(f"removed {len(gone)} non-watch product(s)")
+
     rng, now = random.Random(7), utcnow()
-    existing = {p.slug for p in Product.query.all()}
-    for i, row in enumerate(PRODUCTS):
-        if slugify(row[0]) not in existing:
-            sku_taken = db.session.query(Product.id).filter_by(sku=f"VM-{1000 + i}").first() is not None
-            product = _make_product(i, row, cats[slugify(CATEGORIES[row[2]][0])], now, rng)
+    rows = {slugify(r[0]): (i, r) for i, r in enumerate(PRODUCTS)}
+    existing = {p.slug: p for p in Product.query.all()}
+    for slug, (i, row) in rows.items():
+        category = cats[slugify(CATEGORIES[row[2]][0])]
+        product = existing.get(slug)
+        if product is None:
+            sku_taken = Product.query.filter_by(sku=f"VM-{1000 + i}").first() is not None
+            product = _make_product(i, row, category, now, rng)
             if sku_taken:
                 product.sku = f"VM-{9000 + i}"
             db.session.add(product)
             changes.append(f"added {product.name}")
+            continue
+        if product.category_id != category.id:
+            product.category = category
+            changes.append(f"moved {product.name} to {category.name}")
+        if product.colors is None and product.sizes is None and product.engraving_fee_minor is None:
+            product.sizes, product.colors = row[14] or None, row[15] or None
+            product.engraving_fee_minor = row[16] * 100 if row[16] is not None else None
+            changes.append(f"added size, colour and engraving options to {product.name}")
+        if not product.images:
+            product.images.append(ProductImage(url=U(row[10][0]), alt=product.name, position=0, credit="Unsplash"))
+            changes.append(f"added a photo to {product.name}")
+    # Watches someone added themselves stay, in the first watch collection
+    first = cats[slugify(CATEGORIES[0][0])]
+    for p in Product.query.all():
+        if p.category.slug not in {slugify(c[0]) for c in CATEGORIES}:
+            p.category = first
+            changes.append(f"moved {p.name} to {first.name}")
+    db.session.flush()
+    for cat in Category.query.all():
+        if cat.slug not in {slugify(c[0]) for c in CATEGORIES} and not cat.products:
+            db.session.delete(cat)
+            changes.append(f"removed the empty {cat.name} collection")
     db.session.commit()
     return changes
 
@@ -401,7 +336,7 @@ def seed_demo_accounts(products, rng, now):
             q = rng.randint(1, 2)
             o.items.append(OrderItem(product_id=p.id, product_name=p.name, product_sku=p.sku, product_brand=p.brand,
                                      image_url=p.images[0].url if p.images else None, unit_price_minor=p.price_minor, quantity=q,
-                                     size=rng.choice(p.size_list) if p.size_list else None,
+                                     size=" · ".join(x for x in (rng.choice(p.size_list) if p.size_list else "", rng.choice(p.color_list) if p.color_list else "") if x) or None,
                                      line_total_minor=p.price_minor * q))
             sub += p.price_minor * q
         o.subtotal_minor = sub
@@ -443,7 +378,7 @@ def seed_demo_accounts(products, rng, now):
         db.session.add_all([
             Notification(user_id=buyer.id, title="Welcome to Aurelune", body="Use WELCOME10 for 10% off.",
                          link="/shop/", icon="sparkles", is_read=True, created_at=now - timedelta(days=30)),
-            Notification(user_id=buyer.id, title="The Red Silk Slip Dress is back", body="Restocked in sizes XS–L.",
-                         link="/shop/p/red-silk-slip-dress", icon="shirt", created_at=now - timedelta(days=1)),
+            Notification(user_id=buyer.id, title="The Moonphase Automatic is back", body="Restocked in 39 mm and 42 mm.",
+                         link="/shop/p/moonphase-automatic-dress-watch", icon="watch", created_at=now - timedelta(days=1)),
         ])
     db.session.commit()

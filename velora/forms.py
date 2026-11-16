@@ -116,7 +116,10 @@ class ProductForm(FlaskForm):
     compare_at = MoneyField("Compare-at price (₱, optional)", validators=[Optional()])
     stock = IntegerField("Stock", validators=[InputRequired(), NumberRange(min=0, max=100000)])
     size_label = StringField("Size / variant note", validators=[Optional(), Length(max=60)], filters=[strip])
-    sizes = StringField("Sizes shoppers can choose (comma-separated)", validators=[Optional(), Length(max=120)], filters=[strip])
+    sizes = StringField("Case sizes shoppers can choose (comma-separated)", validators=[Optional(), Length(max=120)], filters=[strip])
+    colors = StringField("Colours shoppers can choose (comma-separated)", validators=[Optional(), Length(max=200)], filters=[strip])
+    engraving_fee = MoneyField("Engraving fee (₱). Leave empty if this watch can't be engraved", validators=[Optional()])
+    engraving_max = IntegerField("Most engraving characters", default=20, validators=[Optional(), NumberRange(min=1, max=40)])
     origin = StringField("Origin", validators=[Optional(), Length(max=120)], filters=[strip])
     ingredients = TextAreaField("Materials, care, specs or ingredients", validators=[Optional(), Length(max=4000)], filters=[strip])
     status = SelectField("Status", choices=[(s, s.title()) for s in PRODUCT_STATUSES])
@@ -128,8 +131,18 @@ class ProductForm(FlaskForm):
     def validate_sizes(self, field):
         parts = [p.strip() for p in (field.data or "").split(",") if p.strip()]
         if len(set(parts)) != len(parts) or any(len(p) > 12 for p in parts) or len(parts) > 12:
-            raise ValidationError("Use up to 12 different sizes, each under 12 characters, e.g. S, M, L.")
+            raise ValidationError("Use up to 12 different sizes, each under 12 characters, e.g. 38 mm, 42 mm.")
         field.data = ",".join(parts)
+
+    def validate_colors(self, field):
+        parts = [p.strip() for p in (field.data or "").split(",") if p.strip()]
+        if len(set(parts)) != len(parts) or any(len(p) > 24 for p in parts) or len(parts) > 10:
+            raise ValidationError("Use up to 10 different colours, each under 24 characters, e.g. Black, Silver, Rose Gold.")
+        field.data = ",".join(parts)
+
+    def validate_engraving_fee(self, field):
+        if field.minor is not None and field.minor < 0:
+            raise ValidationError("The fee can't be negative (use 0 for free engraving).")
 
     def validate_price(self, field):
         if field.minor is None or field.minor <= 0:

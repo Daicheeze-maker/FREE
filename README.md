@@ -1,6 +1,6 @@
 # Aurelune
 
-A full-stack demo e-commerce store for **clothing, watches, jewelry and bags** (plus a small gifts & gourmet aisle). It's built with **Python 3.11+ / Flask / SQLAlchemy / SQLite** and has four role-based experiences: guest, customer, seller and administrator. It integrates two real external APIs, **Open Food Facts** and **Frankfurter**, and adds smooth GSAP animation.
+A full-stack demo e-commerce store that sells **only watches**, and lets the buyer choose the **case size, colour and an optional engraving** on every one. It's built with **Python 3.11+ / Flask / SQLAlchemy / SQLite** and has four role-based experiences: guest, customer, seller and administrator. It integrates two real external APIs, **Open Food Facts** and **Frankfurter**, and adds smooth GSAP animation.
 
 It runs directly on Windows 10/11 or Ubuntu, on bare metal or inside a virtual machine. Docker is not needed.
 
@@ -80,22 +80,24 @@ The five big site photos (homepage hero, lookbook tile, sale banner, sign-in and
 
 Portrait photos (taller than wide) look best. Every image is checked, resized and converted to WebP. Pexels photos are free to use under the [Pexels license](https://www.pexels.com/license/); don't use a stock model's photo to suggest that person endorses your store.
 
-### The collections
+### The collections and the watches
 
 | Collection | Examples |
 |---|---|
-| Women | linen wrap dress, silk slip dress, leather biker jacket, jeans |
-| Men | tailored wool suit, heavyweight tee, field jacket |
-| Shoes | red runner sneakers, white court sneakers, Chelsea boots, loafers, block-heel sandals |
-| Accessories | tortoiseshell and aviator sunglasses, leather belt, silk scarf, card holder |
-| Watches | minimalist, chronograph, gold dress watch, automatic diver, smart watch |
-| Jewelry | 18k stacking rings, pearl earrings, diamond pendant, silver bracelet, gift set |
-| Bags | structured leather tote, quilted chain crossbody, canvas backpack, evening clutch, weekender duffel |
-| Gifts & Gourmet | gift box, chocolate, coffee, candle (the natural home for Open Food Facts imports) |
+| Dress Watches | minimalist leather strap, gold-tone dress watch, moonphase automatic, skeleton |
+| Dive Watches | automatic diver 200 m, titanium diver, rubber-strap diver |
+| Chronographs | steel chronograph, racing chronograph, tachymeter sport chrono |
+| Field & Pilot | field automatic, pilot aviator, explorer on canvas |
+| Smart Watches | fitness watch, hybrid watch, GPS sport watch |
+| Ladies Watches | rose gold bracelet, pearl dial, petite mesh, crystal bezel |
 
-Every product is in the collection that matches what it is (the menu's *Clothing* only holds clothes; sneakers are under *Shoes* and sunglasses under *Accessories*). A test checks this for every product.
+That is 20 watches. **Every watch has options** that the buyer picks on its page:
 
-**Updating from an older version?** If your database only lacks the newest collections (for example Shoes and Accessories), `start.bat` / `start.sh` fix it automatically and **keep** your accounts, orders and photos (it prints what it changed). If it is much older (it still has Cars), they notice an out-of-date demo database (one that still has Cars) and ask *“Update to the new demo store now?”*. Answer `y` to load the new store (this replaces the local demo data); answer `n` to keep what you have. Your own stores (without the demo products) are never touched. You can also run it yourself: `python -m flask --app wsgi upgrade-demo`, or force a full reset with `python -m flask --app wsgi reset-demo --yes-delete-everything`.
+- **Case size** (for example 38 mm / 42 mm / 44 mm), **colour** (with colour swatches), and a **personal engraving** (up to 20 characters, with its own fee, on watches that offer it).
+- Size and colour are required before a watch can go into the bag; the same watch in two different sizes, colours or engravings is two bag lines (stock is shared). The engraving fee is added **by the server**, never by the browser, and the chosen options are saved on the order and shown in the bag, checkout, confirmation, order history, seller order page and the orders CSV.
+- Sellers set each watch's sizes, colours, engraving fee and the most characters allowed in **Seller studio → Products → (watch)**.
+
+**Updating from an older version (fashion, shoes, bags…)?** `start.bat` / `start.sh` convert it automatically and keep your accounts, orders, settings and uploaded photos: clothing, shoes, accessories, jewelry, bags and gift products are removed (past orders keep their own copy of what was bought), the watches and their options are added, and watches you added yourself are kept. It prints what it changed, and a second start changes nothing.
 
 ---
 
@@ -167,7 +169,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 - **Search:** `GET {OFF_BASE_URL}/cgi/search.pl?search_terms=…&search_simple=1&action=process&json=1&page=&page_size=&fields=…`
 - **Product by barcode:** `GET {OFF_BASE_URL}/api/v2/product/{barcode}.json?fields=…`
 - Read-only and no API key. Every request sends a descriptive `User-Agent: VeloraMarket/1.0 (<VELORA_CONTACT_EMAIL>)` as OFF's usage policy asks. Searches happen only when staff explicitly ask for one, and HTTP 429 (rate limited) gets a clear message.
-- **Where it's used:** Open Food Facts is a food database, so imports suit the **Gifts & Gourmet** collection (chocolate, coffee, snacks for gift boxes). *Seller studio → Import · Open Food Facts* shows real results (image if any, brand, quantity, categories, ingredients, Nutri-Score, and how complete the data is) with skeleton loading, empty and error states. **Import** re-fetches the product by barcode on the server, so data posted by the browser is never trusted. It validates and normalizes the record (trims, length limits, numeric nutrients only, https images, valid barcode and grade) and stores it locally as a draft at your price and stock. Imported products look like hand-made ones, and the product page shows ingredients, allergens, a Nutri-Score badge and a per-100 g nutrition table, with attribution. A *Refresh from Open Food Facts* button re-syncs a product. The storefront never calls OFF, so imported products keep working offline.
+- **Where it's used:** Open Food Facts is a food database, so imports are an extra tool (the store itself only sells watches). *Seller studio → Import · Open Food Facts* shows real results (image if any, brand, quantity, categories, ingredients, Nutri-Score, and how complete the data is) with skeleton loading, empty and error states. **Import** re-fetches the product by barcode on the server, so data posted by the browser is never trusted. It validates and normalizes the record (trims, length limits, numeric nutrients only, https images, valid barcode and grade) and stores it locally as a draft at your price and stock. Imported products look like hand-made ones, and the product page shows ingredients, allergens, a Nutri-Score badge and a per-100 g nutrition table, with attribution. A *Refresh from Open Food Facts* button re-syncs a product. The storefront never calls OFF, so imported products keep working offline.
 
 ### Frankfurter — `velora/services/currency.py`
 - `GET {FRANKFURTER_BASE_URL}/latest?base=PHP&symbols=USD,EUR,GBP,JPY,SGD,AUD` (default base URL `https://api.frankfurter.dev/v1`). No key needed. Rates are ECB reference rates, updated on working days.
@@ -213,7 +215,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
   - Configurable flat shipping and free-shipping threshold.
 - Placing the order:
   - **Delivery address on every purchase:** the customer picks one of their saved addresses or enters a new one (with an option to save it). Nothing is pre-selected and an order can't be placed without a valid choice; the address is copied onto the order.
-  - **Sizes:** clothing (XS–XL, waist and suit sizes), shoes (EU 39–46) and rings (5–9) need a size before they can be added to the bag. The same item in two sizes is two bag lines, stock is shared across sizes, and the size is saved on the order.
+  - **Watch options:** size, colour and an optional engraving (see *The collections and the watches*). The server checks every choice and adds the engraving fee itself.
   - **Demo credit:** every buyer starts with ₱500,000 and pays from it at checkout. An order that costs more than the remaining credit is refused (the balance can never go below zero, even with two checkouts at once); cancelling refunds the credit. Paid orders go straight to *Shipped* with a “wait 10 mins” message (`services/payments.py`, built so a real gateway can be plugged in).
   - **One transaction** that re-validates stock, prices and discount on the server, decrements stock with a conditional `UPDATE … WHERE stock >= qty` (so it can't oversell), snapshots item name, SKU, price, discount and image, then records the payment.
   - A one-time checkout token with a unique constraint prevents duplicate orders from double-submits.
@@ -260,7 +262,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 228 tests. External APIs are mocked, so no network is needed. They cover:
+There are 231 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

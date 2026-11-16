@@ -62,14 +62,22 @@ def get_user(email):
 
 
 def in_stock_product(min_stock=5):
-    """A product that needs no size (so tests can add it straight to the bag)."""
-    return (Product.query.filter(Product.stock >= min_stock, Product.status == "active", Product.sizes.is_(None))
+    """A watch the tests can put straight into the bag: it has its size, colour and engraving options switched off."""
+    p = (Product.query.filter(Product.stock >= min_stock, Product.status == "active").order_by(Product.id).first())
+    if p.sizes or p.colors or p.engraving_fee_minor is not None:
+        p.sizes = p.colors = p.engraving_fee_minor = None
+        db.session.commit()
+    return p
+
+
+def optioned_product(min_stock=5):
+    """A watch that has sizes, colours and engraving (the normal case in the store)."""
+    return (Product.query.filter(Product.stock >= min_stock, Product.status == "active", Product.sizes.isnot(None),
+                                 Product.colors.isnot(None), Product.engraving_fee_minor.isnot(None))
             .order_by(Product.id).first())
 
 
-def sized_product(min_stock=5):
-    return (Product.query.filter(Product.stock >= min_stock, Product.status == "active", Product.sizes.isnot(None))
-            .order_by(Product.id).first())
+sized_product = optioned_product
 
 
 def default_address(user):

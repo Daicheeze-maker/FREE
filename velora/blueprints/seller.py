@@ -84,6 +84,7 @@ def _product_form(product=None):
     if product is not None and request.method == "GET":
         form.price.data = str(to_major(product.price_minor))
         form.compare_at.data = str(to_major(product.compare_at_minor)) if product.compare_at_minor else ""
+        form.engraving_fee.data = str(to_major(product.engraving_fee_minor)) if product.engraving_fee_minor is not None else ""
     return form
 
 
@@ -98,6 +99,9 @@ def _apply_product_form(form, product):
     product.stock = form.stock.data
     product.size_label = form.size_label.data or None
     product.sizes = form.sizes.data or None
+    product.colors = form.colors.data or None
+    product.engraving_fee_minor = form.engraving_fee.minor  # empty = no engraving offered
+    product.engraving_max = form.engraving_max.data or 20
     product.origin = form.origin.data or None
     product.ingredients = form.ingredients.data or None
     product.status = form.status.data

@@ -13,7 +13,7 @@ def _fresh_app(tmp_path, name="demo.db"):
     return create_app("testing", SQLALCHEMY_DATABASE_URI=f"sqlite:///{tmp_path / name}")
 
 
-# ------------------------------------------------------------ the update prompt
+# ------------------------------------------------------------ the start-up conversion
 
 def test_demo_status_recognises_each_kind_of_database(tmp_path):
     from velora.cli import init_database
@@ -24,29 +24,13 @@ def test_demo_status_recognises_each_kind_of_database(tmp_path):
         assert demo_status() == "empty"
         seed()
         assert demo_status() == "current"
-        Category.query.filter_by(slug="bags").one().slug = "cars"  # what the previous version had
+        Category.query.filter_by(slug="chronographs").one().slug = "bags"  # an older store's collection
         db.session.commit()
-        assert demo_status() == "outdated"
-        db.session.delete(Product.query.filter_by(slug="linen-wrap-midi-dress").one())  # someone's own store
+        assert demo_status() == "stale"
+        for p in Product.query.all():  # someone's own store: none of the demo products
+            db.session.delete(p)
         db.session.commit()
         assert demo_status() == "custom"
-
-
-def test_upgrade_demo_replaces_an_outdated_demo_store(tmp_path):
-    from velora.cli import init_database
-    from velora.seed import seed
-    app = _fresh_app(tmp_path)
-    with app.app_context():
-        init_database()
-        seed()
-        Category.query.filter_by(slug="bags").one().slug = "cars"
-        db.session.commit()
-    result = app.test_cli_runner().invoke(args=["upgrade-demo", "--yes"])
-    assert result.exit_code == 0 and "new demo store is loaded" in result.output
-    with app.app_context():
-        assert demo_status() == "current"
-        assert Category.query.filter_by(slug="cars").first() is None
-        assert User.query.count() == 0  # the store starts with no accounts: people register themselves
 
 
 def test_upgrade_demo_never_touches_current_or_custom_stores(tmp_path):
@@ -62,29 +46,18 @@ def test_upgrade_demo_never_touches_current_or_custom_stores(tmp_path):
         db.session.commit()
     runner = app.test_cli_runner()
     out = runner.invoke(args=["upgrade-demo", "--yes"]).output
-    assert "OLDER VERSION" not in out and "loaded" not in out  # an up-to-date store isn't even mentioned
+    assert "Catalog updated" not in out  # an up-to-date store isn't even mentioned
     with app.app_context():
-        assert User.query.filter_by(email="marker@example.com").count() == 1  # current store: untouched
-        db.session.delete(Product.query.filter_by(slug="linen-wrap-midi-dress").one())
+        assert User.query.filter_by(email="marker@example.com").count() == 1
+        for p in Product.query.all():
+            db.session.delete(p)
+        db.session.add(Product(name="Mine", slug="mine", sku="M-1", brand="Me", category=Category.query.first(), price_minor=100,
+                               stock=1, short_description="x", description="x"))
         db.session.commit()
     runner.invoke(args=["upgrade-demo", "--yes"])
     with app.app_context():
-        assert User.query.filter_by(email="marker@example.com").count() == 1  # custom store: untouched
-
-
-def test_upgrade_demo_without_a_keyboard_only_explains(tmp_path):
-    from velora.cli import init_database
-    from velora.seed import seed
-    app = _fresh_app(tmp_path)
-    with app.app_context():
-        init_database()
-        seed()
-        Category.query.filter_by(slug="bags").one().slug = "cars"
-        db.session.commit()
-    out = app.test_cli_runner().invoke(args=["upgrade-demo"]).output  # no --yes and no terminal
-    assert "OLDER VERSION" in out and "upgrade-demo" in out
-    with app.app_context():
-        assert demo_status() == "outdated"  # nothing was deleted
+        assert [p.slug for p in Product.query.all()] == ["mine"]  # a store of its own: untouched
+        assert Category.query.count() == 6
 
 
 # ------------------------------------------------------ buyer and linked seller profile

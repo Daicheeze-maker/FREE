@@ -6,12 +6,12 @@
 <section class="hero" data-hero>
   <div class="container hero__grid">
     <div class="hero__copy">
-      <p class="eyebrow" data-hero-fade>New season · Collection 04 {{ icon('flame') }}</p>
+      <p class="eyebrow" data-hero-fade>New arrivals · Make it yours {{ icon('flame') }}</p>
       <h1 class="hero__title display">
-        <span class="line"><span>Style that</span></span>
+        <span class="line"><span>Time that</span></span>
         <span class="line"><span>speaks <em>first.</em></span></span>
       </h1>
-      <p class="hero__lede" data-hero-fade>Clothing, watches and fine jewelry — and bags to match. Every piece is hand-picked by our team.</p>
+      <p class="hero__lede" data-hero-fade>Dress, dive, chronograph and smart watches. Pick your size and colour, then add an engraving to make it yours.</p>
       <div class="hero__ctas" data-hero-fade>
         <a href="{{ url_for('catalog.listing') }}" class="btn btn--dark btn--lg">Start shopping <span class="btn__orb">{{ icon('arrow-up-right') }}</span></a>
         <a href="{{ url_for('catalog.listing', sort='newest') }}" class="play-link"><span class="play-link__box">{{ icon('sparkles') }}</span>What's trending?</a>
@@ -26,7 +26,7 @@
     <div class="hero__visual" aria-hidden="false">
       <div class="hero__glow"></div>
       <div class="hero__block"></div>
-      <div class="hero__photo"><img src="{{ site_photo('hero') }}" alt="Model wearing the new collection" fetchpriority="high" width="900" height="1100"></div>
+      <div class="hero__photo"><img src="{{ site_photo('hero') }}" alt="A watch from the new collection" fetchpriority="high" width="900" height="1100"></div>
       <span class="hero__dots"></span><span class="hero__ring hero__ring--a"></span><span class="hero__ring hero__ring--b"></span>
       {% if hero %}
       <a class="hero__card" href="{{ url_for('catalog.detail', slug=hero.slug) }}">
@@ -39,7 +39,7 @@
       </a>
       {% endif %}
       {% if avg_rating %}<div class="hero__chip hero__chip--rating"><span class="orb">{{ icon('star', 'ic--fill') }}</span><div><strong>{{ avg_rating }} / 5</strong><span>from {{ review_count }} verified review{{ '' if review_count == 1 else 's' }}</span></div></div>{% endif %}
-      <div class="hero__chip hero__chip--ship"><span class="orb">{{ icon('gem') }}</span><div><strong>Authenticity guaranteed</strong><span>on every watch & jewel</span></div></div>
+      <div class="hero__chip hero__chip--ship"><span class="orb">{{ icon('gem') }}</span><div><strong>Authenticity guaranteed</strong><span>on every watch</span></div></div>
     </div>
   </div>
 </section>
@@ -52,8 +52,8 @@
     </div>
     <div class="aisles" data-reveal>
       <a class="aisles__intro" href="{{ url_for('catalog.listing', sort='popular') }}">
-        <img src="{{ site_photo('lookbook') }}" alt="Models wearing the new collection" loading="lazy">
-        <div><strong>The new<br>looks</strong><span>Shop the bestsellers {{ icon('arrow-right', 'ic--sm') }}</span></div>
+        <img src="{{ site_photo('lookbook') }}" alt="Watches from the new collection" loading="lazy">
+        <div><strong>The new<br>watches</strong><span>Shop the bestsellers {{ icon('arrow-right', 'ic--sm') }}</span></div>
       </a>
       <div class="aisles__panel">
         {% for c in categories %}
@@ -81,19 +81,19 @@
 
 <section class="section--tight">
   <div class="container bento">
-    <a class="tile tile--promo" href="{{ url_for('catalog.listing', slug='women') }}" data-reveal>
-      <img src="{{ site_photo('promo') }}" alt="Model wearing dresses and denim from the new collection" loading="lazy">
+    <a class="tile tile--promo" href="{{ url_for('catalog.listing', slug='dress-watches') }}" data-reveal>
+      <img src="{{ site_photo('promo') }}" alt="Watches from the season sale" loading="lazy">
       <div class="tile__content">
         {% if promo %}
         <p class="eyebrow" style="color:rgba(255,255,255,.75)">{{ icon('calendar-days') }} {% if promo.ends_at %}Ends {{ promo.ends_at|dt('%b %d') }}{% else %}Limited time{% endif %}</p>
-        <h3>The season<br>style sale</h3>
-        <p>{{ promo.value }}% off your order. Start with the dresses, denim and jackets in Women.</p>
+        <h3>The season<br>watch sale</h3>
+        <p>{{ promo.value }}% off your order. Start with the dress watches.</p>
         <span class="code-tag">{{ icon('ticket-percent') }} {{ promo.code }} · {{ promo.value }}% off</span>
         {% else %}
         <p class="eyebrow" style="color:rgba(255,255,255,.75)">{{ icon('sparkles') }} New season</p>
         <h3>The new<br>collection</h3>
-        <p>Dresses, denim and jackets from the new season.</p>
-        <span class="code-tag">{{ icon('shirt') }} Shop Women</span>
+        <p>Dress, dive, chronograph and smart watches.</p>
+        <span class="code-tag">{{ icon('watch') }} Shop Dress Watches</span>
         {% endif %}
       </div>
     </a>
@@ -159,7 +159,7 @@
 <section class="section--tight" id="visit">
   <div class="container">
     <div class="section-head" data-reveal>
-      <div><p class="eyebrow">{{ icon('map-pin') }} Visit us</p><h2>Try it on in store</h2><p>Come and meet the team who model our collection. Fitting rooms, free alterations on suits and a coffee on us.</p></div>
+      <div><p class="eyebrow">{{ icon('map-pin') }} Visit us</p><h2>Try it on in store</h2><p>Come and try the watches on your wrist. We size and adjust straps for free, and the coffee is on us.</p></div>
     </div>
     <div class="store-ad" data-reveal>
       <div class="store-ad__info">

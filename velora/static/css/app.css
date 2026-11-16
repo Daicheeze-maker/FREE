@@ -1004,3 +1004,22 @@ details.disclosure[open] { padding-bottom: 8px; }
 .account-type { border: 0; padding: 0; margin: 0 0 14px; min-width: 0; }
 .account-type legend { padding: 0; margin-bottom: 8px; }
 .choice-grid--2 { grid-template-columns: 1fr 1fr; }
+
+/* Watch options: colour swatches and engraving */
+.size-opt--color span { gap: 8px; grid-auto-flow: column; }
+.swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); background: #999; display: inline-block; }
+.swatch[data-swatch*="black"], .swatch[data-swatch*="midnight"] { background: #1b1b1d; }
+.swatch[data-swatch*="silver"], .swatch[data-swatch*="steel"], .swatch[data-swatch*="starlight"] { background: linear-gradient(135deg,#f1f1f1,#b7bcc2); }
+.swatch[data-swatch*="rose"] { background: linear-gradient(135deg,#f3cdbf,#c98b78); }
+.swatch[data-swatch*="gold"] { background: linear-gradient(135deg,#f6e3a1,#c9a24a); }
+.swatch[data-swatch*="blue"], .swatch[data-swatch*="navy"] { background: #1f3d78; }
+.swatch[data-swatch*="green"] { background: #2f5d46; }
+.swatch[data-swatch*="brown"], .swatch[data-swatch*="tan"] { background: #8a5a3a; }
+.swatch[data-swatch*="white"], .swatch[data-swatch*="pearl"], .swatch[data-swatch*="cream"] { background: #f6f2ea; }
+.swatch[data-swatch*="red"] { background: #b3261e; }
+.swatch[data-swatch*="grey"], .swatch[data-swatch*="gray"], .swatch[data-swatch*="titanium"] { background: #7c8087; }
+.engrave .check { margin-bottom: 4px; }
+.engrave__box { margin-top: 10px; display: grid; gap: 6px; }
+.engrave__box[hidden] { display: none; }
+.engrave__hint { margin: 0; font-size: 12.5px; }
+.size-picker__error[hidden] { display: none; }

@@ -18,7 +18,7 @@
               <div>
                 <p class="pcard__brand">{{ p.brand }}</p>
                 <a href="{{ url_for('catalog.detail', slug=p.slug) }}" style="font-weight:600;text-decoration:none">{{ p.name }}</a>
-                <div class="muted" style="font-size:13px">{{ money(p.price_minor) }} each{% if l.size %} · <strong>Size {{ l.size }}</strong>{% elif p.size_label %} · {{ p.size_label }}{% endif %}</div>
+                <div class="muted" style="font-size:13px">{{ money(l.unit_price_minor) }} each{% if l.size %} · <strong>{{ l.label }}</strong>{% elif p.size_label %} · {{ p.size_label }}{% endif %}</div>
                 {% if l.problem %}<div class="cart-line__problem">{{ icon('triangle-alert', 'ic--sm') }} {{ l.problem }}</div>{% endif %}
               </div>
             </div>

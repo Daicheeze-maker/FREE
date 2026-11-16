@@ -1,84 +1,65 @@
-"""Site photo slots (hero, banners, sign-in art).
+"""Site photo slots (hero, banners, sign-in art) and the searches used to find watch photos.
 
-Until a photo is chosen a slot shows a neutral placeholder. Staff fill them in Seller studio -> Model photos:
-upload your own, or use Find photos to pick professional photos from Pexels (free).
+Until a photo is chosen a slot shows the photo of one of the watches. Staff change them in Seller studio -> Site photos:
+upload your own, or use Find photos (Pexels, free).
 """
 
 # key: (label, where it appears, search used by Find photos / auto-fill)
 SLOTS = {
-    "hero": ("Homepage hero", "Large model photo at the top of the homepage", "fashion model portrait studio"),
-    "lookbook": ("Lookbook tile", "Photo beside the collections panel", "fashion editorial model standing"),
-    "promo": ("Sale banner", "Big promotional tile on the homepage", "woman fashion model dress outdoor"),
-    "login": ("Sign-in page", "Photo on the sign-in screen", "fashion model street style"),
-    "register": ("Create-account page", "Photo on the registration screen", "stylish model portrait"),
+    "hero": ("Homepage hero", "Large photo at the top of the homepage", "wristwatch on wrist close up"),
+    "lookbook": ("Collections tile", "Photo beside the collections panel", "luxury watches display"),
+    "promo": ("Sale banner", "Big promotional tile on the homepage", "watch on wrist outdoor"),
+    "login": ("Sign-in page", "Photo on the sign-in screen", "classic wristwatch"),
+    "register": ("Create-account page", "Photo on the registration screen", "automatic watch dial"),
 }
 
-# Until staff choose a photo, each slot shows the model photo of one of these products (first one that has a photo)
+# Until staff choose a photo, each slot shows the photo of one of these watches (first one that has a photo)
 DEFAULT_SLOT_PRODUCTS = {
-    "hero": ("red-silk-slip-dress", "cropped-leather-biker-jacket", "linen-wrap-midi-dress"),
-    "lookbook": ("relaxed-straight-jeans", "tailored-wool-suit", "linen-wrap-midi-dress"),
-    "promo": ("cropped-leather-biker-jacket", "relaxed-straight-jeans", "linen-wrap-midi-dress"),
-    "login": ("cropped-leather-biker-jacket", "tailored-wool-suit", "linen-wrap-midi-dress"),
-    "register": ("tailored-wool-suit", "red-silk-slip-dress", "linen-wrap-midi-dress"),
+    "hero": ("minimalist-leather-strap-watch", "chronograph-steel-watch", "diver-automatic-200m"),
+    "lookbook": ("classic-gold-tone-dress-watch", "diver-automatic-200m", "minimalist-leather-strap-watch"),
+    "promo": ("chronograph-steel-watch", "smart-fitness-watch", "minimalist-leather-strap-watch"),
+    "login": ("diver-automatic-200m", "classic-gold-tone-dress-watch", "minimalist-leather-strap-watch"),
+    "register": ("minimalist-leather-strap-watch", "smart-fitness-watch", "chronograph-steel-watch"),
 }
 
 # What Find photos searches for when opened from a product (by collection slug)
 PRODUCT_QUERIES = {
-    "women": "woman fashion model wearing dress",
-    "men": "man fashion model jacket",
-    "watches": "wristwatch on wrist model",
-    "jewelry": "model wearing jewelry necklace",
-    "bags": "woman with handbag fashion",
-    "shoes": "shoes fashion",
-    "accessories": "fashion accessories",
-    "gifts-gourmet": "luxury gift box",
+    "dress-watches": "dress wristwatch leather strap",
+    "dive-watches": "diver watch wrist",
+    "chronographs": "chronograph wristwatch",
+    "field-pilot": "field watch canvas strap",
+    "smart-watches": "smartwatch on wrist",
+    "ladies-watches": "women rose gold wristwatch",
 }
 
-
-# What Find photos searches for, per product (by product slug): specific, so the right item shows up
+# What Find photos searches for, per watch (by product slug): specific, so the right watch shows up
 PRODUCT_PHOTO_QUERIES = {
-    "linen-wrap-midi-dress": "woman wearing linen wrap dress",
-    "red-silk-slip-dress": "woman red silk slip dress",
-    "cropped-leather-biker-jacket": "woman leather biker jacket",
-    "relaxed-straight-jeans": "woman straight leg jeans",
-    "tailored-wool-suit": "man tailored suit",
-    "heavyweight-white-tee": "man white t-shirt",
-    "utility-field-jacket": "man field jacket outdoors",
-    "red-runner-sneakers": "red running sneakers",
-    "white-leather-court-sneakers": "white leather sneakers",
-    "suede-chelsea-boots": "suede chelsea boots",
-    "classic-leather-loafers": "leather loafers",
-    "block-heel-leather-sandals": "block heel sandals",
-    "tortoiseshell-sunglasses": "tortoiseshell sunglasses",
-    "aviator-sunglasses": "aviator sunglasses",
-    "italian-leather-belt": "leather belt",
-    "printed-silk-scarf": "silk scarf",
-    "leather-card-holder": "leather card holder wallet",
-    "minimalist-leather-strap-watch": "minimalist leather strap watch",
-    "chronograph-steel-watch": "chronograph steel watch",
+    "minimalist-leather-strap-watch": "minimalist wristwatch leather strap",
     "classic-gold-tone-dress-watch": "gold dress watch",
-    "diver-automatic-200m": "diver watch",
-    "smart-fitness-watch": "smartwatch fitness",
-    "18k-gold-stacking-rings-set-of-3": "gold stacking rings",
-    "freshwater-pearl-drop-earrings": "pearl drop earrings",
-    "diamond-solitaire-pendant": "diamond pendant necklace",
-    "sterling-silver-chain-bracelet": "silver chain bracelet",
-    "signature-jewelry-gift-set": "jewelry gift box",
-    "structured-leather-tote": "leather tote bag",
-    "quilted-chain-crossbody": "quilted chain crossbody bag",
-    "everyday-canvas-backpack": "canvas backpack",
-    "evening-leather-clutch": "leather clutch bag",
-    "weekender-duffel-bag": "weekender duffel bag",
-    "luxury-gift-box": "luxury gift box ribbon",
-    "72-dark-chocolate-bar": "dark chocolate bar",
-    "single-origin-coffee-beans": "coffee beans bag",
-    "scented-soy-candle": "scented candle",
+    "moonphase-automatic-dress-watch": "moonphase watch",
+    "slim-skeleton-watch": "skeleton watch",
+    "diver-automatic-200m": "automatic dive watch",
+    "deep-blue-titanium-diver": "blue dial dive watch",
+    "pro-dive-rubber-strap-watch": "dive watch rubber strap",
+    "chronograph-steel-watch": "steel chronograph watch",
+    "racing-chronograph-leather": "racing chronograph watch",
+    "tachymeter-sport-chrono": "tachymeter watch",
+    "field-automatic-watch": "field watch",
+    "pilot-aviator-watch": "pilot watch",
+    "explorer-canvas-strap-watch": "explorer watch canvas strap",
+    "smart-fitness-watch": "fitness smartwatch",
+    "smart-hybrid-watch": "hybrid smartwatch",
+    "smart-gps-sport-watch": "gps sport watch",
+    "rose-gold-bracelet-watch": "rose gold bracelet watch",
+    "pearl-dial-ladies-watch": "pearl dial watch women",
+    "petite-mesh-watch": "mesh strap watch women",
+    "crystal-bezel-watch": "crystal watch women",
 }
 
 
 def product_query(product):
     """The best first search for a product: its own specific query, else one for its collection."""
-    return PRODUCT_PHOTO_QUERIES.get(product.slug) or PRODUCT_QUERIES.get(product.category.slug) or product.name
+    return PRODUCT_PHOTO_QUERIES.get(product.slug) or PRODUCT_QUERIES.get(product.category.slug) or f"{product.name} watch"
 
 
 def setting_key(slot):

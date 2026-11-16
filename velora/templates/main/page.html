@@ -10,17 +10,17 @@
   <div class="cart-layout">
     <article class="prose card">
       {% if slug == 'about' %}
-        <p>{{ brand }} is a small Manila team with a big wardrobe. We curate clothing, watches, fine jewelry and bags, and we show every piece on professional models so you can see how it looks when worn.</p>
+        <p>{{ brand }} is a watch store run by a small Manila team. We sell dress, dive, chronograph, field, smart and ladies' watches, and every watch comes the way you want it: pick the case size and colour, and add a personal engraving.</p>
         {% if photo_credits %}<h2>Photo credits</h2><ul>{% for label, credit in photo_credits %}<li>{{ label }}: {{ credit }} (<a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a>)</li>{% endfor %}</ul>{% endif %}
         <h2>What we stand for</h2>
-        <ul><li>Real fashion photography, so you can see how a piece looks when worn.</li><li>Authentic watches and certified jewelry.</li><li>Real reviews from verified buyers only.</li></ul>
+        <ul><li>Every watch in your size and colour, with an optional engraving.</li><li>Authentic watches with a clear spec sheet.</li><li>Real reviews from verified buyers only.</li></ul>
       {% elif slug == 'shipping' %}
-        <p>We deliver across the Philippines. Metro Manila orders placed before 2pm usually arrive within 48 hours; provincial deliveries take 3–7 business days. Watches and jewelry ship insured.</p>
+        <p>We deliver across the Philippines. Metro Manila orders placed before 2pm usually arrive within 48 hours; provincial deliveries take 3–7 business days. Watches ship insured. Engraved watches take 2 extra business days.</p>
         <h2>Rates</h2>
         <p>A flat fee of {{ fmt_base(15000) }} applies, and delivery is free on orders over {{ fmt_base(free_ship_minor) }} after discounts. (These values are configurable by store administrators.)</p>
         <h2>Tracking</h2><p>Every order has a live tracker under <em>My account → Orders</em>.</p>
       {% elif slug == 'returns' %}
-        <p>Clothing, watches and accessories can be returned unworn with tags within 30 days for a full refund. Earrings can't be returned for hygiene reasons unless faulty.</p>
+        <p>Watches can be returned unworn, with the box and tags, within 30 days for a full refund. Engraved watches are made for you, so they can only be returned if faulty.</p>
         <p>Any order can be cancelled from your account while it's still <strong>Pending</strong> or <strong>Confirmed</strong>.</p>
 {% elif slug == 'privacy' %}
         <p>We collect only what's needed to fulfil your orders: your name, email, delivery addresses and order history. Passwords are stored as salted hashes, never in plain text.</p>
@@ -30,8 +30,9 @@
       {% elif slug == 'faq' %}
         <h2>Is payment real?</h2><p>No — every order is paid with demo credit (each buyer starts with ₱500,000). Nothing is charged.</p>
         <h2>Why are some prices marked “≈”?</h2><p>If you pick a display currency other than PHP we convert using daily reference rates from the European Central Bank via the Frankfurter API. You're always charged in PHP.</p>
-        <h2>Who are the models in the photos?</h2><p>The model photos come from Pexels, a free library of professional photography. Photographers are credited on the About page and under product photos.</p>
-        <h2>Where does nutrition data come from?</h2><p>Gourmet gift items can be enriched with data from Open Food Facts, a free, collaborative food products database.</p>
+        <h2>Where do the photos come from?</h2><p>Photos come from Unsplash, Pexels and Openverse, free libraries of photography. Photographers are credited on the About page and under product photos where required.</p>
+        <h2>How does engraving work?</h2><p>On watches that offer it, tick <em>Add a personal engraving</em> and type up to 20 characters. It is engraved on the case back for the fee shown. Engraved watches can't be returned unless faulty.</p>
+        <h2>Can I choose the size and colour?</h2><p>Yes. Pick a case size and a colour on each watch's page; the choices you made show in your bag and on your order.</p>
       {% else %}
         <p>We're here Monday to Saturday, 9:00–18:00 Philippine time.</p>
         <p>{{ icon('mail') }} <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>

@@ -32,19 +32,25 @@
   const placeholder = document.body.dataset.placeholder;
   let altNext = {};
   try { altNext = JSON.parse(document.body.dataset.photoAlts || "{}"); } catch (_) { /* ignore */ }
-  document.addEventListener("error", (e) => {
-    const img = e.target;
+  function recover(img) {
+    if (img.tagName !== "IMG" || img.closest(".leaflet-container")) return;  // map tiles are handled by the map itself
     // A product photo that has gone from its host: try the next candidate photo for that product first
-    if (img.tagName === "IMG" && !img.dataset.fallback && img.src) {
+    if (!img.dataset.fallback && img.src) {
       const key = Object.keys(altNext).find((k) => img.src.includes(k));
       if (key) { img.src = altNext[key]; return; }
     }
-    // Map tiles are handled by the map itself (it shows an address card if they can't load)
-    if (img.tagName === "IMG" && placeholder && !img.dataset.fallback && !img.closest(".leaflet-container")) {
+    if (placeholder && !img.dataset.fallback) {
       img.dataset.fallback = "1";
       img.src = placeholder;
     }
-  }, true);
+  }
+  document.addEventListener("error", (e) => recover(e.target), true);
+  // Photos that already failed before this script ran (they start loading while the page is still being read)
+  const sweep = () => document.querySelectorAll("img").forEach((img) => {
+    if (img.complete && img.naturalWidth === 0 && img.getAttribute("src")) recover(img);
+  });
+  sweep();
+  window.addEventListener("load", sweep);
 
   /* -------------------------------------------------------- theme */
   $$("[data-theme-toggle]").forEach((btn) => btn.addEventListener("click", () => {
@@ -249,16 +255,21 @@
     const form = e.target.closest("[data-add-to-cart]");
     if (!form) return;
     e.preventDefault();
-    const sizeRadios = Array.from(form.elements).filter((el) => el.name === "size" && el.type === "radio");
-    if (sizeRadios.length && !sizeRadios.some((r) => r.checked)) {
-      const picker = document.querySelector("[data-size-picker]");
-      if (picker) {
-        picker.classList.add("has-error");
-        picker.querySelector(".size-picker__error").hidden = false;
-        picker.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
-        if (hasGsap) gsap.fromTo(picker.querySelector(".size-picker__opts"), { x: -6 }, { x: 0, duration: .5, ease: "elastic.out(1, .3)" });
-      }
-      toast("Please choose a size first.", "error");
+    // every option group (size, colour) needs a pick; a ticked engraving needs its text
+    const missing = Array.from(document.querySelectorAll("[data-size-picker]")).find((g) => !g.querySelector("input:checked"));
+    if (missing) {
+      missing.classList.add("has-error");
+      missing.querySelector(".size-picker__error").hidden = false;
+      missing.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+      if (hasGsap) gsap.fromTo(missing.querySelector(".size-picker__opts"), { x: -6 }, { x: 0, duration: .5, ease: "elastic.out(1, .3)" });
+      toast("Please choose your " + (missing.querySelector("legend").textContent.trim().toLowerCase()) + " first.", "error");
+      return;
+    }
+    const engrave = document.querySelector("[data-engrave]");
+    if (engrave && engrave.querySelector("[data-engrave-toggle]").checked && !engrave.querySelector("#engraving").value.trim()) {
+      engrave.querySelector(".size-picker__error").hidden = false;
+      engrave.querySelector("#engraving").focus();
+      toast("Type your engraving, or untick the box.", "error");
       return;
     }
     const btn = form.querySelector("button[type=submit]");
@@ -334,6 +345,21 @@
       picker.classList.remove("has-error");
       picker.querySelector(".size-picker__error").hidden = true;
     }
+  });
+
+  /* --------------------------------------------------- engraving */
+  document.addEventListener("change", (e) => {
+    if (!e.target.matches("[data-engrave-toggle]")) return;
+    const box = e.target.closest("[data-engrave]").querySelector("[data-engrave-box]");
+    const input = box.querySelector("input[name=engraving]");
+    box.hidden = !e.target.checked;
+    input.disabled = !e.target.checked;  // a disabled box isn't sent, so no engraving is added
+    if (e.target.checked) input.focus(); else { input.value = ""; box.querySelector("[data-engrave-count]").textContent = "0"; }
+  });
+  document.addEventListener("input", (e) => {
+    if (!e.target.matches("[data-engrave] input[name=engraving]")) return;
+    e.target.closest("[data-engrave]").querySelector("[data-engrave-count]").textContent = e.target.value.length;
+    e.target.closest("[data-engrave]").querySelector(".size-picker__error").hidden = true;
   });
 
   /* --------------------------------------------------- qty steppers */

@@ -39,10 +39,7 @@ def home():
     categories = Category.query.order_by(Category.position).all()
     counts = dict(db.session.query(Product.category_id, db.func.count(Product.id))
                   .filter(Product.status == "active").group_by(Product.category_id).all())
-    # The hero ad sits next to a model photo, so feature a clothing item (best-selling dress or top).
-    clothing = {c.id for c in categories if c.slug in ("women", "men")}
-    hero = (next((p for p in featured if p.category_id in clothing and p.images), None)
-            or next((p for p in featured if p.images), None) or (featured[0] if featured else None))
+    hero = next((p for p in featured if p.images), None) or (featured[0] if featured else None)
     review_count = ProductReview.query.filter_by(is_hidden=False).count()
     avg_rating = db.session.query(db.func.avg(ProductReview.rating)).filter(ProductReview.is_hidden.is_(False)).scalar()
     avg_rating = round(float(avg_rating), 1) if avg_rating else None

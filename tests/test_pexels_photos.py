@@ -131,11 +131,11 @@ def test_search_shows_photos_with_photographers(seller, ready):
 def test_search_defaults_to_a_sensible_query_per_target(seller, ready):
     with fake_pexels([photo(1)]) as calls:
         seller.get("/seller/find-photos?target=slot:hero")
-    assert calls[0][1]["params"]["query"] == "fashion model portrait studio"
-    shades = Product.query.filter_by(slug="tortoiseshell-sunglasses").one()
+    assert calls[0][1]["params"]["query"] == "wristwatch on wrist close up"
+    shades = Product.query.filter_by(slug="diver-automatic-200m").one()
     with fake_pexels([photo(1)]) as calls:
         seller.get(f"/seller/find-photos?target=product:{shades.id}")
-    assert calls[0][1]["params"]["query"] == "tortoiseshell sunglasses"  # specific to the product
+    assert calls[0][1]["params"]["query"] == "automatic dive watch"  # specific to the product
 
 
 def test_search_drops_photos_from_other_hosts(app):
@@ -279,11 +279,6 @@ def test_site_spots_show_a_catalog_photo_until_a_real_photo_is_chosen(client):
     home = client.get("/").get_data(as_text=True)
     assert "model-placeholder.svg" not in home.split("hero__photo")[1][:300]  # real catalog photo, not a blank card
     assert client.get("/static/img/model-placeholder.svg").status_code == 200
-
-
-def test_the_wrong_sneaker_photo_is_gone(app):
-    shoes = Product.query.filter_by(slug="red-runner-sneakers").one()
-    assert shoes.images and all("toe" not in i.url for i in shoes.images)  # has a stand-in photo; the old one showed toe shoes
 
 
 def test_copy_no_longer_claims_the_team_models_the_photos(client):

@@ -63,7 +63,8 @@ def add(product_id):
     qty = request.form.get("quantity", 1, type=int) or 1
     try:
         cart_service.set_quantity(product, max(1, min(qty, cart_service.MAX_QTY_PER_LINE)),
-                                  request.form.get("size", ""), add=True)
+                                  cart_service.make_key(request.form.get("size", ""), request.form.get("color", ""),
+                                                        request.form.get("engraving", "")), add=True)
     except ValueError as exc:
         if _is_fetch():
             return jsonify(ok=False, error=str(exc)), 409

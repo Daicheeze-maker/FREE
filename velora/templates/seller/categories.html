@@ -17,7 +17,7 @@
     <h2 style="font-size:17px">{{ icon('folder-plus') }} New category</h2>
     {{ form.csrf_token }}
     {{ field(form.name) }}{{ field(form.description) }}
-    {{ field(form.icon, hint="Any Lucide icon name, e.g. coffee, leaf, cookie.") }}
+    {{ field(form.icon, hint="Any Lucide icon name, e.g. watch, timer, waves.") }}
     {{ field(form.position, type="number") }}
     <button class="btn btn--accent btn--block" type="submit">Create category</button>
   </form>

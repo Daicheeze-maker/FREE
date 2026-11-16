@@ -312,7 +312,7 @@ def test_expired_and_exhausted_codes(customer):
 
 
 def test_discount_applied_in_order_and_usage_counted(customer):
-    p = Product.query.filter_by(name="Minimalist Leather Strap Watch").first()
+    p = in_stock_product()
     customer.post(f"/cart/add/{p.id}", data={"quantity": 1})
     customer.post("/cart/discount", data={"code": "welcome10"})
     _checkout(customer)

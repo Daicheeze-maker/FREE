@@ -18,33 +18,31 @@ DEMO_BUYERS = ("buyer1@velora.example", "buyer2@velora.example")
 
 
 def demo_status():
-    """Is the data in this database the CURRENT demo catalog?
+    """Is the data in this database the CURRENT watch store?
 
-    'empty'    - nothing loaded yet (seed will load it)
-    'current'  - the up-to-date demo catalog
-    'stale'    - the demo catalog from a slightly older release (e.g. no Shoes/Accessories yet): refreshed
-                 automatically WITHOUT deleting anything
-    'outdated' - a much older version of the demo store (still has Cars): replaced only if you say yes
-    'custom'   - somebody's own store (none of the demo products): never touched automatically
+    'empty'   - nothing loaded yet (seed will load it)
+    'current' - the up-to-date watch store
+    'stale'   - an older version of the demo store (fashion, shoes, bags…) or one missing newer watches or options:
+                converted automatically WITHOUT deleting accounts, orders or settings
+    'custom'  - somebody's own store (none of the demo products): never touched automatically
     """
     from .models import Category, Product
-    from .seed import KNOWN_MOVES
+    from .seed import CATEGORIES, PRODUCTS
+    from .services.catalog import slugify
     if Category.query.first() is None:
         return "empty"
-    if Product.query.filter_by(slug="linen-wrap-midi-dress").first() is None:
+    demo = {slugify(r[0]) for r in PRODUCTS} | {"linen-wrap-midi-dress"}
+    if not Product.query.filter(Product.slug.in_(demo)).count():
         return "custom"
-    has_cars = Category.query.filter_by(slug="cars").first() is not None
-    has_bags = Category.query.filter_by(slug="bags").first() is not None
-    if has_cars or not has_bags:
-        return "outdated"
-    wanted = {"shoes", "accessories"}
-    have = {c.slug for c in Category.query.filter(Category.slug.in_(wanted))}
-    moved = all(
-        (p := Product.query.filter_by(slug=slug).first()) is None or p.category.slug == target
-        for slug, target in KNOWN_MOVES.items())
-    from .seed import ALT_PHOTOS
-    photoless = Product.query.filter(~Product.images.any(), Product.name.in_(list(ALT_PHOTOS))).count()
-    return "current" if (have == wanted and moved and not photoless) else "stale"
+    wanted = {slugify(c[0]) for c in CATEGORIES}
+    if {c.slug for c in Category.query.all()} != wanted:
+        return "stale"
+    if {p.slug for p in Product.query.all()} < {slugify(r[0]) for r in PRODUCTS}:
+        return "stale"
+    for p in Product.query.filter(Product.slug.in_({slugify(r[0]) for r in PRODUCTS})):
+        if not p.images or (p.colors is None and p.sizes is None and p.engraving_fee_minor is None):
+            return "stale"
+    return "current"
 
 
 def remove_demo_accounts():
@@ -133,31 +131,9 @@ def register_cli(app):
         status = demo_status()
         if status == "stale":
             from .seed import refresh_catalog
-            for change in refresh_catalog():  # safe: adds/moves things, deletes no accounts, orders or photos
+            for change in refresh_catalog():  # keeps accounts, orders, settings and uploaded photos
                 click.echo(f" Catalog updated: {change}")
-            return
-        if status != "outdated":
-            return  # up to date, empty, or someone's own store: nothing to do (and nothing printed)
-        if current_app.config.get("ENV_NAME") == "production":
-            click.echo("Demo data is outdated, but it is never replaced automatically in production.")
-            return
-        click.echo("")
-        click.echo("=" * 70)
-        click.echo(" Your store data is from an OLDER VERSION of Aurelune")
-        click.echo(" (it still has Cars and the old catalog).")
-        click.echo(" Updating loads the new catalog: Bags, Shoes, Accessories, sizes and the map.")
-        click.echo(" It REPLACES everything in the local database (accounts, orders, uploads' links).")
-        click.echo("=" * 70)
-        if not yes:
-            if not sys.stdin.isatty():
-                click.echo(" Run this in a terminal to update:  python -m flask --app wsgi upgrade-demo")
-                return
-            if not click.confirm(" Update to the new demo store now?", default=False):
-                click.echo(" OK, keeping your current data (you will still see the old catalog).")
-                return
-        wipe_and_reseed()
-        click.echo(" Done: the new demo store is loaded.")
-        click.echo("")
+        # "current", "empty" or someone's own store: nothing to do (and nothing printed)
 
     @app.cli.command("create-admin")
     @click.option("--email", prompt=True)

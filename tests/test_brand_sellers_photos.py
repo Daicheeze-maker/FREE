@@ -158,14 +158,14 @@ def fake_openverse():
 def test_fill_photos_works_without_any_key(app):
     from velora.services import photo_fill
     ProductImage.query.filter(ProductImage.product_id.in_(
-        [p.id for p in Product.query.filter(Product.slug.in_(["red-runner-sneakers", "aviator-sunglasses"]))])).delete(synchronize_session=False)
+        [p.id for p in Product.query.filter(Product.slug.in_(["minimalist-leather-strap-watch", "smart-fitness-watch"]))])).delete(synchronize_session=False)
     db.session.commit()
     p, calls = fake_openverse()
     with p, patch("velora.services.photo_check.check_remote", return_value={}):
         res = photo_fill.fill_products(limit=50)
-    assert res.source == "Openverse" and "Red Runner Sneakers" in res.done
+    assert res.source == "Openverse" and "Minimalist Leather Strap Watch" in res.done
     db.session.expire_all()
-    shoe = Product.query.filter_by(slug="red-runner-sneakers").one()
+    shoe = Product.query.filter_by(slug="minimalist-leather-strap-watch").one()
     assert shoe.primary_image.filename.endswith(".webp") and "Openverse" in shoe.primary_image.credit and "CC BY 2.0" in shoe.primary_image.credit
 
 
@@ -193,25 +193,25 @@ def test_every_product_has_a_photo_in_a_fresh_store(client):
         assert p.primary_image.url.startswith("https://images.unsplash.com/photo-"), p.name
 
 
-def test_shoes_and_accessories_pages_render_a_photo_for_every_card(client):
-    for slug in ("shoes", "accessories"):
+def test_collection_pages_render_a_photo_for_every_card(client):
+    for slug in ("dress-watches", "dive-watches", "chronographs", "field-pilot", "smart-watches", "ladies-watches"):
         page = client.get(f"/shop/c/{slug}").get_data(as_text=True)
         cards = page.count('class="pcard"')
-        assert cards >= 5 and page.count("images.unsplash.com/photo-") >= cards, slug
+        assert cards >= 3 and page.count("images.unsplash.com/photo-") >= cards, slug
 
 
-def test_photo_less_products_get_a_photo_on_refresh_without_touching_others(app):
+def test_photo_less_watches_get_a_photo_on_refresh_without_touching_others(app):
     from velora.seed import refresh_catalog
-    shoe = Product.query.filter_by(slug="suede-chelsea-boots").one()
-    keep = Product.query.filter_by(slug="linen-wrap-midi-dress").one()
-    ProductImage.query.filter_by(product_id=shoe.id).delete()
+    watch = Product.query.filter_by(slug="moonphase-automatic-dress-watch").one()
+    keep = Product.query.filter_by(slug="smart-fitness-watch").one()
+    ProductImage.query.filter_by(product_id=watch.id).delete()
     before = [i.url for i in keep.images]
     db.session.commit()
     changes = refresh_catalog()
     db.session.expire_all()
-    assert "added a photo to Suede Chelsea Boots" in changes
-    assert Product.query.filter_by(slug="suede-chelsea-boots").one().images
-    assert [i.url for i in Product.query.filter_by(slug="linen-wrap-midi-dress").one().images] == before
+    assert "added a photo to Moonphase Automatic Dress Watch" in changes
+    assert Product.query.filter_by(slug="moonphase-automatic-dress-watch").one().images
+    assert [i.url for i in Product.query.filter_by(slug="smart-fitness-watch").one().images] == before
 
 
 def test_page_carries_the_photo_fallback_chain_for_the_browser(client):
@@ -219,8 +219,13 @@ def test_page_carries_the_photo_fallback_chain_for_the_browser(client):
     page = client.get("/").get_data(as_text=True)
     raw = re.search(r'data-photo-alts="([^"]*)"', page).group(1)
     chain = json.loads(h.unescape(raw))
-    assert chain["1542291026-7eec264c27ff"].startswith("https://images.unsplash.com/photo-1491553895911")
-    assert len(chain) >= 15
+    assert chain["1508685096489-7aacd43bd3b1"].startswith("https://images.unsplash.com/photo-1524805444758")
+    # every chain ends on a photo that is known to load, and every watch has somewhere to go if its first photo is gone
+    from velora.seed import PRODUCTS
+    for row in PRODUCTS:
+        ids = row[10]
+        assert ids[-1] in ("1523275335684-37898b6baf30", "1522312346375-d1a52e2b99b3", "1524592094714-0f0654e20314",
+                           "1547996160-81dfa63595aa", "1434056886845-dac89ffe9b56"), row[0]
 
 
 def test_static_scripts_are_versioned_so_browsers_never_keep_old_ones(client):

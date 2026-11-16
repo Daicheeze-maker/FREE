@@ -1,8 +1,10 @@
 """Cart storage: session cart for guests, database cart for signed-in customers.
 
-A cart line is identified by (product, size): the same jacket in M and in L are two lines.
-Stock is tracked per product, so all sizes of a product share its stock.
+A cart line is identified by (product, options): the same watch in 40 mm Black and in 44 mm Blue are two lines, and
+so are two different engravings. The options are kept as one short text, "size|colour|engraving" (see make_key).
+Stock is tracked per product, so all variants of a watch share its stock.
 """
+import re
 from dataclasses import dataclass
 
 from flask import session
@@ -13,38 +15,97 @@ from ..models import PRODUCT_ACTIVE, Cart, CartItem, Product
 
 MAX_QTY_PER_LINE = 20
 SESSION_KEY = "cart"
+SEP = "|"
+ENGRAVING_OK = re.compile(r"^[\w .,'&!?/#@+\-]+$", re.UNICODE)
+
+
+def make_key(size="", color="", engraving=""):
+    """Join what the shopper picked into the one text a cart line is stored under."""
+    def tidy(v):
+        return re.sub(r"\s+", " ", (v or "").replace(SEP, " ")).strip()
+    parts = [tidy(size), tidy(color), tidy(engraving)]
+    return SEP.join(parts) if any(parts) else ""
+
+
+def split_key(key):
+    parts = (key or "").split(SEP, 2)
+    return tuple(parts + [""] * (3 - len(parts)))  # (size, colour, engraving)
+
+
+def variant_label(key):
+    size, color, engraving = split_key(key)
+    bits = [b for b in (size, color) if b]
+    if engraving:
+        bits.append(f"Engraved “{engraving}”")
+    return " · ".join(bits)
 
 
 @dataclass
 class CartLine:
     product: Product
     quantity: int
-    size: str = ""
+    size: str = ""  # the options text (see make_key); named `size` because forms already post it under that name
+
+    @property
+    def options(self):
+        return split_key(self.size)
+
+    @property
+    def engraving(self):
+        return self.options[2]
+
+    @property
+    def label(self):
+        return variant_label(self.size)
+
+    @property
+    def unit_price_minor(self):
+        fee = self.product.engraving_fee_minor if (self.engraving and self.product.offers_engraving) else 0
+        return self.product.price_minor + (fee or 0)
 
     @property
     def line_total_minor(self):
-        return self.product.price_minor * self.quantity
+        return self.unit_price_minor * self.quantity
 
     @property
     def problem(self):
         if self.product.status != PRODUCT_ACTIVE:
             return "No longer available"
-        if self.product.size_list and self.size not in self.product.size_list:
-            return "Choose a size"
+        try:
+            clean_size(self.product, self.size)
+        except ValueError as exc:
+            return str(exc).rstrip(".")
         if self.product.stock < self.quantity:
             return "Sold out" if self.product.stock == 0 else f"Only {self.product.stock} available"
         return None
 
 
-def clean_size(product, size):
-    """Validate the size a shopper picked. Products without sizes always use ''."""
-    size = (size or "").strip()
-    options = product.size_list
-    if not options:
-        return ""
-    if size not in options:
-        raise ValueError("Please choose a size." if not size else f"“{size[:20]}” isn't available for this item.")
-    return size
+def clean_size(product, key):
+    """Validate the options a shopper picked for this watch. Returns the normalised options text."""
+    size, color, engraving = split_key(key)
+    size, color, engraving = size.strip(), color.strip(), engraving.strip()
+    if product.size_list:
+        if not size:
+            raise ValueError("Please choose a size.")
+        if size not in product.size_list:
+            raise ValueError(f"“{size[:20]}” isn't available for this watch.")
+    elif size:
+        raise ValueError("This watch has no size options.")
+    if product.color_list:
+        if not color:
+            raise ValueError("Please choose a colour.")
+        if color not in product.color_list:
+            raise ValueError(f"“{color[:20]}” isn't available for this watch.")
+    elif color:
+        raise ValueError("This watch has no colour options.")
+    if engraving:
+        if not product.offers_engraving:
+            raise ValueError("This watch can't be engraved.")
+        if len(engraving) > (product.engraving_max or 20):
+            raise ValueError(f"Engraving can be up to {product.engraving_max or 20} characters.")
+        if not ENGRAVING_OK.match(engraving):
+            raise ValueError("Engraving can use letters, numbers and . , ' & ! ? / # @ + - only.")
+    return make_key(size, color, engraving)
 
 
 def _uses_db():
@@ -177,8 +238,10 @@ def merge_session_cart_into(user):
         product = products.get(pid)
         if not product or product.status != PRODUCT_ACTIVE or product.stock <= 0:
             continue
-        if product.size_list and size not in product.size_list:
-            continue  # a size that no longer exists can't be bought
+        try:
+            size = clean_size(product, size)
+        except ValueError:
+            continue  # options that no longer exist can't be bought
         if (pid, size) in existing:
             existing[(pid, size)].quantity = min(existing[(pid, size)].quantity + qty, MAX_QTY_PER_LINE, product.stock)
         else:

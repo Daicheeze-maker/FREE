@@ -44,11 +44,32 @@
       {% if product.in_stock and product.status == 'active' %}
       {% if product.size_list %}
       <fieldset class="size-picker" id="sizes" data-size-picker>
-        <legend>Size</legend>
+        <legend>Case size</legend>
         <div class="size-picker__opts">
           {% for s in product.size_list %}<label class="size-opt"><input type="radio" name="size" value="{{ s }}" form="pdp-add"><span>{{ s }}</span></label>{% endfor %}
         </div>
         <p class="size-picker__error" role="alert" hidden>{{ icon('circle-alert', 'ic--sm') }} Please choose a size first.</p>
+      </fieldset>
+      {% endif %}
+      {% if product.color_list %}
+      <fieldset class="size-picker" id="colors" data-size-picker>
+        <legend>Colour</legend>
+        <div class="size-picker__opts">
+          {% for c in product.color_list %}<label class="size-opt size-opt--color"><input type="radio" name="color" value="{{ c }}" form="pdp-add"><span><i class="swatch" data-swatch="{{ c|lower }}" aria-hidden="true"></i>{{ c }}</span></label>{% endfor %}
+        </div>
+        <p class="size-picker__error" role="alert" hidden>{{ icon('circle-alert', 'ic--sm') }} Please choose a colour first.</p>
+      </fieldset>
+      {% endif %}
+      {% if product.offers_engraving %}
+      <fieldset class="size-picker engrave" data-engrave>
+        <legend>Customise</legend>
+        <label class="check"><input type="checkbox" data-engrave-toggle form="pdp-add"><span>Add a personal engraving <strong>+{{ money(product.engraving_fee_minor) }}</strong></span></label>
+        <div class="engrave__box" data-engrave-box hidden>
+          <label class="sr-only" for="engraving">Engraving text</label>
+          <input id="engraving" class="input" type="text" name="engraving" form="pdp-add" maxlength="{{ product.engraving_max }}" placeholder="e.g. J &amp; M · 14.02.2026" autocomplete="off" disabled>
+          <p class="muted engrave__hint"><span data-engrave-count>0</span>/{{ product.engraving_max }} characters. Engraved on the case back. Engraved watches can't be returned.</p>
+          <p class="size-picker__error" role="alert" hidden>{{ icon('circle-alert', 'ic--sm') }} Type your engraving, or untick the box.</p>
+        </div>
       </fieldset>
       {% endif %}
       <form id="pdp-add" method="post" action="{{ url_for('shop.add', product_id=product.id) }}" class="pdp__buy" data-add-to-cart>

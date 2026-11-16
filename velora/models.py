@@ -149,7 +149,10 @@ class Product(TimestampMixin, db.Model):
     is_featured = db.Column(db.Boolean, nullable=False, default=False)
     sold_count = db.Column(db.Integer, nullable=False, default=0)
     size_label = db.Column(db.String(60))
-    sizes = db.Column(db.String(120))  # comma-separated choices a shopper must pick from, e.g. "XS,S,M,L,XL"
+    sizes = db.Column(db.String(120))  # case sizes a shopper must pick from, e.g. "38 mm,42 mm"
+    colors = db.Column(db.String(200))  # colourways a shopper must pick from, e.g. "Silver,Gold,Rose Gold"
+    engraving_fee_minor = db.Column(db.Integer)  # None = no engraving offered; otherwise the extra price for it
+    engraving_max = db.Column(db.Integer, nullable=False, default=20, server_default="20")  # most characters allowed
     origin = db.Column(db.String(120))
 
     # Open Food Facts enrichment
@@ -186,6 +189,14 @@ class Product(TimestampMixin, db.Model):
     @property
     def size_list(self):
         return [s.strip() for s in (self.sizes or "").split(",") if s.strip()]
+
+    @property
+    def color_list(self):
+        return [s.strip() for s in (self.colors or "").split(",") if s.strip()]
+
+    @property
+    def offers_engraving(self):
+        return self.engraving_fee_minor is not None
 
     @property
     def stock_label(self):
@@ -239,7 +250,7 @@ class CartItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cart_id = db.Column(db.Integer, db.ForeignKey("cart.id", ondelete="CASCADE"), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id", ondelete="CASCADE"), nullable=False)
-    size = db.Column(db.String(20), nullable=False, default="", server_default="")
+    size = db.Column(db.String(160), nullable=False, default="", server_default="")  # the chosen options: "size|colour|engraving"
     quantity = db.Column(db.Integer, nullable=False, default=1)
 
     cart = db.relationship("Cart", back_populates="items")
@@ -349,7 +360,7 @@ class OrderItem(db.Model):
     product_sku = db.Column(db.String(64), nullable=False)
     product_brand = db.Column(db.String(120))
     image_url = db.Column(db.String(500))
-    size = db.Column(db.String(20))
+    size = db.Column(db.String(160))  # the chosen options as shown to the customer
     unit_price_minor = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     discount_minor = db.Column(db.Integer, nullable=False, default=0)
