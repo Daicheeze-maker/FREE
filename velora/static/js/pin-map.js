@@ -46,7 +46,6 @@
       if (mine !== seq) return;
       if (data.ok && data.result) { fill(data.result); say("Address filled in from your pin: " + data.result.label + ". Check it, then add your unit or building."); }
       else if (data.ok) say("Pinned. We couldn't find a street address here, so please type it in.");
-      else if (data.error === "no_token") say("Pinned. Address lookup isn't switched on yet (the store needs its Mapbox token), so please type the address.");
       else say("Pinned. Address lookup is unavailable right now, so please type the address.");
     } catch (e) { if (mine === seq) say("Pinned. Address lookup is unavailable right now, so please type the address."); }
   }

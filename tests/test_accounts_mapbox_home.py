@@ -252,7 +252,12 @@ def test_checkout_and_address_pages_have_the_pin_map(app, client):
 def test_address_reverse_turns_a_pin_into_an_address(app, client):
     assert client.get("/address-reverse?lat=14.55&lng=121.02").status_code == 302  # signed in only
     login(client, "buyer1@velora.example", "Buyer123!")
-    assert client.get("/address-reverse?lat=14.55&lng=121.02").get_json()["error"] == "no_token"
+    p, ncalls = nominatim_get()
+    with p:  # no Mapbox token: the free OpenStreetMap lookup still fills the address
+        data = client.get("/address-reverse?lat=14.5547&lng=121.0244").get_json()
+    assert data["ok"] and data["result"]["line1"] == "6750 Ayala Avenue" and data["result"]["city"] == "Makati"
+    assert data["result"]["postal_code"] == "1226" and data["result"]["region"] == "Metro Manila"
+    assert ncalls[0][0].endswith("/reverse") and ncalls[0][1]["params"]["lat"] == 14.5547
     assert client.get("/address-reverse?lat=abc&lng=1").status_code == 400
     app.config["MAPBOX_TOKEN"] = TOKEN
     p, calls = mapbox_get()
@@ -273,3 +278,49 @@ def test_stale_next_link_does_not_land_on_a_404_after_signing_in(client):
     client.post("/account/logout")
     r = client.post("/account/login?next=/shop/c/bags", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
     assert r.headers["Location"].endswith("/shop/c/bags")
+
+
+NOMINATIM = {"lat": "14.5547", "lon": "121.0244", "display_name": "6750, Ayala Avenue, Makati, Metro Manila, 1226, Philippines",
+             "address": {"house_number": "6750", "road": "Ayala Avenue", "city": "Makati", "state": "Metro Manila",
+                         "postcode": "1226", "country": "Philippines"}}
+
+
+def nominatim_get(error=None, data=NOMINATIM):
+    calls = []
+
+    def fake(url, **kw):
+        calls.append((url, kw))
+        if error:
+            raise error
+        return Resp(200, data)
+    return patch("velora.services.nominatim.requests.get", side_effect=fake), calls
+
+
+def test_pin_falls_back_to_openstreetmap_when_mapbox_fails(app, client):
+    app.config["MAPBOX_TOKEN"] = TOKEN
+    login(client, "buyer1@velora.example", "Buyer123!")
+    ncalls = []
+
+    def fake(url, **kw):  # both services share `requests`, so one fake answers by host
+        if "mapbox" in url:
+            return Resp(401, {})
+        ncalls.append(url)
+        return Resp(200, NOMINATIM)
+    with patch("requests.get", side_effect=fake):
+        data = client.get("/address-reverse?lat=14.5547&lng=121.0244").get_json()
+    assert data["ok"] and data["result"]["city"] == "Makati" and len(ncalls) == 1
+
+
+def test_pin_reports_unavailable_when_every_lookup_fails(app, client):
+    login(client, "buyer1@velora.example", "Buyer123!")
+    nm, _ = nominatim_get(error=requests.ConnectionError("offline"))
+    with nm:
+        data = client.get("/address-reverse?lat=14.5&lng=121").get_json()
+    assert data == {"ok": False, "result": None, "error": "unavailable"}
+
+
+def test_pin_in_the_sea_gives_no_address_but_no_error(app, client):
+    login(client, "buyer1@velora.example", "Buyer123!")
+    nm, _ = nominatim_get(data={"error": "Unable to geocode"})
+    with nm:
+        assert client.get("/address-reverse?lat=0&lng=0").get_json() == {"ok": True, "result": None}

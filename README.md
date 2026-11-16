@@ -180,7 +180,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 ### Mapbox — `velora/services/mapbox.py` (address suggestions)
 - When someone types a street address (checkout, *My addresses*), the page asks **this server** (`GET /address-search?q=…`, signed-in users only), which calls Mapbox Geocoding v6 (`/search/geocode/v6/forward`, limited to the Philippines by default) and returns just street, city, province, postal code and country. The token never reaches the browser. Picking a suggestion fills the form; typing by hand always still works.
 - Token: put `MAPBOX_TOKEN=pk.…` in `.env`, or paste it once under **Admin → API health → Mapbox** (it is tested before it is saved and never shown again). A free public token (starts with `pk.`) comes from [account.mapbox.com](https://account.mapbox.com/access-tokens/). Without a token the address form has no suggestions and nothing else changes.
-- **Pin your location:** checkout and *My addresses* also show a map (Leaflet + OpenStreetMap). Click it, drag the pin, or press *Use my current location* and the server asks Mapbox (`GET /address-reverse`, reverse geocoding) which address is there and fills the form. Without a Mapbox token the pin still works, but you type the address yourself.
+- **Pin your location:** checkout and *My addresses* also show a map (Leaflet + OpenStreetMap). Click it, drag the pin, or press *Use my current location* and the server asks Mapbox (`GET /address-reverse`, reverse geocoding) which address is there and fills the form. Without a Mapbox token (or if Mapbox is down) the address comes from OpenStreetMap's free Nominatim lookup instead, so the form always fills in.
 - Errors (bad token, rate limit, offline) are recorded on the API health page and the form falls back to manual entry.
 
 ### Openverse — `velora/services/openverse.py` (automatic product photos, no key)
@@ -258,7 +258,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 225 tests. External APIs are mocked, so no network is needed. They cover:
+There are 228 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

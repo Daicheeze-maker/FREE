@@ -9,7 +9,7 @@ from ..forms import NewsletterForm
 from ..models import (Category, DiscountCode, NewsletterSubscription, Product, ProductReview, get_setting,
                       utcnow)
 from ..security import is_safe_redirect
-from ..services import mapbox
+from ..services import mapbox, nominatim
 from ..services.catalog import visible_products
 
 bp = Blueprint("main", __name__)
@@ -160,9 +160,12 @@ def address_reverse():
         lat, lng = float(request.args["lat"]), float(request.args["lng"])
     except (KeyError, ValueError):
         return jsonify(ok=False, result=None, error="Bad location."), 400
-    if not mapbox.token():
-        return jsonify(ok=False, result=None, error="no_token")
     try:
-        return jsonify(ok=True, result=mapbox.reverse(lat, lng))
+        if mapbox.token():
+            try:
+                return jsonify(ok=True, result=mapbox.reverse(lat, lng))
+            except mapbox.MapboxError:
+                pass  # Mapbox is down or rejected the token: fall back to the free OpenStreetMap lookup
+        return jsonify(ok=True, result=nominatim.reverse(lat, lng))
     except (mapbox.MapboxError, ValueError):
         return jsonify(ok=False, result=None, error="unavailable")
