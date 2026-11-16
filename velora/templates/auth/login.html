@@ -4,13 +4,14 @@
 {% block content %}
 <div class="auth">
   <div class="auth__art">
-    <img src="{{ site_photo('login') }}" alt="Model in a Velora outfit" loading="lazy">
+    <img src="{{ site_photo('login') }}" alt="Model in a Velora outfit" fetchpriority="high">
     <p class="auth__quote">Welcome back.<br>Your wardrobe missed you.</p>
   </div>
   <div class="auth__panel">
     <div class="auth__form" data-reveal>
+      <a class="back-link" href="{{ url_for('main.home') }}" data-back>{{ icon('arrow-left', 'ic--sm') }} Back</a>
       <h1>Sign in</h1>
-      <p>Sign in with your account. New here? <a href="{{ url_for('auth.register', next=request.args.get('next')) }}">Create an account</a>: you get a buyer profile and a linked seller profile, and can switch between them from the account menu.</p>
+      <p>Welcome back. Sign in with your email and password.</p>
       <form method="post" novalidate>
         {{ form.csrf_token }}
         {{ field(form.email, "you@example.com", autocomplete="email") }}
@@ -18,6 +19,10 @@
         {{ field(form.remember) }}
         <button class="btn btn--dark btn--lg btn--block" type="submit" data-loading-text="Signing in…">Sign in {{ icon('arrow-right') }}</button>
       </form>
+      <div class="auth__alt">
+        <p>New here? Create an account to get a buyer profile and a linked seller profile.</p>
+        <a class="btn btn--ghost btn--block" href="{{ url_for('auth.register', next=request.args.get('next')) }}">Create an account</a>
+      </div>
     </div>
   </div>
 </div>

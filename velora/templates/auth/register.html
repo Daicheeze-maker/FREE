@@ -4,13 +4,14 @@
 {% block content %}
 <div class="auth">
   <div class="auth__art">
-    <img src="{{ site_photo('register') }}" alt="Model in a Velora outfit" loading="lazy">
+    <img src="{{ site_photo('register') }}" alt="Model in a Velora outfit" fetchpriority="high">
     <p class="auth__quote">Join the<br>inner circle.</p>
   </div>
   <div class="auth__panel">
     <div class="auth__form" data-reveal>
+      <a class="back-link" href="{{ url_for('main.home') }}" data-back>{{ icon('arrow-left', 'ic--sm') }} Back</a>
       <h1>Create account</h1>
-      <p>Already have one? <a href="{{ url_for('auth.login', next=request.args.get('next')) }}">Sign in</a>. Your bag comes with you.</p>
+      <p>It takes a minute, and your bag comes with you.</p>
       <form method="post" novalidate>
         {{ form.csrf_token }}
         {{ field(form.full_name, "Maya Santos", autocomplete="name") }}
@@ -20,6 +21,10 @@
         {{ field(form.accept) }}
         <button class="btn btn--dark btn--lg btn--block" type="submit" data-loading-text="Creating account…">Create account {{ icon('arrow-right') }}</button>
       </form>
+      <div class="auth__alt">
+        <p>Already have an account?</p>
+        <a class="btn btn--ghost btn--block" href="{{ url_for('auth.login', next=request.args.get('next')) }}">Sign in</a>
+      </div>
       <p class="muted" style="font-size:12.5px;margin-top:16px">{{ icon('gift', 'ic--sm') }} New customers get <strong>WELCOME10</strong> — 10% off the first order.</p>
     </div>
   </div>

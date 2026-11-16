@@ -2,7 +2,7 @@
 from functools import wraps
 from urllib.parse import urljoin, urlparse
 
-from flask import abort, request
+from flask import abort, current_app, request
 from flask_login import current_user
 
 from .extensions import db
@@ -49,7 +49,13 @@ def is_safe_redirect(target):
         return False
     host = urlparse(request.host_url)
     dest = urlparse(urljoin(request.host_url, target))
-    return dest.scheme in ("http", "https") and dest.netloc == host.netloc
+    if not (dest.scheme in ("http", "https") and dest.netloc == host.netloc):
+        return False
+    try:  # only pages that exist: a stale ?next= must not land someone on a 404 after signing in
+        current_app.url_map.bind(host.netloc).match(dest.path, method="GET")
+    except Exception:
+        return False
+    return True
 
 
 def apply_security_headers(response):

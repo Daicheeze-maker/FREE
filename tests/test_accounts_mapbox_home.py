@@ -220,3 +220,56 @@ def test_top_menu_is_hidden_on_shop_pages_but_shown_elsewhere(client):
     for url in ("/", "/about"):
         page = client.get(url).get_data(as_text=True)
         assert all(w in _nav(page) for w in ("Clothing", "Watches", "Jewelry", "Bags")), url
+
+
+# ------------------------------------------------------------------ sign-in layout, pin map, stale links
+
+def test_sign_in_and_register_have_back_button_and_the_other_link_at_the_bottom(client):
+    login_page = client.get("/account/login").get_data(as_text=True)
+    assert "data-back" in login_page and "auth__alt" in login_page
+    assert login_page.index("auth__alt") > login_page.index("</form>")
+    assert 'href="/account/register"' in login_page.split("auth__alt")[1]
+    reg = client.get("/account/register").get_data(as_text=True)
+    assert "data-back" in reg and 'href="/account/login"' in reg.split("auth__alt")[1]
+    assert "model-placeholder" not in login_page.split("auth__art")[1][:300]
+
+
+def test_error_page_has_a_back_button(client):
+    page = client.get("/nope-nothing-here").get_data(as_text=True)
+    assert "data-back" in page
+
+
+def test_checkout_and_address_pages_have_the_pin_map(app, client):
+    login(client, "buyer1@velora.example", "Buyer123!")
+    client.post(f"/cart/add/{in_stock_product().id}", data={"quantity": 1})
+    for url in ("/checkout", "/account/addresses"):
+        page = client.get(url).get_data(as_text=True)
+        assert "data-pin-map" in page and "pin-map.js" in page and "leaflet.js" in page, url
+        assert 'data-reverse="/address-reverse"' in page
+    assert "data-back" in client.get("/checkout").get_data(as_text=True)
+
+
+def test_address_reverse_turns_a_pin_into_an_address(app, client):
+    assert client.get("/address-reverse?lat=14.55&lng=121.02").status_code == 302  # signed in only
+    login(client, "buyer1@velora.example", "Buyer123!")
+    assert client.get("/address-reverse?lat=14.55&lng=121.02").get_json()["error"] == "no_token"
+    assert client.get("/address-reverse?lat=abc&lng=1").status_code == 400
+    app.config["MAPBOX_TOKEN"] = TOKEN
+    p, calls = mapbox_get()
+    with p:
+        data = client.get("/address-reverse?lat=14.5547&lng=121.0244").get_json()
+        assert data["ok"] and data["result"]["city"] == "Makati" and data["result"]["postal_code"] == "1226"
+        assert client.get("/address-reverse?lat=999&lng=1").get_json()["ok"] is False  # out of range, no crash
+    assert calls[0][0].endswith("/search/geocode/v6/reverse")
+    assert calls[0][1]["params"]["latitude"] == 14.5547 and calls[0][1]["params"]["longitude"] == 121.0244
+    p, _ = mapbox_get(features=())
+    with p:
+        assert client.get("/address-reverse?lat=1&lng=1").get_json() == {"ok": True, "result": None}
+
+
+def test_stale_next_link_does_not_land_on_a_404_after_signing_in(client):
+    r = client.post("/account/login?next=/shop/c/cars-that-are-gone", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
+    assert r.headers["Location"].endswith("/account/")
+    client.post("/account/logout")
+    r = client.post("/account/login?next=/shop/c/bags", data={"email": "buyer1@velora.example", "password": "Buyer123!"})
+    assert r.headers["Location"].endswith("/shop/c/bags")

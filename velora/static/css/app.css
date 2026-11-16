@@ -983,3 +983,16 @@ details.disclosure[open] { padding-bottom: 8px; }
 .addr-suggest li[role=option] { padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; line-height: 1.35; }
 .addr-suggest li[role=option][aria-selected=true] { background: var(--bg-2); }
 .addr-suggest__credit { padding: 6px 12px 4px; font-size: 11px; color: var(--muted); }
+
+/* Pin-your-location map */
+.pin-map { border: 1px solid var(--line); border-radius: var(--r-md, 12px); padding: 12px; background: var(--bg-2); }
+.pin-map[hidden] { display: none; }
+.pin-map__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.pin-map__canvas { height: 280px; border-radius: 10px; overflow: hidden; background: var(--bg); }
+.pin-map__hint { margin: 8px 0 0; font-size: 13px; }
+
+/* Back button */
+.back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px; font-weight: 600; font-size: 14px; color: var(--muted); text-decoration: none; }
+.back-link:hover { color: var(--ink); }
+.auth__alt { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); text-align: center; }
+.auth__alt p { margin: 0 0 10px; color: var(--muted); }

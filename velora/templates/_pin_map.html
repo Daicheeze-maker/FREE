@@ -1,0 +1,10 @@
+{% from "_macros.html" import icon %}
+{# Pin your delivery spot on a map (Leaflet + OpenStreetMap). Put inside an element that has data-address-form. #}
+<div class="pin-map span-2" data-pin-map data-reverse="{{ url_for('main.address_reverse') }}" data-icons="{{ url_for('static', filename='vendor/leaflet/images/') }}" data-lat="14.5995" data-lng="120.9842">
+  <div class="pin-map__head">
+    <strong>{{ icon('map-pin', 'ic--sm') }} Pin your location</strong>
+    <button class="btn btn--ghost btn--sm" type="button" data-pin-locate>{{ icon('locate-fixed', 'ic--sm') }} Use my current location</button>
+  </div>
+  <div class="pin-map__canvas" data-pin-canvas role="application" aria-label="Map: click or drag the pin to your delivery spot"></div>
+  <p class="pin-map__hint muted" data-pin-hint aria-live="polite">Click the map or drag the pin. We fill in the address for you, then you can fix any detail.</p>
+</div>

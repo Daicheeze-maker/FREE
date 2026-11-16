@@ -35,6 +35,7 @@
         const el = pick(name);
         if (el && val) { el.value = val; el.dispatchEvent(new Event("input", { bubbles: true })); }
       }
+      box.dispatchEvent(new CustomEvent("address:picked", { detail: { lat: r.lat, lng: r.lng } }));
       close();
       const next = pick("line2") || pick("phone");
       if (next) next.focus();

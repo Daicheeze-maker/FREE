@@ -495,6 +495,14 @@
     if (json.ok) { form.reset(); if (hasGsap) gsap.fromTo(msg, { y: 6, opacity: 0 }, { y: 0, opacity: 1, duration: .4 }); }
   }));
 
+  /* ------------------------------------------------------------ back buttons */
+  $$("[data-back]").forEach((a) => a.addEventListener("click", (e) => {
+    // go to the page you came from (if it was on this site); otherwise follow the link's own address
+    let same = false;
+    try { same = document.referrer && new URL(document.referrer).origin === location.origin; } catch (_) { /* ignore */ }
+    if (same && history.length > 1) { e.preventDefault(); history.back(); }
+  }));
+
   /* ================================================== ANIMATIONS */
   function revealCards(root) {
     const cards = $$("[data-reveal-item]", root || document);

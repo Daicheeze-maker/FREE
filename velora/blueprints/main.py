@@ -150,3 +150,19 @@ def address_search():
         return jsonify(ok=True, results=mapbox.search(q))
     except mapbox.MapboxError:
         return jsonify(ok=False, results=[], error="Address suggestions are unavailable right now. Type the address by hand.")
+
+
+@bp.get("/address-reverse")
+@login_required
+def address_reverse():
+    """Turn a pin on the map into an address (Mapbox reverse geocoding). Signed-in users only."""
+    try:
+        lat, lng = float(request.args["lat"]), float(request.args["lng"])
+    except (KeyError, ValueError):
+        return jsonify(ok=False, result=None, error="Bad location."), 400
+    if not mapbox.token():
+        return jsonify(ok=False, result=None, error="no_token")
+    try:
+        return jsonify(ok=True, result=mapbox.reverse(lat, lng))
+    except (mapbox.MapboxError, ValueError):
+        return jsonify(ok=False, result=None, error="unavailable")

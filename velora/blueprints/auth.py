@@ -1,4 +1,5 @@
 import secrets
+from urllib.parse import urlparse
 import time
 from collections import defaultdict, deque
 from datetime import timedelta
@@ -40,6 +41,22 @@ def home_for(user):
     if user.role == "seller":
         return url_for("seller.dashboard")
     return url_for("account.dashboard")
+
+
+def _page_exists(path, user):
+    """Does this address lead to a real page for this user? (a stale ?next= must not end on a 404)"""
+    from ..models import Category, Order, Product
+    try:
+        endpoint, args = current_app.url_map.bind("localhost").match(path.split("?")[0], method="GET")
+    except Exception:
+        return False
+    if endpoint == "catalog.listing" and args.get("slug"):
+        return Category.query.filter_by(slug=args["slug"]).first() is not None
+    if endpoint == "catalog.detail":
+        return Product.query.filter_by(slug=args["slug"]).first() is not None
+    if endpoint == "account.order_detail":
+        return Order.query.filter_by(number=args["number"], user_id=user.id).first() is not None
+    return True
 
 
 def _ensure_seller_profile(buyer):
@@ -97,7 +114,7 @@ def login():
                     return redirect(home_for(seller))
             flash(f"Welcome back, {user.first_name}.", "success")
             nxt = request.args.get("next")
-            return redirect(nxt if is_safe_redirect(nxt) else home_for(user))
+            return redirect(nxt if is_safe_redirect(nxt) and _page_exists(urlparse(nxt).path, user) else home_for(user))
         else:
             if user:
                 user.failed_login_count += 1

@@ -57,22 +57,15 @@ def parse_feature(raw):
             "country": _ctx(ctx, "country"), "lat": lat, "lng": lng}
 
 
-def search(query, limit=5, key=None):
-    """Address suggestions for what has been typed so far. Returns a list of dicts (see parse_feature)."""
-    query = _text(query, 120)
-    if len(query) < 3:
-        return []
+def _call(path, params, key=None):
+    """GET one Mapbox Geocoding endpoint; returns the list of parsed addresses."""
     key = key or token()  # `key` lets a not-yet-saved token be tested first
     if not key:
         raise MapboxError("Add your Mapbox token to turn on address suggestions.")
     cfg = current_app.config
-    params = {"q": query, "access_token": key, "limit": min(max(1, int(limit)), 10), "autocomplete": "true",
-              "types": "address,street,neighborhood,locality,place", "language": "en"}
-    if cfg.get("MAPBOX_COUNTRY"):
-        params["country"] = cfg["MAPBOX_COUNTRY"]
     started = time.monotonic()
     try:
-        resp = requests.get(cfg["MAPBOX_BASE_URL"].rstrip("/") + "/search/geocode/v6/forward", params=params,
+        resp = requests.get(cfg["MAPBOX_BASE_URL"].rstrip("/") + path, params={**params, "access_token": key},
                             timeout=cfg["HTTP_TIMEOUT"], headers={"User-Agent": api_health.user_agent(), "Accept": "application/json"})
         if resp.status_code in (401, 403):
             raise MapboxError("Mapbox didn't accept that token. Copy it again from account.mapbox.com (it starts with pk.).")
@@ -89,3 +82,25 @@ def search(query, limit=5, key=None):
     api_health.record_success(api_health.MAPBOX, int((time.monotonic() - started) * 1000))
     features = data.get("features") if isinstance(data, dict) else None
     return [r for r in (parse_feature(f) for f in (features or [])) if r]
+
+
+def search(query, limit=5, key=None):
+    """Address suggestions for what has been typed so far. Returns a list of dicts (see parse_feature)."""
+    query = _text(query, 120)
+    if len(query) < 3:
+        return []
+    params = {"q": query, "limit": min(max(1, int(limit)), 10), "autocomplete": "true",
+              "types": "address,street,neighborhood,locality,place", "language": "en"}
+    if current_app.config.get("MAPBOX_COUNTRY"):
+        params["country"] = current_app.config["MAPBOX_COUNTRY"]
+    return _call("/search/geocode/v6/forward", params, key)
+
+
+def reverse(lat, lng):
+    """The address at a pinned spot (None if Mapbox knows nothing there)."""
+    lat, lng = float(lat), float(lng)
+    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+        raise ValueError("coordinates out of range")
+    found = _call("/search/geocode/v6/reverse", {"latitude": lat, "longitude": lng, "limit": 1,
+                                                 "types": "address,street,neighborhood,locality,place", "language": "en"})
+    return found[0] if found else None

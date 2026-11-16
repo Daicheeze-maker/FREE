@@ -2,6 +2,7 @@
 {% from "_macros.html" import icon, field, confirm_form %}
 {% block page_title %}Addresses{% endblock %}
 {% block heading %}Delivery addresses{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
 {% block account %}
 <div class="account-grid">
   <div>
@@ -21,9 +22,10 @@
     </div>
     {% else %}<p class="alert alert--info">{{ icon('info') }} You don't have any saved addresses yet. Add one to speed up checkout.</p>{% endif %}
   </div>
-  <form method="post" class="card" novalidate{% if mapbox_ready %} data-address-search="{{ url_for('main.address_search') }}"{% endif %}>
+  <form method="post" class="card" novalidate data-address-form{% if mapbox_ready %} data-address-search="{{ url_for('main.address_search') }}"{% endif %}>
     <h2 style="font-size:18px">Add address</h2>
     {{ form.csrf_token }}
+    <div class="form-grid">{% include "_pin_map.html" %}</div>
     {{ field(form.label, "Home, Office…") }}
     {{ field(form.full_name, "", autocomplete="name") }}
     {{ field(form.phone, "+63 917 000 0000", autocomplete="tel") }}
@@ -34,4 +36,8 @@
     <button class="btn btn--dark btn--block" type="submit">Save address</button>
   </form>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pin-map.js') }}"></script>
 {% endblock %}
