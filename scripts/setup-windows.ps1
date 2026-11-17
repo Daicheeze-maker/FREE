@@ -54,9 +54,14 @@ try {
     }
     & $venvPy -m pip install --upgrade pip; Run "Updating pip"
     & $venvPy -m pip install -r (Join-Path $root "backend\requirements.txt"); Run "Installing Python packages"
-    # opencv-python (pulled in by some packages) duplicates opencv-python-headless; keep only headless.
-    & { $ErrorActionPreference = "Continue"; & $venvPy -m pip uninstall -y opencv-python 2>$null | Out-Null }
-    $global:LASTEXITCODE = 0
+    # Note: never uninstall opencv-python here. It shares the cv2 folder with opencv-python-headless,
+    # so removing one deletes the other's files too.
+    Write-Host "Checking that the engine's packages load..."
+    & $venvPy -c "import cv2, numpy, sherpa_onnx, scenedetect, fastapi, sqlalchemy, uvicorn"
+    if ($LASTEXITCODE -ne 0) {
+        & $venvPy -m pip install --force-reinstall --no-deps opencv-python-headless; Run "Repairing OpenCV"
+        & $venvPy -c "import cv2, numpy, sherpa_onnx, scenedetect, fastapi, sqlalchemy, uvicorn"; Run "Checking the engine's packages"
+    }
 
     Write-Host "`nBuilding the interface..."
     Push-Location (Join-Path $root "frontend")

@@ -5,6 +5,6 @@ cd "$(dirname "$0")/.."
 command -v ffmpeg >/dev/null || { echo "Install FFmpeg first (apt install ffmpeg / brew install ffmpeg)"; exit 1; }
 python3 -m venv backend/.venv
 backend/.venv/bin/pip install -r backend/requirements-dev.txt
-backend/.venv/bin/pip uninstall -y opencv-python >/dev/null 2>&1 || true
+backend/.venv/bin/python -c 'import cv2, sherpa_onnx, scenedetect, fastapi'
 (cd frontend && npm ci && npm run build)
 echo "Run:  cd backend && .venv/bin/python -m clipforge.main   then open http://127.0.0.1:8756"

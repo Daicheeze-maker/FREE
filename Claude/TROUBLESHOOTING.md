@@ -16,6 +16,7 @@ Back to [[Home]] · See also [[Known Limitations]]
 | "ClipForge is not set up yet" | Run `scripts\setup-windows.ps1` first ([[INSTALLATION]]). |
 | PowerShell will not run the setup script | `powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1` |
 | "Address already in use" / port 8756 busy | Another ClipForge is running (check Task Manager for `python.exe` or `clipforge-engine.exe`), or start on another port: `.venv\Scripts\python.exe -m clipforge.main --port 8760` |
+| `ModuleNotFoundError: No module named 'cv2'` | Run `backend\.venv\Scripts\python.exe -m pip install --force-reinstall --no-deps opencv-python-headless` from the ClipForge folder. (Caused by an early version of the setup script.) |
 | `pip install` fails building a package | Use Python 3.12 (`py -3.12`). Very new Python versions may not have prebuilt wheels for every package yet. |
 
 ## FFmpeg
