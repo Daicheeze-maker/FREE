@@ -9,7 +9,7 @@ Everything runs on your computer. Nothing is uploaded unless you explicitly enab
 ## Quick start (Windows)
 1. Download the repository (Code → Download ZIP) and unzip it.
 2. Right-click `scripts\setup-windows.ps1` → **Run with PowerShell** (installs Python, Node.js and FFmpeg if missing).
-3. Double-click **`Start ClipForge.bat`**. The first screen helps you download the AI models (~670 MB).
+3. Double-click **ClipForge AI** on your Desktop (the setup creates it). It opens in its own window; close the window to quit. The first screen helps you download the AI models (~670 MB).
 
 ## Documentation
 The docs are an **Obsidian vault named `Claude`** in the [`Claude/`](Claude/) folder. Open that folder as a vault in Obsidian, or read the files on GitHub:

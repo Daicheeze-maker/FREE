@@ -65,7 +65,8 @@ try {
         npm run build; Run "Building the interface"
     } finally { Pop-Location }
 
-    Write-Host "`nDone. Double-click 'Start ClipForge.bat' to open the studio." -ForegroundColor Green
+    & (Join-Path $PSScriptRoot "install-shortcut.ps1")
+    Write-Host "`nDone. Double-click 'ClipForge AI' on your Desktop to open the studio." -ForegroundColor Green
     Write-Host "The first screen lets you download the AI models (about 670 MB for the recommended set)."
 }
 catch {

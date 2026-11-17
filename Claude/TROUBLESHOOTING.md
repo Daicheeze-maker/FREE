@@ -10,7 +10,9 @@ Back to [[Home]] · See also [[Known Limitations]]
 ## Starting
 | Symptom | Fix |
 |---|---|
-| "ClipForge's local engine is not responding" | The console window from `Start ClipForge.bat` must stay open. If it closed with an error, run the .bat again and read the message. |
+| Double-clicking the icon does nothing visible | Wait 10 seconds; the first start is slow. If still nothing, check `%LOCALAPPDATA%\ClipForge\logs\engine-errors.log`, or start `Start ClipForge.bat` to see the engine's messages. |
+| "The ClipForge engine did not start" | The box shows the last lines of the error. Common causes: another program using port 8756, or the setup did not finish (run `scripts\setup-windows.ps1` again). |
+| "ClipForge's local engine is not responding" | If you used `Start ClipForge.bat`, its console window must stay open. Use the Desktop icon instead. |
 | "ClipForge is not set up yet" | Run `scripts\setup-windows.ps1` first ([[INSTALLATION]]). |
 | PowerShell will not run the setup script | `powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1` |
 | "Address already in use" / port 8756 busy | Another ClipForge is running (check Task Manager for `python.exe` or `clipforge-engine.exe`), or start on another port: `.venv\Scripts\python.exe -m clipforge.main --port 8760` |

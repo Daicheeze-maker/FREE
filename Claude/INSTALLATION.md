@@ -20,7 +20,9 @@ Works on Windows 10/11, including the target machine (Ryzen 5 7500F, Radeon RX 9
 
    Then it creates `backend\.venv`, installs the Python packages from `backend\requirements.txt`, and builds the interface.
    If it says a tool "is not on PATH yet", close the window and run it again.
-3. **Start ClipForge.** Double-click **`Start ClipForge.bat`**. A console window runs the engine, and your browser opens `http://127.0.0.1:8756`. Keep the console open while you work; close it to quit.
+3. **Start ClipForge.** Double-click **ClipForge AI** on your Desktop or in the Start menu (the setup creates both). A small "Starting…" box appears, then ClipForge opens in its own window. **Close the window to quit**; the engine stops by itself.
+   - Lost the icon? Run `scripts\install-shortcut.ps1` again.
+   - Prefer a console window with the engine's output? Use `Start ClipForge.bat` instead.
 4. **First-run setup** walks you through the environment check and the model download. See [[MODEL_SETUP]].
 
 > [!note] If PowerShell refuses to run the script
