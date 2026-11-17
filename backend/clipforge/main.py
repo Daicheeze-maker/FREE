@@ -149,6 +149,24 @@ def create_app() -> FastAPI:
     return app
 
 
+def _watch_parent(pid: int) -> None:
+    """If the desktop shell crashes or is killed, do not leave an orphaned engine running."""
+    import os
+    import threading
+    import time
+
+    import psutil
+
+    def loop() -> None:
+        while psutil.pid_exists(pid):
+            time.sleep(2)
+        log.info("desktop app (pid %s) ended; stopping the engine", pid)
+        manager.stop()
+        os._exit(0)
+
+    threading.Thread(target=loop, daemon=True, name="parent-watch").start()
+
+
 def run() -> None:
     import argparse
 
@@ -157,7 +175,10 @@ def run() -> None:
     ap = argparse.ArgumentParser(description=APP_NAME)
     ap.add_argument("--port", type=int, default=8756)
     ap.add_argument("--host", default=None, help="override the listen address")
+    ap.add_argument("--parent-pid", type=int, default=0, help="exit when this process (the desktop app) ends")
     args = ap.parse_args()
+    if args.parent_pid:
+        _watch_parent(args.parent_pid)
     init_db()
     host = args.host or ("0.0.0.0" if settings.get("lan_access") else "127.0.0.1")
     uvicorn.run(create_app(), host=host, port=args.port, log_level="warning")

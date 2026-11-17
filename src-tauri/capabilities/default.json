@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The studio window loads the local engine's UI; it gets no Tauri API permissions.",
+  "windows": ["main"],
+  "permissions": []
+}

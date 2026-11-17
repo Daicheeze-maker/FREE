@@ -12,7 +12,9 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 ASSETS_DIR = PACKAGE_DIR / "assets"
 FONTS_DIR = ASSETS_DIR / "fonts"
 REPO_DIR = PACKAGE_DIR.parent.parent
-FRONTEND_DIST = Path(os.environ.get("CLIPFORGE_FRONTEND", REPO_DIR / "frontend" / "dist"))
+_BUNDLED_UI = Path(getattr(sys, "_MEIPASS", "")) / "ui"  # PyInstaller engine build ships the UI here
+FRONTEND_DIST = Path(os.environ.get("CLIPFORGE_FRONTEND") or (_BUNDLED_UI if getattr(sys, "frozen", False)
+                                                             else REPO_DIR / "frontend" / "dist"))
 
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac"}

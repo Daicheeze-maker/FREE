@@ -11,3 +11,8 @@ src-tauri/target/
 src-tauri/gen/
 *.log
 .DS_Store
+backend-dist/
+backend-build/
+Claude/.obsidian/
+Claude/.trash/
+backend/.venv
