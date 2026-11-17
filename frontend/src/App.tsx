@@ -114,8 +114,8 @@ function Shell({ children }: { children: React.ReactNode }) {
       <header className="flex items-center justify-between border-b border-line bg-surface px-3 py-2 md:hidden">
         <Logo /><JobsWidget compact />
       </header>
-      <main className={cx("min-h-0 min-w-0 flex-1 overflow-y-auto", !fullBleed && "px-4 py-4 md:px-6 md:py-5")}>
-        <div className={cx(!fullBleed && "mx-auto max-w-6xl")}>{children}</div>
+      <main className={cx("min-h-0 min-w-0 flex-1 overflow-y-auto", fullBleed ? "lg:overflow-hidden" : "px-4 py-4 md:px-6 md:py-5")}>
+        <div className={cx(fullBleed ? "h-full" : "mx-auto max-w-6xl")}>{children}</div>
       </main>
       <nav className="flex shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
         {NAV.map((n) => (

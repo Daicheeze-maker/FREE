@@ -135,6 +135,8 @@ def create_app() -> FastAPI:
 
         @app.get("/{full_path:path}", include_in_schema=False)
         def spa(full_path: str):
+            if full_path == "api" or full_path.startswith("api/"):
+                return JSONResponse({"detail": "Not found"}, status_code=404)
             f = (FRONTEND_DIST / full_path).resolve()
             if full_path and f.is_file() and FRONTEND_DIST.resolve() in f.parents:
                 return FileResponse(f)

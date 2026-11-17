@@ -105,6 +105,7 @@ class JobManager:
         self._wake = threading.Event()
         self._worker: threading.Thread | None = None
         self._stop = False
+        self._generation = 0  # each start() gets a new generation; older worker threads exit
         self._lock = threading.Lock()
 
     def register(self, type_: str, handler: Handler, heavy: bool = True,
@@ -114,7 +115,9 @@ class JobManager:
     def start(self) -> None:
         self.recover()
         self._stop = False
-        self._worker = threading.Thread(target=self._loop, name="clipforge-worker", daemon=True)
+        self._generation += 1
+        self._worker = threading.Thread(target=self._loop, args=(self._generation,), name="clipforge-worker",
+                                        daemon=True)
         self._worker.start()
 
     def stop(self) -> None:
@@ -173,8 +176,8 @@ class JobManager:
         if ctx:
             ctx.pause_event.clear()
 
-    def _loop(self) -> None:
-        while not self._stop:
+    def _loop(self, generation: int) -> None:
+        while not self._stop and generation == self._generation:
             job_id = None
             with session() as s:
                 heavy = [t for t, h in self.handlers.items() if h[1]]
@@ -190,10 +193,12 @@ class JobManager:
 
     def _run(self, job_id: str) -> None:
         with session() as s:
-            job = s.get(Job, job_id)
-            if not job or job.status != "queued":
+            # Atomic claim: only one thread can move a job from queued to running.
+            claimed = (s.query(Job).filter(Job.id == job_id, Job.status == "queued")
+                       .update({"status": "running", "started_at": now()}, synchronize_session=False))
+            if not claimed:
                 return
-            job.status, job.started_at = "running", now()
+            job = s.get(Job, job_id)
             type_, params = job.type, dict(job.params)
         handler, _, stages = self.handlers[type_]
         ctx = JobContext(job_id, params, stages)
