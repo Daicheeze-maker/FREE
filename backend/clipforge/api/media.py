@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 
 from ..config import FONTS_DIR
 from ..db import session
-from ..models import ClipCandidate, ExportJob, SourceVideo
+from ..models import ClipCandidate, ExportJob, GeneratedClip, SourceVideo
 
 router = APIRouter(prefix="/api")
 
@@ -53,6 +53,14 @@ def export_file(eid: str, download: bool = False):
         path = e.path if e and e.status == "completed" else None
     kw = {"filename": Path(path).name} if download and path else {}
     return _file(path, "video/mp4", **kw)
+
+
+@router.get("/media/music/{clip_id}")
+def music(clip_id: str):
+    """Background music attached to a clip, for preview in the editor."""
+    with session() as s:
+        c = s.get(GeneratedClip, clip_id)
+        return _file(c.music_path if c else None)
 
 
 @router.get("/fonts/{name}")

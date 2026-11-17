@@ -16,9 +16,11 @@ NO_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 
 
 def _find(name: str, configured: str) -> str | None:
+    exe = name + (".exe" if sys.platform == "win32" else "")
     if configured and Path(configured).is_file():
         return configured
-    exe = name + (".exe" if sys.platform == "win32" else "")
+    if configured and (Path(configured) / exe).is_file():  # a folder such as C:\ffmpeg\bin is accepted too
+        return str(Path(configured) / exe)
     bundled = PACKAGE_DIR.parent / "bin" / exe  # optional drop-in location: backend/bin/
     if bundled.is_file():
         return str(bundled)

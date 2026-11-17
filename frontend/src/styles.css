@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* Design tokens. Everything in the UI is built from these. */
+@theme {
+  --color-bg: #0e0f11;
+  --color-surface: #15171a;
+  --color-raised: #1c1f23;
+  --color-hover: #24282d;
+  --color-line: #2a2e34;
+  --color-line-strong: #3a3f47;
+  --color-text: #e6e8eb;
+  --color-muted: #9097a1;
+  --color-faint: #666d77;
+  --color-accent: #f2673a;
+  --color-accent-hover: #ff7a4d;
+  --color-accent-soft: #3a2118;
+  --color-ok: #3fb97a;
+  --color-warn: #e0a83a;
+  --color-danger: #e5534b;
+  --color-info: #5b9dea;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+@font-face { font-family: "Poppins"; font-weight: 400; src: url("/api/fonts/Poppins-Regular.ttf"); font-display: swap; }
+@font-face { font-family: "Poppins"; font-weight: 600; src: url("/api/fonts/Poppins-SemiBold.ttf"); font-display: swap; }
+@font-face { font-family: "Poppins"; font-weight: 700; src: url("/api/fonts/Poppins-Bold.ttf"); font-display: swap; }
+@font-face { font-family: "Poppins"; font-weight: 800; src: url("/api/fonts/Poppins-ExtraBold.ttf"); font-display: swap; }
+@font-face { font-family: "Anton"; font-weight: 400; src: url("/api/fonts/Anton-Regular.ttf"); font-display: swap; }
+@font-face { font-family: "Bebas Neue"; font-weight: 400; src: url("/api/fonts/BebasNeue-Regular.ttf"); font-display: swap; }
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+* { scrollbar-width: thin; scrollbar-color: var(--color-line-strong) transparent; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+input[type="range"] { accent-color: var(--color-accent); height: 18px; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+@keyframes cap-pop { from { transform: scale(1.18); } to { transform: scale(1); } }
+@keyframes cap-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

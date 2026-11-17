@@ -102,6 +102,42 @@ def pairing():
     return {"pin": cfg["pair_pin"], "ip": lan_ip(), "enabled": cfg["lan_access"]}
 
 
+@router.get("/fs/list")
+def fs_list(path: str = ""):
+    """Folder browser for choosing a video on this computer (loopback only; lists folders and videos)."""
+    import os
+    import string
+    import sys
+    from pathlib import Path
+
+    home = Path.home()
+    p = Path(path).expanduser() if path else home
+    if not p.is_dir():
+        raise HTTPException(400, "That folder does not exist.")
+    dirs, files = [], []
+    try:
+        for e in sorted(os.scandir(p), key=lambda e: e.name.lower()):
+            if e.name.startswith((".", "$")):
+                continue
+            try:
+                if e.is_dir():
+                    dirs.append({"name": e.name, "path": e.path})
+                elif Path(e.name).suffix.lower() in VIDEO_EXTENSIONS:
+                    files.append({"name": e.name, "path": e.path, "size": e.stat().st_size})
+            except OSError:
+                continue
+    except PermissionError as e:
+        raise HTTPException(403, "ClipForge is not allowed to read that folder.") from e
+    roots = [{"name": "Home", "path": str(home)}]
+    for name in ("Videos", "Movies", "Downloads", "Desktop"):
+        if (home / name).is_dir():
+            roots.append({"name": name, "path": str(home / name)})
+    if sys.platform == "win32":
+        roots += [{"name": f"{d}:", "path": f"{d}:\\"} for d in string.ascii_uppercase if Path(f"{d}:\\").exists()]
+    return {"path": str(p), "parent": str(p.parent) if p.parent != p else None, "dirs": dirs, "files": files,
+            "roots": roots}
+
+
 # ---- models -----------------------------------------------------------------
 @router.get("/models")
 def models():

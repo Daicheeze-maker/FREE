@@ -28,7 +28,7 @@ from .logging_setup import log, setup_logging
 
 COOKIE = "clipforge_session"
 OPEN_PATHS = {"/api/session", "/api/pair"}
-LOOPBACK_ONLY = {"/api/settings/pairing"}
+LOOPBACK_ONLY = {"/api/settings/pairing", "/api/fs/list"}
 
 
 def _is_loopback(host: str | None) -> bool:
