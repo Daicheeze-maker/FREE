@@ -108,7 +108,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 297 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 298 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -137,6 +137,9 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
     X-Forwarded-For). `create-admin.bat` now always stays open and says what happened.
 12. **Seller applications:** no more automatic seller profiles; buyers apply, the admin approves/rejects (owner's idea).
 13. **Phone numbers per country** (country picker, digit limits, libphonenumber validation, E.164 storage).
+14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
+    start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
+    `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.
 
 ## Open items / ideas
 

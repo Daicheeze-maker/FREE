@@ -84,3 +84,10 @@ def test_no_admin_password_is_kept_in_the_repository(app):
         text = open(f, newline="").read()
         assert "ensure-admin" in text or "ADMIN_PASSWORD=" in text
         assert "--password" not in text, f  # no password is written into the scripts
+
+
+def test_every_start_script_installs_new_requirements(app):
+    """Regression: scripts\\run.bat didn't install new packages, so a pull that added one (phonenumbers) crashed it."""
+    for f in ("start.bat", "start.sh", "scripts/run.bat", "scripts/run.sh"):
+        assert "pip install" in open(f, newline="").read() and "-r requirements.txt" in open(f, newline="").read(), f
+    assert "\r\n" in open("scripts/run.bat", newline="").read()
