@@ -44,7 +44,7 @@
     </section>
     <section class="card" data-reveal>
       <div class="card__head"><h2>{{ icon('map-pin') }} Delivery</h2></div>
-      <p style="margin:0"><strong>{{ order.ship_name }}</strong><br>{{ order.ship_phone }}<br>{{ order.ship_address }}</p>
+      <p style="margin:0"><strong>{{ order.ship_name }}</strong><br>{{ (order.ship_phone|phone) }}<br>{{ order.ship_address }}</p>
       {% if order.notes %}<p class="muted" style="margin-top:10px">Note: {{ order.notes }}</p>{% endif %}
     </section>
     {% if order.customer_can_cancel %}

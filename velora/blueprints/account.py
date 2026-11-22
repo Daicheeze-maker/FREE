@@ -247,9 +247,10 @@ def seller_application():
     can_apply = profile is None and (last is None or last.status == "rejected")
     form = SellerApplicationForm()
     if request.method == "GET" and last is not None and can_apply:
-        form.shop_name.data, form.phone.data, form.about.data = last.shop_name, last.phone, last.about
+        form.shop_name.data, form.about.data = last.shop_name, last.about
+        form.set_phone(last.phone)
     if request.method == "GET" and not form.phone.data:
-        form.phone.data = current_user.phone or ""
+        form.set_phone(current_user.phone or "")
     if can_apply and form.validate_on_submit():
         try:
             sellers.apply(current_user, form.shop_name.data, form.phone.data, form.about.data)

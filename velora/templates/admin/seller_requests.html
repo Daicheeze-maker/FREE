@@ -11,7 +11,7 @@
   {% for a in pending %}
   <section class="card req" data-reveal-item>
     <div class="req__head"><span class="avatar">{{ a.user.full_name[:1] }}</span><div><strong>{{ a.shop_name }}</strong><small>{{ a.user.full_name }} · {{ a.user.email }}</small></div></div>
-    <dl class="kv"><dt>Phone</dt><dd>{{ a.phone }}</dd><dt>Applied</dt><dd>{{ a.created_at|dtt }}</dd><dt>What they'll sell</dt><dd>{{ a.about }}</dd></dl>
+    <dl class="kv"><dt>Phone</dt><dd>{{ (a.phone|phone) }}</dd><dt>Applied</dt><dd>{{ a.created_at|dtt }}</dd><dt>What they'll sell</dt><dd>{{ a.about }}</dd></dl>
     <div class="req__actions">
       <form method="post" action="{{ url_for('admin.seller_decide', app_id=a.id, decision='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--accent btn--sm" type="submit">{{ icon('check', 'ic--sm') }} Approve</button></form>
       <form method="post" action="{{ url_for('admin.seller_decide', app_id=a.id, decision='reject') }}" class="req__reject">

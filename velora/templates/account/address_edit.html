@@ -1,5 +1,5 @@
 {% extends "account/_layout.html" %}
-{% from "_macros.html" import icon, field %}
+{% from "_macros.html" import icon, field, phone_field %}
 {% block page_title %}Edit address{% endblock %}
 {% block heading %}Edit address{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
@@ -9,7 +9,7 @@
   <div class="form-grid">
     {% include "_pin_map.html" %}
     {{ field(form.label) }}{{ field(form.full_name, autocomplete="name") }}
-    {{ field(form.phone, autocomplete="tel") }}{{ field(form.postal_code, autocomplete="postal-code") }}
+    {{ phone_field(form.phone, form.phone_country) }}{{ field(form.postal_code, autocomplete="postal-code") }}
     {{ field(form.line1, cls="span-2", autocomplete="address-line1") }}{{ field(form.line2, cls="span-2", autocomplete="address-line2") }}
     {{ field(form.city, autocomplete="address-level2") }}{{ field(form.region, autocomplete="address-level1") }}
     {{ field(form.country, autocomplete="country-name") }}

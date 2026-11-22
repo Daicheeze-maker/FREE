@@ -1,5 +1,5 @@
 {% extends "account/_layout.html" %}
-{% from "_macros.html" import icon, field %}
+{% from "_macros.html" import icon, field, phone_field %}
 {% block page_title %}Sell on {{ brand }}{% endblock %}
 {% block heading %}Sell on {{ brand }}{% endblock %}
 {% block account %}
@@ -15,7 +15,7 @@
     <section class="card sell-status sell-status--wait" data-reveal>
       <h2>{{ icon('hourglass') }} Waiting for the admin</h2>
       <p>You applied on {{ last.created_at|dt }} to sell as <strong>{{ last.shop_name }}</strong>. The admin will approve or reject it, and you'll get a notification with the answer.</p>
-      <dl class="kv"><dt>Shop name</dt><dd>{{ last.shop_name }}</dd><dt>Phone</dt><dd>{{ last.phone }}</dd><dt>What you'll sell</dt><dd>{{ last.about }}</dd></dl>
+      <dl class="kv"><dt>Shop name</dt><dd>{{ last.shop_name }}</dd><dt>Phone</dt><dd>{{ (last.phone|phone) }}</dd><dt>What you'll sell</dt><dd>{{ last.about }}</dd></dl>
     </section>
     {% else %}
       {% if last and last.status == 'rejected' %}
@@ -27,7 +27,7 @@
         <form method="post" novalidate>
           {{ form.csrf_token }}
           {{ field(form.shop_name, "e.g. Manila Time House") }}
-          {{ field(form.phone, "+63 917 000 0000", autocomplete="tel") }}
+          {{ phone_field(form.phone, form.phone_country) }}
           {{ field(form.about, "Which watches will you sell? New or pre-owned? Where do they come from?") }}
           {{ field(form.agree) }}
           <button class="btn btn--dark btn--lg" type="submit" data-loading-text="Sending…">{{ icon('send', 'ic--sm') }} Send application</button>

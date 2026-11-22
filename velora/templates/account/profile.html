@@ -1,5 +1,5 @@
 {% extends "console.html" if current_user.is_staff else "account/_layout.html" %}
-{% from "_macros.html" import icon, field %}
+{% from "_macros.html" import icon, field, phone_field %}
 {% block page_title %}Profile & security{% endblock %}
 {% block heading %}Profile & security{% endblock %}
 {% macro forms() %}
@@ -9,7 +9,7 @@
     {{ form.csrf_token }}<input type="hidden" name="form" value="profile">
     <div class="field"><span class="field__label">Email</span><input class="input" value="{{ current_user.email }}" disabled aria-label="Email (cannot be changed)"><p class="field__hint">Contact support to change your sign-in email.</p></div>
     {{ field(form.full_name, autocomplete="name") }}
-    {{ field(form.phone, "+63 917 000 0000", autocomplete="tel") }}
+    {{ phone_field(form.phone, form.phone_country) }}
     <div class="field"><span class="field__label">Role</span><span class="role-tag role-tag--{{ current_user.role }}">{{ current_user.role }}</span></div>
     <button class="btn btn--dark" type="submit">Save profile</button>
   </form>

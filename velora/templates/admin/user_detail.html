@@ -10,7 +10,7 @@
     <section class="card">
       <h2 style="font-size:17px">{{ icon('id-card') }} Account</h2>
       <dl class="kv">
-        <dt>Email</dt><dd>{{ user.email }}</dd><dt>Phone</dt><dd>{{ user.phone or '—' }}</dd>
+        <dt>Email</dt><dd>{{ user.email }}</dd><dt>Phone</dt><dd>{{ (user.phone|phone) or '—' }}</dd>
         <dt>Joined</dt><dd>{{ user.created_at|dtt }}</dd><dt>Last sign-in</dt><dd>{{ user.last_login_at|dtt }}</dd>
         <dt>Failed sign-ins</dt><dd>{{ user.failed_login_count }}{% if user.locked_until and user.locked_until > now %} · <strong>locked until {{ user.locked_until|dtt }}</strong>{% endif %}</dd>
       </dl>

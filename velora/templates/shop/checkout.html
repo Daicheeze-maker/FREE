@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import icon, field %}
+{% from "_macros.html" import icon, field, phone_field %}
 {% block title %}Checkout · {{ brand }}{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
 {% block content %}
@@ -26,7 +26,7 @@
             {% for a in addresses %}
             <label class="choice">
               <input type="radio" name="address_choice" value="{{ a.id }}" {% if choice == a.id|string %}checked{% endif %} required>
-              <span class="choice__card"><strong>{{ a.label }}{% if a.is_default %} · Default{% endif %}</strong>{{ a.full_name }} · {{ a.phone }}<br>{{ a.one_line() }}</span>
+              <span class="choice__card"><strong>{{ a.label }}{% if a.is_default %} · Default{% endif %}</strong>{{ a.full_name }} · {{ (a.phone|phone) }}<br>{{ a.one_line() }}</span>
             </label>
             {% endfor %}
             <label class="choice">
@@ -39,7 +39,7 @@
               {% include "_pin_map.html" %}
               {{ field(new_form.label, "Home, Office…") }}
               {{ field(new_form.full_name, "Who will receive it?", autocomplete="name") }}
-              {{ field(new_form.phone, "+63 917 000 0000", autocomplete="tel") }}
+              {{ phone_field(new_form.phone, new_form.phone_country) }}
               {{ field(new_form.postal_code, "1101", autocomplete="postal-code") }}
               {{ field(new_form.line1, "House no., street, barangay", cls="span-2", autocomplete="address-line1") }}
               {{ field(new_form.line2, "", cls="span-2", autocomplete="address-line2") }}

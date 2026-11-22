@@ -79,6 +79,16 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - Spectrum's 6 frames per colour = front, 3/4, side, back from the image + mirrored side and 3/4. They come from ~70 px
   thumbnails, so they are soft; better frames (e.g. 24–36 photos per turn) can replace them file for file.
 
+## Phone numbers
+
+- `velora/phones.py` with the free **`phonenumbers`** package (Google libphonenumber rules, offline, in requirements.txt).
+  Countries = the display currencies' countries: PH, US, GB, JP, SG, AU + euro DE, FR, IT, ES, NL, IE.
+- **Mobile numbers only** (delivery updates). Limits come from the metadata: PH = 10 digits after +63 (11 typed with the 0),
+  SG 8, AU 9 (+0), etc. Stored as E.164 (`+639171234567`), shown with the `|phone` filter (`+63 917 123 4567`).
+- Forms with a phone use `PhoneFormMixin` (`phone` + `phone_country` select, `set_phone()` to prefill a saved number);
+  templates use the `phone_field(f, country)` macro; `app.js` keeps digits only and caps them per country (no `maxlength`
+  attribute, so pasted "+63 …" isn't cut short). The country defaults to the display currency's country.
+
 ## Address, map and external services
 
 - Checkout and My addresses: **Pin your location** map (Leaflet + OSM tiles, vendored). Pin → `/address-reverse`
@@ -98,7 +108,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 269 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 297 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -126,6 +136,7 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
     (`/account/setup-admin`, linked from the sign-in page): only while the store has no admin, only from 127.0.0.1 (no
     X-Forwarded-For). `create-admin.bat` now always stays open and says what happened.
 12. **Seller applications:** no more automatic seller profiles; buyers apply, the admin approves/rejects (owner's idea).
+13. **Phone numbers per country** (country picker, digit limits, libphonenumber validation, E.164 storage).
 
 ## Open items / ideas
 

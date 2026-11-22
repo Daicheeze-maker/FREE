@@ -181,6 +181,10 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 
 ---
 
+### Phone numbers — `velora/phones.py`
+- Every phone box has a country picker for the store's currency countries (Philippines, US, UK, Japan, Singapore, Australia and the main euro countries). Each country has its own digit limit, e.g. the Philippines takes 10 digits after +63 (or 11 typed with the leading 0), Singapore 8. Mobile numbers only.
+- Checked with the free, offline [phonenumbers](https://github.com/daviddrysdale/python-phonenumbers) library (Google's libphonenumber rules) and saved as `+639171234567`, shown as `+63 917 123 4567`.
+
 ### Mapbox — `velora/services/mapbox.py` (address suggestions)
 - When someone types a street address (checkout, *My addresses*), the page asks **this server** (`GET /address-search?q=…`, signed-in users only), which calls Mapbox Geocoding v6 (`/search/geocode/v6/forward`, limited to the Philippines by default) and returns just street, city, province, postal code and country. The token never reaches the browser. Picking a suggestion fills the form; typing by hand always still works.
 - Token: put `MAPBOX_TOKEN=pk.…` in `.env`, or paste it once under **Admin → API health → Mapbox** (it is tested before it is saved and never shown again). A free public token (starts with `pk.`) comes from [account.mapbox.com](https://account.mapbox.com/access-tokens/). Without a token the address form has no suggestions and nothing else changes.
@@ -262,7 +266,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 269 tests. External APIs are mocked, so no network is needed. They cover:
+There are 297 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

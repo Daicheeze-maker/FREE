@@ -26,7 +26,8 @@
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
   }).addTo(map);
   tiles.on("tileload", () => { loaded++; });
-  tiles.on("tileerror", () => { failed++; if (!loaded && failed >= 4) { map.remove(); hide(); } });
+  let removed = false;
+  tiles.on("tileerror", () => { failed++; if (!loaded && failed >= 4 && !removed) { removed = true; map.remove(); hide(); } });
   map.on("click", () => map.scrollWheelZoom.enable());
   map.on("mouseout", () => map.scrollWheelZoom.disable());
 
@@ -108,5 +109,5 @@
     if (typeof lat === "number" && typeof lng === "number") { map.setView([lat, lng], 17); place(lat, lng, false); say("Pin moved to the address you chose."); }
   });
   // The map sits in a form that can be hidden at first: fix its size when it appears
-  new ResizeObserver(() => map.invalidateSize()).observe(canvas);
+  new ResizeObserver(() => { if (!removed) map.invalidateSize(); }).observe(canvas);
 })();

@@ -1065,3 +1065,8 @@ details.disclosure[open] { padding-bottom: 8px; }
 .req__reject { display: flex; gap: 8px; flex: 1; min-width: 220px; }
 .req__reject .input { flex: 1; height: 36px; }
 .side-link .count-pill { margin-left: auto; }
+
+/* Mobile number with country picker */
+.phone-input { display: grid; grid-template-columns: minmax(118px, 136px) 1fr; gap: 8px; }
+.phone-input__country { padding-right: 28px; }
+.phone-input__number { letter-spacing: .02em; }

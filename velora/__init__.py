@@ -118,6 +118,16 @@ def _register_template_helpers(app):
     def format_dtt(value):
         return value.strftime("%b %d, %Y · %H:%M UTC") if value else "—"
 
+    @app.template_filter("phone")
+    def format_phone(value):
+        from .phones import pretty
+        return pretty(value)
+
+    @app.template_global()
+    def phone_countries():
+        from .phones import countries
+        return countries()
+
     @app.template_filter("reject_page")
     def reject_page(args):
         return {k: v for k, v in args.items() if k != "page"}

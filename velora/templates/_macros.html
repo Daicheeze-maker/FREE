@@ -97,6 +97,26 @@
 </div>
 {%- endmacro %}
 
+{% macro phone_field(f, country, cls="") -%}
+{# Mobile number with a country picker: the box only takes as many digits as that country uses. #}
+{% set errors = f.errors %}
+<div class="field phone-field {{ cls }} {% if errors %}has-error{% endif %}" data-phone>
+  <label class="field__label" for="{{ f.id }}">{{ f.label.text }}</label>
+  <div class="phone-input">
+    <label class="sr-only" for="{{ country.id }}">Country</label>
+    <select class="input select phone-input__country" id="{{ country.id }}" name="{{ country.name }}" data-phone-country>
+      {% for c in phone_countries() %}
+      <option value="{{ c.code }}" data-dial="{{ c.dial }}" data-max="{{ c.max_typed }}" data-digits="{{ c.min if c.min == c.max else c.min ~ '–' ~ c.max }}" data-trunk="{{ c.trunk }}" data-example="{{ c.example }}" {% if c.code == country.data %}selected{% endif %}>{{ c.flag }} {{ c.code }} {{ c.dial }}</option>
+      {% endfor %}
+    </select>
+    <input class="input phone-input__number" id="{{ f.id }}" name="{{ f.name }}" type="tel" inputmode="numeric" autocomplete="tel-national"
+           value="{{ f.data or '' }}" {% if f.flags.required %}required{% endif %} {% if errors %}aria-invalid="true" aria-describedby="{{ f.id }}-err"{% else %}aria-describedby="{{ f.id }}-hint"{% endif %}>
+  </div>
+  {% if not errors %}<p class="field__hint" id="{{ f.id }}-hint" data-phone-hint>Choose the country, then type the mobile number.</p>{% endif %}
+  {% for e in errors %}<p class="field__error" id="{{ f.id }}-err">{{ icon('circle-alert') }} {{ e }}</p>{% endfor %}
+</div>
+{%- endmacro %}
+
 {% macro status_badge(status) -%}
 <span class="status status--{{ status }}"><span class="status__dot"></span>{{ status|title }}</span>
 {%- endmacro %}

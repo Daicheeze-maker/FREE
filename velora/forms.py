@@ -5,12 +5,46 @@ from wtforms import (BooleanField, DateTimeLocalField, EmailField, HiddenField, 
 from wtforms.validators import (DataRequired, Email, EqualTo, InputRequired, Length, NumberRange,
                                 Optional, Regexp, ValidationError)
 
+from . import phones
 from .models import PRODUCT_STATUSES, ROLES
 from .money import to_minor
 
 
 def strip(value):
     return value.strip() if isinstance(value, str) else value
+
+
+class PhoneFormMixin:
+    """A `phone` box with a country picker. The number is checked for the chosen country (libphonenumber rules)
+    and saved in one standard form, e.g. +639171234567."""
+    phone_country = SelectField("Country", default=phones.DEFAULT_COUNTRY,
+                                choices=[(c["code"], f"{c['flag']} {c['name']} ({c['dial']})") for c in phones.countries()])
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_submitted():
+            if self.phone_country.data == phones.DEFAULT_COUNTRY:
+                try:  # start on the country of the shopper's display currency
+                    from flask import session
+                    self.phone_country.data = phones.CURRENCY_COUNTRY.get(session.get("currency"), phones.DEFAULT_COUNTRY)
+                except RuntimeError:
+                    pass
+            self.set_phone(self.phone.data)
+
+    def set_phone(self, stored):
+        """Show a saved number in the box as country + national digits."""
+        region, national = phones.split(stored)
+        if region:
+            self.phone_country.data = region
+        self.phone.data = national
+
+    def validate_phone(self, field):
+        if not field.data:
+            return
+        try:
+            field.data = phones.normalize(field.data, self.phone_country.data)
+        except ValueError as exc:
+            raise ValidationError(str(exc))
 
 
 class MoneyField(StringField):
@@ -51,9 +85,9 @@ class RegisterForm(FlaskForm):
     accept = BooleanField("I agree to the terms and privacy policy", validators=[DataRequired("Please accept to continue.")])
 
 
-class SellerApplicationForm(FlaskForm):
+class SellerApplicationForm(PhoneFormMixin, FlaskForm):
     shop_name = StringField("Shop name", validators=[DataRequired(), Length(min=2, max=80)], filters=[strip])
-    phone = StringField("Contact phone", validators=[DataRequired(), Length(min=7, max=40), Regexp(r"^[0-9 +()-]+$", message="Enter a valid phone number.")], filters=[strip])
+    phone = StringField("Contact mobile number", validators=[DataRequired(), Length(max=40)], filters=[strip])
     about = TextAreaField("What will you sell?", validators=[DataRequired(), Length(min=20, max=1000, message="Tell the admin a little more (20 to 1,000 characters).")], filters=[strip])
     agree = BooleanField("I'll only sell genuine watches and follow the store's seller rules", validators=[DataRequired("Please agree to continue.")])
 
@@ -69,9 +103,9 @@ class AdminSetupForm(FlaskForm):
     confirm = PasswordField("Confirm password", validators=[DataRequired(), EqualTo("password", "Passwords must match.")])
 
 
-class ProfileForm(FlaskForm):
+class ProfileForm(PhoneFormMixin, FlaskForm):
     full_name = StringField("Full name", validators=[DataRequired(), Length(min=2, max=120)], filters=[strip])
-    phone = StringField("Phone", validators=[Optional(), Length(max=40), Regexp(r"^[0-9 +()-]*$", message="Digits, spaces, + ( ) - only.")], filters=[strip])
+    phone = StringField("Mobile number", validators=[Optional(), Length(max=40)], filters=[strip])
 
 
 class PasswordChangeForm(FlaskForm):
@@ -80,10 +114,10 @@ class PasswordChangeForm(FlaskForm):
     confirm = PasswordField("Confirm new password", validators=[DataRequired(), EqualTo("password", "Passwords must match.")])
 
 
-class AddressForm(FlaskForm):
+class AddressForm(PhoneFormMixin, FlaskForm):
     label = StringField("Label", default="Home", validators=[DataRequired(), Length(max=40)], filters=[strip])
     full_name = StringField("Recipient name", validators=[DataRequired(), Length(max=120)], filters=[strip])
-    phone = StringField("Phone", validators=[DataRequired(), Length(min=7, max=40), Regexp(r"^[0-9 +()-]+$", message="Enter a valid phone number.")], filters=[strip])
+    phone = StringField("Mobile number", validators=[DataRequired(), Length(max=40)], filters=[strip])
     line1 = StringField("Street address", validators=[DataRequired(), Length(max=200)], filters=[strip])
     line2 = StringField("Apartment, unit, building (optional)", validators=[Optional(), Length(max=200)], filters=[strip])
     city = StringField("City", validators=[DataRequired(), Length(max=100)], filters=[strip])

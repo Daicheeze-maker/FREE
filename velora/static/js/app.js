@@ -362,6 +362,33 @@
     e.target.closest("[data-engrave]").querySelector(".size-picker__error").hidden = true;
   });
 
+  /* --------------------------------------------------- phone numbers: per-country digit limit */
+  $$("[data-phone]").forEach((box) => {
+    const sel = box.querySelector("[data-phone-country]");
+    const input = box.querySelector(".phone-input__number");
+    const hint = box.querySelector("[data-phone-hint]");
+    if (!sel || !input) return;
+    const opt = () => sel.options[sel.selectedIndex].dataset;
+    const apply = () => {
+      const o = opt();
+      input.dataset.max = o.max;  // the digit limit is applied after spaces and the country code are removed
+      input.placeholder = o.example;
+      if (hint) hint.textContent = `${o.dial} · ${o.digits} digits${o.trunk ? ` (or start with ${o.trunk})` : ""} · e.g. ${o.example}`;
+      clean();
+    };
+    const clean = () => {
+      const o = opt();
+      let v = input.value;
+      if (v.trim().startsWith(o.dial)) v = v.trim().slice(o.dial.length);        // pasted with the country code
+      else if (v.trim().startsWith(o.dial.slice(1)) && v.replace(/\D/g, "").length > Number(o.max)) v = v.trim().slice(o.dial.length - 1);
+      v = v.replace(/\D/g, "").slice(0, Number(o.max));                           // digits only, never too many
+      if (v !== input.value) input.value = v;
+    };
+    sel.addEventListener("change", apply);
+    input.addEventListener("input", clean);
+    apply();
+  });
+
   /* --------------------------------------------------- qty steppers */
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-qty-step]");

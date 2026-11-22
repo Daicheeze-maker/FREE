@@ -16,6 +16,7 @@ email-validator==2.3.0
 requests==2.34.2
 python-dotenv==1.2.3
 Pillow==12.3.0
+phonenumbers==9.0.44  # Google's libphonenumber rules: checks phone numbers per country, offline
 
 # Serving: Waitress everywhere (incl. Windows); Gunicorn on Linux/macOS
 waitress==3.0.2

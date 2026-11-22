@@ -43,7 +43,7 @@
       <h2 style="font-size:17px">{{ icon('user-round') }} Customer</h2>
       <dl class="kv" style="grid-template-columns:100px 1fr">
         <dt>Account</dt><dd>{{ order.user.full_name }}<br><span class="muted">{{ order.user.email }}</span></dd>
-        <dt>Ship to</dt><dd>{{ order.ship_name }} · {{ order.ship_phone }}<br>{{ order.ship_address }}</dd>
+        <dt>Ship to</dt><dd>{{ order.ship_name }} · {{ (order.ship_phone|phone) }}<br>{{ order.ship_address }}</dd>
         {% if order.notes %}<dt>Notes</dt><dd>{{ order.notes }}</dd>{% endif %}
       </dl>
     </section>
