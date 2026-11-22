@@ -123,6 +123,12 @@ PRODUCTS = [
      ["1560343090-f0409e92791a", "1508685096489-7aacd43bd3b1", V3], "Crystal-set bezel · bracelet",
      "A crystal-set bezel that catches the light, on a polished link bracelet.",
      "Stainless steel, crystals, sapphire-coated glass, quartz movement.", "30 mm,33 mm", "Silver,Gold,Rose Gold", 700),
+    ("Spectrum Chronograph", "Aurelune Studio", 2, 12900, 14900, 30, "Quartz chronograph · 10 ATM", "Japan movement", True, 186,
+     [V2], "Ten colour editions · drag for a 360° view",
+     "A bold sport chronograph with a matte black case, three subdials and a soft rubber strap, in ten colour editions. "
+     "Pick your colour and drag the photo to turn the watch all the way around.",
+     "Black PVD steel case, mineral crystal, FKM rubber strap, quartz chronograph movement.", "42 mm,44 mm",
+     "Black,White,Blue,Red,Green,Purple,Pink,Orange,Yellow,Teal", 500),
 ]
 
 WATCH_SLUGS = {slugify(row[0]) for row in PRODUCTS}
@@ -140,6 +146,9 @@ OWN_PHOTOS = {
     "tachymeter-sport-chrono": ["panda-chrono-wrist", "panda-chrono-display"],
     "pilot-aviator-watch": ["black-pilot-leather"],
     "field-automatic-watch": ["green-field-leather-rope", "green-field-leather-front", "green-field-leather-side"],
+    # one photo per colour edition, in the same order as its colours (the 360° frames are in static/img/spin/)
+    "spectrum-chronograph": [f"spectrum-{c}" for c in ("black", "white", "blue", "red", "green", "purple", "pink",
+                                                         "orange", "yellow", "teal")],
 }
 OWN_CREDIT = "Store photo"
 

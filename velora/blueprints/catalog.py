@@ -9,6 +9,8 @@ from ..money import to_minor
 from ..services.catalog import SORTS, all_brands, has_purchased, related_products, search_products
 from .main import recently_viewed, remember_view
 
+from ..spin import spin_data  # noqa: E402
+
 bp = Blueprint("catalog", __name__, url_prefix="/shop")
 
 
@@ -67,7 +69,8 @@ def detail(slug):
     dist = {i: sum(1 for r in reviews if r.rating == i) for i in range(1, 6)}
     return render_template("catalog/detail.html", product=product, related=related_products(product),
                            recent=recently_viewed(exclude=product.id, limit=4), reviews=reviews, dist=dist,
-                           can_review=can_review, already_reviewed=already_reviewed, review_form=form)
+                           can_review=can_review, already_reviewed=already_reviewed, review_form=form,
+                           spin=spin_data(product))
 
 
 @bp.post("/p/<slug>/review")

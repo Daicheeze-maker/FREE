@@ -35,7 +35,9 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Catalog: watches with options
 
-- 6 collections: Dress Watches, Dive Watches, Chronographs, Field & Pilot, Smart Watches, Ladies Watches. 20 watches (`velora/seed.py` `PRODUCTS`).
+- 6 collections: Dress Watches, Dive Watches, Chronographs, Field & Pilot, Smart Watches, Ladies Watches. 21 watches (`velora/seed.py` `PRODUCTS`).
+- **Spectrum Chronograph** (Chronographs): 10 colour editions (Black, White, Blue, Red, Green, Purple, Pink, Orange, Yellow, Teal),
+  cut from the owner's grid image. One photo per colour (`static/img/watches/spectrum-<colour>.webp`) and a **drag-to-turn 360° view**.
 - Every watch has **case sizes** (`Product.sizes`), **colours** (`Product.colors`) and optional **engraving**
   (`engraving_fee_minor`, None = not offered; `engraving_max` chars, default 20).
 - A cart line is keyed by `"size|colour|engraving"`, stored in the (historically named) `size` column of `CartItem`;
@@ -58,6 +60,16 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - To add more own photos: put them in the Drive folder, download, convert to WebP in `velora/static/img/watches/`,
   add to `OWN_PHOTOS`, run tests.
 
+## 360° view
+
+- `velora/spin.py` `spin_data(product)` finds frames in `velora/static/img/spin/<product-slug>/<colour-slug>/01.webp…` (turning
+  order). A colour's main photo is the product image ending in `-<colour-slug>.webp`. Nothing else to configure: drop frames
+  in a folder like that and the product page shows the **360° View** button.
+- `static/js/spin.js`: pointer drag (mouse/touch/pen) with a short glide, cross-fade between frames, arrow keys/Home/Escape,
+  a small automatic half-turn on open (skipped with reduced motion), colour buttons and colour thumbnails switch photo + frames.
+- Spectrum's 6 frames per colour = front, 3/4, side, back from the image + mirrored side and 3/4. They come from ~70 px
+  thumbnails, so they are soft; better frames (e.g. 24–36 photos per turn) can replace them file for file.
+
 ## Address, map and external services
 
 - Checkout and My addresses: **Pin your location** map (Leaflet + OSM tiles, vendored). Pin → `/address-reverse`
@@ -77,7 +89,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 235 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 242 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -92,7 +104,11 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
 5. Shop images now come from the owner's Google Drive folder (committed in `velora/static/img/watches/`); memory moved to this
    file in the GitHub repo (the owner first asked for an Obsidian vault named CLAUDE, then chose GitHub).
 
+6. Added the **Spectrum Chronograph** in 10 colours from the owner's image, with a drag-to-turn 360° view.
+
 ## Open items / ideas
+
+- Spectrum's 360° frames are low resolution (cut from small thumbnails); replace with real photos for a sharper turn.
 
 - 10 watches still use stock photos (Moonphase, Deep Blue Titanium, Explorer, the 3 smart watches, the 4 ladies' watches):
   add photos for them to the Drive folder and map them in `OWN_PHOTOS`.

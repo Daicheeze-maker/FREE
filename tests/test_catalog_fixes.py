@@ -24,7 +24,7 @@ def names(slug):
 def test_collections_and_their_order(app):
     ordered = [c.name for c in Category.query.order_by(Category.position)]
     assert ordered == ["Dress Watches", "Dive Watches", "Chronographs", "Field & Pilot", "Smart Watches", "Ladies Watches"]
-    assert [len(names(c.slug)) for c in Category.query.order_by(Category.position)] == [4, 3, 3, 3, 3, 4]
+    assert [len(names(c.slug)) for c in Category.query.order_by(Category.position)] == [4, 3, 4, 3, 3, 4]
 
 
 def test_every_watch_has_size_colour_and_a_photo(app):
@@ -165,7 +165,7 @@ def test_fill_gives_photos_to_missing_and_broken_ones_and_leaves_working_ones(se
     from velora.seed import OWN_PHOTOS
     own_kept = Product.query.filter(Product.slug.in_(list(OWN_PHOTOS)), Product.id.notin_(
         [p.id for p in Product.query.order_by(Product.id).limit(9)])).count()
-    assert f"Added photos to {20 - 1 - own_kept} product(s)" in text  # all but the working stock photo and the store's own photos
+    assert f"Added photos to {21 - 1 - own_kept} product(s)" in text  # all but the working stock photo and the store's own photos
     db.session.expire_all()
     tote = db.session.get(Product, tote.id)
     assert [i.url for i in tote.images] == [tote_url]  # a working photo is untouched
@@ -194,7 +194,7 @@ def test_fill_uses_different_photos_and_second_press_finishes_the_job(seller, ke
         seller.post("/seller/products/autofill-photos")
     db.session.expire_all()
     covers = [p.primary_image.filename or p.primary_image.url for p in Product.query.all()]
-    assert all(covers) and len(set(covers)) == len(covers) == 20  # every watch has its own, different photo
+    assert all(covers) and len(set(covers)) == len(covers) == 21  # every watch has its own, different photo
 
 
 def test_fill_does_nothing_when_every_photo_works(seller, keyed):

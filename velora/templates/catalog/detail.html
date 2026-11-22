@@ -15,12 +15,23 @@
     <div class="gallery" data-gallery>
       <div class="gallery__main">
         <img src="{{ image_src(product.primary_image) }}" alt="{{ product.primary_image.alt if product.primary_image else product.name }}" data-gallery-main width="800" height="1000" fetchpriority="high">
+        {% if spin %}
+        <div class="spin" data-spin data-spin-data="{{ spin|tojson|forceescape }}" hidden
+             role="slider" tabindex="0" aria-label="360° view of the {{ product.name }}. Drag left or right, or use the arrow keys, to turn it."
+             aria-valuemin="0" aria-valuemax="359" aria-valuenow="0" aria-valuetext="Front">
+          <img class="spin__frame" data-spin-a alt="" draggable="false">
+          <img class="spin__frame spin__frame--b" data-spin-b alt="" draggable="false">
+          <span class="spin__hint" data-spin-hint>{{ icon('move-horizontal', 'ic--sm') }} Drag to turn</span>
+          <span class="spin__dial" aria-hidden="true"><span data-spin-needle></span></span>
+        </div>
+        <button type="button" class="spin-toggle" data-spin-toggle aria-pressed="false">{{ icon('rotate-3d', 'ic--sm') }} <span data-spin-label>360° View</span></button>
+        {% endif %}
       </div>
       {% set cover = product.primary_image %}{% if cover and cover.credit and 'Pexels' in cover.credit %}<p class="photo-credit">{{ icon('camera', 'ic--sm') }} {{ cover.credit }}</p>{% endif %}
       {% if product.images|length > 1 %}
       <div class="gallery__thumbs" role="group" aria-label="Product images">
         {% for img in product.images %}
-        <button type="button" class="gallery__thumb {% if loop.first %}is-active{% endif %}" data-gallery-thumb data-src="{{ image_src(img) }}" data-alt="{{ img.alt }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" aria-label="Show image {{ loop.index }}">
+        <button type="button" class="gallery__thumb {% if loop.first %}is-active{% endif %}" data-gallery-thumb data-src="{{ image_src(img) }}" data-alt="{{ img.alt }}"{% if spin %}{% for name, c in spin.colours.items() if c.main == img.url %} data-color="{{ name }}"{% endfor %}{% endif %} aria-pressed="{{ 'true' if loop.first else 'false' }}" aria-label="Show image {{ loop.index }}">
           <img src="{{ image_src(img) }}" alt="" loading="lazy">
         </button>
         {% endfor %}
@@ -192,4 +203,7 @@
   </section>
   {% endif %}
 </div>
+{% endblock %}
+{% block scripts %}
+{% if spin %}<script src="{{ url_for('static', filename='js/spin.js', v=asset_v) }}"></script>{% endif %}
 {% endblock %}
