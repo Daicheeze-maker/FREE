@@ -321,3 +321,39 @@ def test_start_up_removes_the_sold_out_watch_and_repairs_wrong_photos(app):
     assert Product.query.filter_by(slug="crystal-bezel-watch").first() is None
     assert "1546868871" in Product.query.filter_by(slug="smart-fitness-watch").one().primary_image.url
     assert demo_status() == "current" and refresh_catalog() == []
+
+
+def test_a_removed_watch_never_shows_even_if_an_old_database_still_has_it(client):
+    """Safety net: even before start-up deletes it, the shoe-photo 'Crystal Bezel Watch' is invisible everywhere."""
+    from velora.models import Category
+    ladies = Category.query.filter_by(slug="ladies-watches").one()
+    crystal = Product(name="Crystal Bezel Watch", slug="crystal-bezel-watch", sku="VM-7777", brand="Maison Lune",
+                      category=ladies, price_minor=1350000, stock=0, short_description="x", description="x")
+    crystal.images.append(ProductImage(url="https://images.unsplash.com/photo-1560343090-f0409e92791a?w=900", alt="x", credit="Unsplash"))
+    db.session.add(crystal)
+    db.session.commit()
+    for url in ("/", "/shop/", "/shop/c/ladies-watches", "/shop/?q=crystal", "/shop/?sort=newest"):
+        page = client.get(url).get_data(as_text=True)
+        assert "Crystal Bezel" not in page and "1560343090" not in page, url
+    assert client.get("/shop/p/crystal-bezel-watch").status_code == 404
+
+
+def test_homepage_new_arrivals_and_featured_never_show_sold_out_watches(client):
+    newest = Product.query.order_by(Product.created_at.desc(), Product.id.desc()).first()
+    newest.stock = 0
+    featured = Product.query.filter_by(is_featured=True).order_by(Product.sold_count.desc()).first()
+    featured.stock = 0
+    db.session.commit()
+    home = client.get("/").get_data(as_text=True)
+    assert "Sold out" not in home
+    scroller = home.split('id="new-scroller"')[1].split("</section>")[0]
+    assert f"/shop/p/{newest.slug}" not in scroller and scroller.count('class="pcard"') >= 4
+    assert f'class="hero__card" href="/shop/p/{featured.slug}"' not in home
+
+
+def test_start_scripts_update_themselves_safely(app):
+    bat = open("start.bat", newline="").read()
+    assert "\r\n" in bat and "git pull --ff-only origin claude/eloquent-archimedes-lakibj" in bat
+    assert '"%~f0" --updated' in bat  # the updated copy restarts from the top
+    sh = open("start.sh").read()
+    assert 'exec bash "$0" --updated' in sh and "git pull --ff-only" in sh

@@ -56,7 +56,8 @@ def listing(slug=None):
 def detail(slug):
     product = Product.query.filter_by(slug=slug).first_or_404()
     staff = current_user.is_authenticated and current_user.is_staff
-    if product.status != PRODUCT_ACTIVE and not staff:
+    from ..seed import REMOVED_SLUGS
+    if (product.status != PRODUCT_ACTIVE and not staff) or product.slug in REMOVED_SLUGS:
         abort(404)
     remember_view(product.id)
     can_review = already_reviewed = False

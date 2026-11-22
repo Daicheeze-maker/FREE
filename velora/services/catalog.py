@@ -42,7 +42,8 @@ def next_sku(prefix="VM"):
 
 
 def visible_products():
-    return Product.query.filter(Product.status == PRODUCT_ACTIVE)
+    from ..seed import REMOVED_SLUGS  # watches the store no longer sells: hidden even before start-up deletes them
+    return Product.query.filter(Product.status == PRODUCT_ACTIVE, Product.slug.notin_(list(REMOVED_SLUGS)))
 
 
 def search_products(q=None, category=None, brands=None, min_price=None, max_price=None,

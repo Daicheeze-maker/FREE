@@ -20,7 +20,9 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - PowerShell blocks `Activate.ps1`. Give the owner `.bat` files to double-click (e.g. `create-admin.bat`) or Command Prompt steps.
 - `*.bat` files must keep **CRLF** line endings (`.gitattributes`). Python `open().write()` in text mode turns them into LF: write
   them with `newline=''`.
-- To update: `git pull origin claude/eloquent-archimedes-lakibj`, then `start.bat`.
+- To update: just double-click `start.bat`: it runs `git pull --ff-only` on the branch first, then **restarts itself**
+  (`"%~f0" --updated`) because Windows reads a running .bat from disk; it prints `Store version: <hash> (<date>)`. Ask the owner
+  for that line when something looks old. Manual: `git pull origin claude/eloquent-archimedes-lakibj`.
 
 ## Accounts and roles
 
@@ -89,7 +91,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 245 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 248 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -109,6 +111,9 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
    and the Smart Fitness Watch showed an analog watch (`seed.WRONG_PHOTO_IDS` / `WRONG_PHOTO_ON`; `refresh_catalog` repairs
    existing stores). Verified-on-screen smartwatch photos: `SW1`, `SW2` in `seed.py`.
 8. Fixed `demo_status()`: a store with a seller-made watch was never marked stale, so new demo watches (Spectrum) were not added.
+9. The owner's PC kept showing the removed shoe-photo watch because it had an old copy. Now `start.bat`/`start.sh` update
+   themselves; `visible_products()` and the product page hide `REMOVED_SLUGS` even if an old database still has them; the
+   homepage (New arrivals, Featured, hero card) only shows in-stock watches.
 
 ## Open items / ideas
 

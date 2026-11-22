@@ -33,8 +33,9 @@ def recently_viewed(exclude=None, limit=6):
 @bp.route("/")
 def home():
     base = visible_products()
-    featured = base.filter(Product.is_featured.is_(True)).order_by(Product.sold_count.desc()).limit(8).all()
-    new_arrivals = base.order_by(Product.created_at.desc(), Product.id.desc()).limit(8).all()
+    in_stock = base.filter(Product.stock > 0)  # the homepage only advertises watches you can buy right now
+    featured = in_stock.filter(Product.is_featured.is_(True)).order_by(Product.sold_count.desc()).limit(8).all()
+    new_arrivals = in_stock.order_by(Product.created_at.desc(), Product.id.desc()).limit(8).all()
     bestsellers = base.order_by(Product.sold_count.desc()).limit(4).all()
     categories = Category.query.order_by(Category.position).all()
     counts = dict(db.session.query(Product.category_id, db.func.count(Product.id))

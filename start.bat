@@ -9,6 +9,19 @@ setlocal
 cd /d "%~dp0"
 title Aurelune
 
+REM Step 1: get the latest version from GitHub, then start this file again from the top.
+REM (Windows reads a .bat file while it runs, so after an update the new copy must start fresh.)
+if /i not "%~1"=="--updated" (
+  where git >nul 2>nul && if exist ".git" (
+    echo  Checking for updates...
+    git pull --ff-only origin claude/eloquent-archimedes-lakibj || echo  Could not update automatically. Starting the version you have.
+  )
+  "%~f0" --updated
+  exit /b
+)
+git log -1 --format="  Store version: %%h (%%cd)" --date=short 2>nul
+
+
 if not exist ".venv\Scripts\activate.bat" (
   echo.
   echo  First run: setting things up. This takes a minute or two...
@@ -24,6 +37,7 @@ if not exist ".venv\Scripts\activate.bat" (
 )
 
 call .venv\Scripts\activate.bat
+python -m pip install -q --disable-pip-version-check --retries 1 --timeout 10 -r requirements.txt
 python -m flask --app wsgi init-db >nul
 python -m flask --app wsgi seed >nul
 python -m flask --app wsgi upgrade-demo
