@@ -30,7 +30,7 @@ def test_collections_and_their_order(app):
 def test_every_watch_has_size_colour_and_a_photo(app):
     for p in Product.query.all():
         assert p.size_list and p.color_list, p.name
-        assert p.images and p.primary_image.url.startswith("https://images.unsplash.com/photo-"), p.name
+        assert p.images and p.primary_image.url.startswith(("https://images.unsplash.com/photo-", "/static/img/watches/")), p.name
         assert p.engraving_fee_minor is None or p.engraving_fee_minor >= 0
     assert Product.query.filter(Product.engraving_fee_minor.isnot(None)).count() >= 15
     assert Product.query.filter_by(slug="smart-gps-sport-watch").one().offers_engraving is False
@@ -155,14 +155,17 @@ def test_fill_gives_photos_to_missing_and_broken_ones_and_leaves_working_ones(se
     blank_demo_photos()
     tote = Product.query.filter_by(slug="smart-fitness-watch").one()
     tote_url = tote.images[0].url
-    broken = Product.query.filter_by(slug="pilot-aviator-watch").one()
+    broken = Product.query.filter_by(slug="explorer-canvas-strap-watch").one()
     broken_url = broken.images[0].url
     pool = [photo(1000 + i) for i in range(60)]
     with fake_pexels(pool) as calls, \
             __import__("unittest.mock").mock.patch("velora.services.photo_check.remote_ok", _working_remote(tote_url)):
         r = seller.post("/seller/products/autofill-photos", follow_redirects=True)
     text = page(r)
-    assert "Added photos to 19 product(s)" in text  # everything except the working one
+    from velora.seed import OWN_PHOTOS
+    own_kept = Product.query.filter(Product.slug.in_(list(OWN_PHOTOS)), Product.id.notin_(
+        [p.id for p in Product.query.order_by(Product.id).limit(9)])).count()
+    assert f"Added photos to {20 - 1 - own_kept} product(s)" in text  # all but the working stock photo and the store's own photos
     db.session.expire_all()
     tote = db.session.get(Product, tote.id)
     assert [i.url for i in tote.images] == [tote_url]  # a working photo is untouched
@@ -170,7 +173,7 @@ def test_fill_gives_photos_to_missing_and_broken_ones_and_leaves_working_ones(se
     assert broken.primary_image.filename and all(i.url != broken_url for i in broken.images)  # dead link replaced
     assert broken.primary_image.credit.startswith("Photo by ") and "Pexels" in broken.primary_image.credit
     searches = [kw["params"]["query"] for url, kw in calls if url.endswith("/search")]
-    assert "steel chronograph watch" in searches and "automatic dive watch" in searches  # specific, per watch
+    assert "blue dial dive watch" in searches and "automatic dive watch" in searches  # specific, per watch
 
 
 def test_products_with_no_photo_at_all_are_filled_first(seller, keyed):
@@ -190,8 +193,8 @@ def test_fill_uses_different_photos_and_second_press_finishes_the_job(seller, ke
         seller.post("/seller/products/autofill-photos")
         seller.post("/seller/products/autofill-photos")
     db.session.expire_all()
-    covers = [p.primary_image.filename for p in Product.query.all()]
-    assert all(covers) and len(set(covers)) == len(covers) == 20  # every watch has its own photo
+    covers = [p.primary_image.filename or p.primary_image.url for p in Product.query.all()]
+    assert all(covers) and len(set(covers)) == len(covers) == 20  # every watch has its own, different photo
 
 
 def test_fill_does_nothing_when_every_photo_works(seller, keyed):

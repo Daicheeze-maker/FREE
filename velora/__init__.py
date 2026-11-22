@@ -126,10 +126,13 @@ def _register_template_helpers(app):
         """Photo for a site slot: the one staff chose, else a model photo from the catalog, else a neutral placeholder."""
         from flask import url_for
         from .models import Product
-        from .photos import DEFAULT_SLOT_PRODUCTS, setting_key
+        from .photos import DEFAULT_SLOT_FILES, DEFAULT_SLOT_PRODUCTS, setting_key
         filename = get_setting(setting_key(slot))
         if filename:
             return url_for("main.media", filename=filename)
+        own = DEFAULT_SLOT_FILES.get(slot)
+        if own and (Path(app.static_folder) / "img" / "watches" / f"{own}.webp").is_file():
+            return url_for("static", filename=f"img/watches/{own}.webp")
         for slug in DEFAULT_SLOT_PRODUCTS.get(slot, ()):
             product = Product.query.filter_by(slug=slug, status="active").first()
             img = product.primary_image if product else None

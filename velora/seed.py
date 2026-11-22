@@ -127,6 +127,49 @@ PRODUCTS = [
 
 WATCH_SLUGS = {slugify(row[0]) for row in PRODUCTS}
 
+# The store's own photos (velora/static/img/watches/), first one is the cover. They ship with the project, so they
+# always load. Watches not listed here use the Unsplash photos in PRODUCTS.
+OWN_PHOTOS = {
+    "minimalist-leather-strap-watch": ["rose-gold-dress-black-strap"],
+    "classic-gold-tone-dress-watch": ["rose-gold-dress-closeup", "rose-gold-dress-angle"],
+    "slim-skeleton-watch": ["blue-skeleton-wrist", "blue-skeleton-tourbillon", "blue-skeleton-outdoor"],
+    "diver-automatic-200m": ["black-dial-luminor-rock"],
+    "pro-dive-rubber-strap-watch": ["navy-diver-rubber"],
+    "chronograph-steel-watch": ["fluted-blue-chrono-front", "fluted-blue-chrono-side", "fluted-blue-chrono-back"],
+    "racing-chronograph-leather": ["blue-steel-chrono-front", "blue-steel-chrono-side", "blue-steel-chrono-back"],
+    "tachymeter-sport-chrono": ["panda-chrono-wrist", "panda-chrono-display"],
+    "pilot-aviator-watch": ["black-pilot-leather"],
+    "field-automatic-watch": ["green-field-leather-rope", "green-field-leather-front", "green-field-leather-side"],
+}
+OWN_CREDIT = "Store photo"
+
+
+def own_photo_url(name):
+    return f"/static/img/watches/{name}.webp"
+
+
+def apply_own_photos(product):
+    """Give a watch the store's own photos in place of stand-in stock photos. Photos a seller uploaded or picked
+    (saved files) are never replaced; a photo link a seller typed in is kept after the store's own. True if changed."""
+    names = OWN_PHOTOS.get(product.slug)
+    if not names or any(i.filename for i in product.images):
+        return False
+    wanted = [own_photo_url(n) for n in names]
+    if [i.url for i in product.images[:len(wanted)]] == wanted:
+        return False
+    stand_in = lambda i: (i.credit or "") in ("Unsplash", OWN_CREDIT) or (i.url or "").startswith("/static/img/watches/")
+    keep = [i for i in product.images if not stand_in(i)]
+    for img in [i for i in product.images if stand_in(i)]:
+        product.images.remove(img)
+        db.session.delete(img)
+    ordered = [ProductImage(url=u, alt=f"{product.name} — view {n + 1}", credit=OWN_CREDIT) for n, u in enumerate(wanted)] + keep
+    for pos, img in enumerate(ordered):
+        img.position = pos
+        if img not in product.images:
+            product.images.append(img)
+    product.images.sort(key=lambda i: i.position)
+    return True
+
 
 def alt_next():
     """{photo id: URL of the next candidate}: lets the browser move on when a photo has been removed from its host."""
@@ -146,6 +189,11 @@ def _make_product(i, row, category, now, rng):
                 origin=origin, is_featured=featured, sold_count=sold, ingredients=specs, sizes=sizes or None,
                 colors=colors or None, engraving_fee_minor=engraving * 100 if engraving is not None else None,
                 engraving_max=20, created_at=now - timedelta(days=60 - i * 2 if i < 18 else rng.randint(1, 12)))
+    own = OWN_PHOTOS.get(slugify(name))
+    if own:
+        for pos, n in enumerate(own):
+            p.images.append(ProductImage(url=own_photo_url(n), alt=f"{name} — view {pos + 1}", position=pos, credit=OWN_CREDIT))
+        return p
     for pos, pid in enumerate(photos[:1]):
         p.images.append(ProductImage(url=U(pid), alt=f"{name} — {short}", position=pos, credit="Unsplash"))
     return p
@@ -223,7 +271,9 @@ def refresh_catalog():
             product.sizes, product.colors = row[14] or None, row[15] or None
             product.engraving_fee_minor = row[16] * 100 if row[16] is not None else None
             changes.append(f"added size, colour and engraving options to {product.name}")
-        if not product.images:
+        if apply_own_photos(product):
+            changes.append(f"added the store's own photos to {product.name}")
+        elif not product.images:
             product.images.append(ProductImage(url=U(row[10][0]), alt=product.name, position=0, credit="Unsplash"))
             changes.append(f"added a photo to {product.name}")
     # Watches someone added themselves stay, in the first watch collection

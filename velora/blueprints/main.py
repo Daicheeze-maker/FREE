@@ -39,7 +39,10 @@ def home():
     categories = Category.query.order_by(Category.position).all()
     counts = dict(db.session.query(Product.category_id, db.func.count(Product.id))
                   .filter(Product.status == "active").group_by(Product.category_id).all())
-    hero = next((p for p in featured if p.images), None) or (featured[0] if featured else None)
+    # The hero card prefers a watch with the store's own photo (they always load), then any watch with a photo
+    own = lambda p: p.images and (p.images[0].filename or (p.images[0].url or "").startswith("/static/"))
+    hero = (next((p for p in featured if own(p)), None) or next((p for p in featured if p.images), None)
+            or (featured[0] if featured else None))
     review_count = ProductReview.query.filter_by(is_hidden=False).count()
     avg_rating = db.session.query(db.func.avg(ProductReview.rating)).filter(ProductReview.is_hidden.is_(False)).scalar()
     avg_rating = round(float(avg_rating), 1) if avg_rating else None

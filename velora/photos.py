@@ -13,7 +13,16 @@ SLOTS = {
     "register": ("Create-account page", "Photo on the registration screen", "automatic watch dial"),
 }
 
-# Until staff choose a photo, each slot shows the photo of one of these watches (first one that has a photo)
+# Until staff choose a photo, each slot shows one of the store's own photos (velora/static/img/watches/)
+DEFAULT_SLOT_FILES = {
+    "hero": "blue-skeleton-wrist",
+    "lookbook": "watch-collection-gloves",
+    "promo": "panda-chrono-wrist",
+    "login": "navy-diver-rubber",
+    "register": "green-field-leather-rope",
+}
+
+# ...and if that file is missing, the photo of one of these watches (first one that has a photo)
 DEFAULT_SLOT_PRODUCTS = {
     "hero": ("minimalist-leather-strap-watch", "chronograph-steel-watch", "diver-automatic-200m"),
     "lookbook": ("classic-gold-tone-dress-watch", "diver-automatic-200m", "minimalist-leather-strap-watch"),

@@ -22,7 +22,7 @@ def remote_ok(url, timeout=6, user_agent="VeloraMarket/1.0"):
 
 def check_remote(urls, workers=8):
     """{url: works?} for many URLs at once."""
-    urls = sorted({u for u in urls if u})
+    urls = sorted({u for u in urls if u and u.startswith(("http://", "https://"))})
     if not urls:
         return {}
     agent = api_health.user_agent()  # read here, in the request thread: worker threads have no app context
@@ -34,7 +34,16 @@ def local_ok(filename):
     return bool(filename) and (Path(current_app.config["UPLOAD_FOLDER"]) / filename).is_file()
 
 
+def static_ok(url):
+    """Photos that ship with the store, e.g. /static/img/watches/navy-diver-rubber.webp."""
+    if not (url or "").startswith("/static/"):
+        return False
+    root = Path(current_app.static_folder).resolve()
+    path = (root / url[len("/static/"):]).resolve()
+    return path.is_relative_to(root) and path.is_file()
+
+
 def working_images(product, remote_status):
     """The product's images that really load (local files that exist, remote links that answer)."""
     return [img for img in product.images
-            if (img.filename and local_ok(img.filename)) or (img.url and remote_status.get(img.url))]
+            if (img.filename and local_ok(img.filename)) or (img.url and (static_ok(img.url) or remote_status.get(img.url)))]

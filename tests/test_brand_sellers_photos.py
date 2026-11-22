@@ -190,7 +190,7 @@ def test_every_product_has_a_photo_in_a_fresh_store(client):
     missing = [p.name for p in Product.query.all() if not p.images]
     assert missing == []
     for p in Product.query.all():
-        assert p.primary_image.url.startswith("https://images.unsplash.com/photo-"), p.name
+        assert p.primary_image.url.startswith(("https://images.unsplash.com/photo-", "/static/img/watches/")), p.name
 
 
 def test_collection_pages_render_a_photo_for_every_card(client):
@@ -238,3 +238,47 @@ def test_pin_map_has_browser_fallbacks_and_csp_allows_them(client):
     assert "nominatim.openstreetmap.org" in js and "bigdatacloud" in js
     csp = client.get("/").headers["Content-Security-Policy"]
     assert "https://nominatim.openstreetmap.org" in csp and "script-src 'self'" in csp
+
+
+# ---------------------------------------------------------------- the store's own photos (owner's Drive folder)
+
+def test_store_photos_ship_with_the_project_and_are_used(client):
+    from velora.seed import OWN_PHOTOS, own_photo_url
+    for slug, names in OWN_PHOTOS.items():
+        p = Product.query.filter_by(slug=slug).one()
+        assert [i.url for i in p.images] == [own_photo_url(n) for n in names], slug
+        for n in names:
+            assert client.get(own_photo_url(n)).status_code == 200, n
+    html = client.get("/shop/p/chronograph-steel-watch").get_data(as_text=True)
+    assert html.count("/static/img/watches/fluted-blue-chrono-") >= 3  # front, side and back in the gallery
+
+
+def test_store_photos_count_as_working_and_are_never_replaced(app):
+    from velora.services import photo_check
+    p = Product.query.filter_by(slug="navy-diver-rubber" if False else "pro-dive-rubber-strap-watch").one()
+    assert photo_check.working_images(p, {}) == list(p.images)
+    assert photo_check.static_ok("/static/../velora/seed.py") is False  # no peeking outside the static folder
+
+
+def test_refresh_gives_old_stock_photos_the_store_photos_but_keeps_seller_uploads(app):
+    from velora.seed import apply_own_photos, refresh_catalog
+    watch = Product.query.filter_by(slug="pilot-aviator-watch").one()
+    for img in list(watch.images):
+        watch.images.remove(img)
+    watch.images.append(ProductImage(url="https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?w=900", alt="x", credit="Unsplash"))
+    mine = Product.query.filter_by(slug="field-automatic-watch").one()
+    for pos, img in enumerate(mine.images, 1):
+        img.position = pos
+    mine.images.insert(0, ProductImage(filename="seller.webp", alt="mine", position=0))
+    db.session.commit()
+    assert "added the store's own photos to Pilot Aviator Watch" in refresh_catalog()
+    db.session.expire_all()
+    assert Product.query.filter_by(slug="pilot-aviator-watch").one().primary_image.url == "/static/img/watches/black-pilot-leather.webp"
+    assert Product.query.filter_by(slug="field-automatic-watch").one().primary_image.filename == "seller.webp"
+    assert refresh_catalog() == []
+
+
+def test_site_spots_use_the_store_photos(client):
+    html = client.get("/").get_data(as_text=True)
+    assert "/static/img/watches/blue-skeleton-wrist.webp" in html and "/static/img/watches/watch-collection-gloves.webp" in html
+    assert "/static/img/watches/navy-diver-rubber.webp" in client.get("/account/login").get_data(as_text=True)

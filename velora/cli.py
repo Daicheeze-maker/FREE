@@ -39,8 +39,12 @@ def demo_status():
         return "stale"
     if {p.slug for p in Product.query.all()} < {slugify(r[0]) for r in PRODUCTS}:
         return "stale"
+    from .seed import OWN_PHOTOS, own_photo_url
     for p in Product.query.filter(Product.slug.in_({slugify(r[0]) for r in PRODUCTS})):
         if not p.images or (p.colors is None and p.sizes is None and p.engraving_fee_minor is None):
+            return "stale"
+        own = OWN_PHOTOS.get(p.slug)
+        if own and not any(i.filename for i in p.images) and p.images[0].url != own_photo_url(own[0]):
             return "stale"
     return "current"
 
