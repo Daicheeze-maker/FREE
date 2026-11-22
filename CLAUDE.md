@@ -157,6 +157,8 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
 17. Calmer header: the six collection links moved into a Shop ▾ menu; logo moved to the left.
 18. Shop menu icons replaced by real watch thumbnails (owner: line icons looked unprofessional).
 19. Own drawn collection icons (SVG) replace the thumbnails everywhere collections are listed.
+20. `docs/aurelune-process-flow.pdf`: process flow, order steps, statuses, roles, APIs, own endpoints and VM setup (also an
+    Artifact page). Rebuild it if the flow or APIs change.
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
     `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.
