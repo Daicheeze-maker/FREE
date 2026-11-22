@@ -289,7 +289,13 @@ def test_top_bar_is_short_shop_menu_holds_the_collections(client):
     html = client.get("/").get_data(as_text=True)
     nav = html.split('class="header__nav"')[1].split("</nav>")[0]
     assert "Shop" in nav and "New arrivals" in nav and "Best sellers" in nav
-    assert nav.count('class="mega-item"') == 6 and nav.count("mega-item__thumb") == 6 and "See all watches" in nav
+    assert nav.count('class="mega-item"') == 6 and "See all watches" in nav
     assert html.index('class="logo"') < html.index('class="header__nav"')  # logo on the left
-    for slug in ("dress-watches", "dive-watches", "chronographs", "field-pilot", "smart-watches", "ladies-watches"):
-        assert client.get(f"/static/img/collections/{slug}.webp").status_code == 200, slug
+    assert nav.count('class="cicon') == 6  # the store's own drawn icons, one per collection
+
+
+def test_collection_icons_are_the_store_s_own_everywhere(client):
+    html = client.get("/").get_data(as_text=True)
+    assert html.count('class="cicon') >= 12  # Shop menu + phone menu (+ homepage tiles)
+    side = client.get("/shop/c/dive-watches").get_data(as_text=True).split("Collections")[1][:4000]
+    assert side.count('class="cicon') == 6

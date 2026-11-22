@@ -1,4 +1,4 @@
-{% from "_macros.html" import icon %}<!doctype html>
+{% from "_macros.html" import icon %}{% from "_collection_icons.html" import collection_icon %}<!doctype html>
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
@@ -30,7 +30,7 @@
         <button class="nav-link dropdown__toggle" type="button" aria-expanded="false" aria-haspopup="true">Shop {{ icon('chevron-down', 'ic--sm') }}</button>
         <div class="dropdown__panel dropdown__panel--mega nav-mega">
           {% for c in nav_categories %}
-          <a class="mega-item" href="{{ url_for('catalog.listing', slug=c.slug) }}">{% if c.slug in ('dress-watches', 'dive-watches', 'chronographs', 'field-pilot', 'smart-watches', 'ladies-watches') %}<img class="mega-item__thumb" src="{{ url_for('static', filename='img/collections/' ~ c.slug ~ '.webp') }}" alt="" width="56" height="56" loading="lazy">{% else %}<span class="mega-item__icon">{{ icon(c.icon or 'watch') }}</span>{% endif %}<span><strong>{{ c.name }}</strong><small>{{ c.description }}</small></span></a>
+          <a class="mega-item" href="{{ url_for('catalog.listing', slug=c.slug) }}"><span class="mega-item__icon">{{ collection_icon(c.slug, c.icon or 'watch') }}</span><span><strong>{{ c.name }}</strong><small>{{ c.description }}</small></span></a>
           {% endfor %}
           <a class="nav-mega__all" href="{{ url_for('catalog.listing') }}">See all watches {{ icon('arrow-right', 'ic--sm') }}</a>
         </div>
@@ -111,7 +111,7 @@
   <div class="drawer__body mobile-nav">
     <form action="{{ url_for('catalog.listing') }}" method="get" class="search search--block" role="search">{{ icon('search') }}<label class="sr-only" for="m-search">Search</label><input id="m-search" type="search" name="q" placeholder="Search products" maxlength="100"></form>
     <p class="mobile-nav__label">All collections</p>
-    {% for c in nav_categories %}<a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ icon(c.icon) }} {{ c.name }}</a>{% endfor %}
+    {% for c in nav_categories %}<a href="{{ url_for('catalog.listing', slug=c.slug) }}">{{ collection_icon(c.slug, c.icon) }} {{ c.name }}</a>{% endfor %}
     <p class="mobile-nav__label">Account</p>
     {% if current_user.is_authenticated %}
       {% if current_user.role == 'customer' %}<a href="{{ url_for('account.dashboard') }}">{{ icon('layout-dashboard') }} My account</a><a href="{{ url_for('account.wishlist') }}">{{ icon('heart') }} Wishlist</a>

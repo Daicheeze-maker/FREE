@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon, product_card, price, stars %}
+{% from "_collection_icons.html" import collection_icon %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">{% endblock %}
 {% block content %}
 
@@ -58,7 +59,7 @@
       <div class="aisles__panel">
         {% for c in categories %}
         <a class="aisle" href="{{ url_for('catalog.listing', slug=c.slug) }}">
-          <span class="aisle__icon">{{ icon(c.icon) }}</span>
+          <span class="aisle__icon">{{ collection_icon(c.slug, c.icon) }}</span>
           <span><strong>{{ c.name }}</strong><span>{{ counts.get(c.id, 0) }} pieces · See all</span></span>
         </a>
         {% endfor %}

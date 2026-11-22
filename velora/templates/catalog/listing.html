@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon, skeleton_grid %}
+{% from "_collection_icons.html" import collection_icon %}
 {% block title %}{% if q %}“{{ q }}” · {% endif %}{{ category.name if category else 'Shop all' }} · {{ brand }}{% endblock %}
 {% block content %}
 <div class="container">
@@ -25,7 +26,7 @@
         <h3>Collections</h3>
         <ul class="filter-cats">
           <li><a href="{{ url_for('catalog.listing', q=q or None, sort=sort) }}" class="{% if not category %}is-active{% endif %}">{{ icon('layout-grid') }} All products</a></li>
-          {% for c in nav_categories %}<li><a href="{{ url_for('catalog.listing', slug=c.slug, q=q or None, sort=sort) }}" class="{% if category and category.id == c.id %}is-active{% endif %}">{{ icon(c.icon) }} {{ c.name }}</a></li>{% endfor %}
+          {% for c in nav_categories %}<li><a href="{{ url_for('catalog.listing', slug=c.slug, q=q or None, sort=sort) }}" class="{% if category and category.id == c.id %}is-active{% endif %}">{{ collection_icon(c.slug, c.icon) }} {{ c.name }}</a></li>{% endfor %}
         </ul>
       </div>
       <fieldset style="border:0;padding:0;margin:0">

@@ -110,15 +110,18 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - Test everything before handing over (pytest + a real-browser check with Playwright). Be honest about what could not be checked
   (the cloud sandbox can't reach most image hosts).
 - Always push to the branch and send the updated zip.
-- Header: logo left; centre menu = **Shop ▾** (mega menu with the 6 collections, each with a
-  watch-photo thumbnail from `static/img/collections/<slug>.webp`, cropped from the generated photos, + See all), New arrivals, Best sellers;
+- Header: logo left; centre menu = **Shop ▾** (mega menu with the 6 collections, each with the
+  store's own drawn icon, + See all), New arrivals, Best sellers;
   search, currency, theme, account, bag on the right (owner found 6 links too crowded).
+- **Collection icons** are our own inline SVGs (`templates/_collection_icons.html`, macro `collection_icon(slug, fallback)`):
+  one style (48 grid, 2.2 stroke, tinted dial, currentColor). Used in the Shop menu, phone menu, shop sidebar, homepage tiles.
+  Unknown collections fall back to their Lucide icon. The owner rejected Lucide icons and product-photo thumbnails.
 - Top menu is hidden on collection pages (left "Collections" list is used there). Back button on every page except home,
   sign-in, register and checkout.
 
 ## Tests
 
-`python -m pytest -q` (about 304 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 305 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -153,6 +156,7 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
     watches, the Spectrum Chronograph and the Drive photos are gone; homepage/sign-in photos are generated ones.
 17. Calmer header: the six collection links moved into a Shop ▾ menu; logo moved to the left.
 18. Shop menu icons replaced by real watch thumbnails (owner: line icons looked unprofessional).
+19. Own drawn collection icons (SVG) replace the thumbnails everywhere collections are listed.
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
     `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.
