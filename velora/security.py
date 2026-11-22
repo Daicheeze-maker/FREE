@@ -2,7 +2,7 @@
 from functools import wraps
 from urllib.parse import urljoin, urlparse
 
-from flask import abort, current_app, request
+from flask import abort, current_app, has_request_context, request
 from flask_login import current_user
 
 from .extensions import db
@@ -25,6 +25,8 @@ def roles_required(*roles):
 
 
 def client_ip():
+    if not has_request_context():
+        return "start-up"  # run from the command line (start.bat / upgrade-demo), not from a web page
     return (request.remote_addr or "unknown")[:64]
 
 
@@ -32,7 +34,7 @@ def audit(action, target_type=None, target_id=None, details=None, actor=None, co
     actor_id = None
     if actor is not None:
         actor_id = actor.id
-    elif current_user and current_user.is_authenticated:
+    elif has_request_context() and current_user and current_user.is_authenticated:  # CLI/start-up: no one signed in
         actor_id = current_user.id
     db.session.add(AuditLog(
         actor_id=actor_id, action=action, target_type=target_type,

@@ -33,7 +33,9 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
   decides, at **Admin → Seller requests** (`/admin/seller-requests`, badge with the pending count). Approval creates the
   linked seller profile (email + `#seller`, `SELLER_SUFFIX`, named after the shop); rejection sends the admin's note and they can
   re-apply. Admin → Active sellers can **Remove seller access**. Logic: `velora/services/sellers.py`; model `SellerApplication`.
-  `User.linked_profile` only returns switched-on profiles. Seller profiles from older versions were kept as they are.
+  `User.linked_profile` only returns switched-on profiles. Automatic seller profiles from older versions (email + `#seller`, no
+  approved application) are switched off at start-up by `sellers.review_legacy_sellers()` (run by `upgrade-demo`) and sent to
+  Seller requests as pending; approving switches the same profile back on. Admins also see Seller studio (they run the store).
 - Login checks the real password (no auto-registration).
 - **Easiest for the owner:** start the store, Sign in page → **Set up the admin account** (one-time page).
 - Admins are also made with `create-admin.bat` (double-click) / `python -m flask --app wsgi create-admin`, or by `start.bat`
@@ -121,7 +123,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 305 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 309 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -160,6 +162,8 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
 20. `docs/aurelune-process-flow.pdf`: process flow, order steps, statuses, roles, APIs, own endpoints and a step-by-step VM guide (VirtualBox +
     Ubuntu 24.04 LTS, port forward 5000) (also an
     Artifact page). Rebuild it if the flow or APIs change.
+21. Owner asked why they were "automatically a seller": old automatic seller profiles now need admin approval (Lazada/Shopee
+    style); stale Sign in text fixed; `security.audit`/`client_ip` work from the command line (no request context).
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
     `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.

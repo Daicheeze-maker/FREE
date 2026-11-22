@@ -82,3 +82,29 @@ def revoke(seller, admin):
     if buyer is not None:
         notify(buyer.id, "Your seller access was removed", "Contact the store if you think this is a mistake.",
                "/account/sell", icon="store")
+
+
+def review_legacy_sellers():
+    """Older versions gave every buyer a seller profile automatically. Selling now needs the admin's approval
+    (like Lazada or Shopee), so such a profile is switched off and sent to Admin -> Seller requests as a pending
+    application. Approving it switches the same profile (and its shop name) back on. Returns the buyer emails."""
+    moved = []
+    for seller in User.query.filter(User.role == ROLE_SELLER, User.is_active_account.is_(True),
+                                    User.email.like(f"%{SELLER_SUFFIX}")).all():
+        buyer = User.query.filter_by(email=seller.email.removesuffix(SELLER_SUFFIX), role=ROLE_CUSTOMER).first()
+        if buyer is None:
+            continue
+        if SellerApplication.query.filter_by(user_id=buyer.id, status=APP_APPROVED).first():
+            continue  # approved by an admin: a real seller
+        seller.is_active_account = False
+        if not SellerApplication.query.filter_by(user_id=buyer.id, status=APP_PENDING).first():
+            db.session.add(SellerApplication(
+                user_id=buyer.id, shop_name=(seller.full_name or buyer.full_name or "My shop")[:80],
+                phone=seller.phone or buyer.phone or "Not given",
+                about="Seller profile from an earlier version of the store, made automatically. Approve to let them keep selling."))
+        notify(buyer.id, "Your seller profile is waiting for approval",
+               "Selling now needs the admin's approval. Your request was sent automatically.", "/account/sell", icon="store")
+        audit("seller.legacy_review", "user", seller.id, f"Automatic seller profile sent for approval: {seller.email}", actor=None)
+        moved.append(buyer.email)
+    db.session.commit()
+    return moved

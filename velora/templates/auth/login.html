@@ -23,7 +23,7 @@
       <p class="alert alert--info" style="margin-top:18px">{{ icon('shield-check') }} <span>This store has no admin yet. <a href="{{ url_for('auth.setup_admin') }}"><strong>Set up the admin account</strong></a> (only works on this computer).</span></p>
       {% endif %}
       <div class="auth__alt">
-        <p>New here? Create an account to get a buyer profile and a linked seller profile.</p>
+        <p>New here? Create a free account to shop. Want to sell? Apply after signing up; an admin approves every seller.</p>
         <a class="btn btn--ghost btn--block" href="{{ url_for('auth.register', next=request.args.get('next')) }}">Create an account</a>
       </div>
     </div>

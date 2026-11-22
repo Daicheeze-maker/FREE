@@ -138,6 +138,10 @@ def register_cli(app):
             click.echo(f" Removed {len(removed)} old sample account(s): {', '.join(removed)}")
         if kept:
             click.echo(f" Kept sample account(s) that have real orders: {', '.join(kept)}")
+        from .services.sellers import review_legacy_sellers
+        moved = review_legacy_sellers()
+        if moved:
+            click.echo(f" Sent {len(moved)} automatic seller profile(s) to Admin > Seller requests for approval: {', '.join(moved)}")
         status = demo_status()
         if status == "stale":
             from .seed import refresh_catalog

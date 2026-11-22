@@ -113,3 +113,64 @@ def test_menus_point_buyers_to_the_application(app):
     home = c.get("/").get_data(as_text=True)
     assert 'href="/account/sell"' in home and "Switch to seller profile" not in home
     assert "an admin approves" in app.test_client().get("/account/register").get_data(as_text=True)
+
+
+def _old_style_pair(email="old@example.com", shop="Old Shop"):
+    """An account from before seller applications: a buyer plus an automatic, switched-on seller profile."""
+    buyer = User(email=email, full_name="Old Buyer", role="customer")
+    buyer.set_password("Secret123")
+    seller = User(email=email + "#seller", full_name=shop, role="seller")
+    seller.set_password("x-unused-x")
+    db.session.add_all([buyer, seller])
+    db.session.commit()
+    return buyer, seller
+
+
+def test_start_up_sends_automatic_seller_profiles_for_approval(app):
+    """Like Lazada/Shopee: nobody sells until an admin approves. Old automatic profiles go to Seller requests."""
+    from velora.models import APP_APPROVED, APP_PENDING
+    buyer, seller = _old_style_pair()
+    approved_buyer, approved_seller = _old_style_pair("ok@example.com", "Approved Shop")
+    db.session.add(SellerApplication(user_id=approved_buyer.id, shop_name="Approved Shop", phone="+639171234567",
+                                     about="x", status=APP_APPROVED))
+    db.session.commit()
+    from velora.services.sellers import review_legacy_sellers
+    moved = review_legacy_sellers()
+    assert "old@example.com" in moved and "ok@example.com" not in moved
+    db.session.expire_all()
+    assert get_user("old@example.com#seller").is_active_account is False
+    assert get_user("old@example.com").linked_profile is None  # can't switch to selling any more
+    pending = SellerApplication.query.filter_by(user_id=buyer.id).one()
+    assert pending.status == APP_PENDING and pending.shop_name == "Old Shop"
+    assert Notification.query.filter_by(user_id=buyer.id, title="Your seller profile is waiting for approval").count() == 1
+    assert get_user("ok@example.com#seller").is_active_account is True  # an approved seller keeps selling
+    assert review_legacy_sellers() == [] and SellerApplication.query.filter_by(user_id=buyer.id).count() == 1
+
+
+def test_approving_the_old_profile_switches_it_back_on(app, admin):
+    from velora.services.sellers import review_legacy_sellers
+    buyer, _ = _old_style_pair()
+    review_legacy_sellers()
+    pending = SellerApplication.query.filter_by(user_id=buyer.id).one()
+    admin.post(f"/admin/seller-requests/{pending.id}/approve", data={"note": ""})
+    db.session.expire_all()
+    assert get_user("old@example.com#seller").is_active_account is True
+    assert get_user("old@example.com").linked_profile is not None
+
+
+def test_sign_in_page_says_selling_needs_approval(client):
+    html = client.get("/account/login").get_data(as_text=True)
+    assert "linked seller profile" not in html and "an admin approves every seller" in html
+
+
+def test_start_up_command_reports_it(tmp_path):
+    from velora import create_app
+    from velora.cli import init_database
+    from velora.seed import seed
+    real = create_app("testing", SQLALCHEMY_DATABASE_URI=f"sqlite:///{tmp_path / 'old.db'}")
+    with real.app_context():
+        init_database()
+        seed()
+        _old_style_pair()
+    out = real.test_cli_runner().invoke(args=["upgrade-demo"]).output
+    assert "Sent 1 automatic seller profile(s) to Admin > Seller requests" in out
