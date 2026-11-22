@@ -31,7 +31,9 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - Register asks **Shop or Sell**. Every buyer gets a linked seller profile (email + `#seller`, `SELLER_SUFFIX`);
   "Sell" signs straight into the seller profile and opens Seller studio. Switch profiles from the account menu / sidebar.
 - Login checks the real password (no auto-registration).
-- Admins are made with `python -m flask --app wsgi create-admin` or by double-clicking `create-admin.bat`.
+- Admins are made with `create-admin.bat` (double-click) / `python -m flask --app wsgi create-admin`, or by `start.bat`
+  (`flask ensure-admin`) when `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set in the local `.env` (gitignored, stays on the PC).
+  Never put a real password or the owner's login in the repository; `ensure-admin` never resets an existing admin's password.
 - Each buyer starts with **₱500,000 demo credit** (`STARTING_CREDIT_MINOR`), spent at checkout with an atomic UPDATE.
 - Admin → **Active sellers** (`/admin/sellers`) lists seller profiles and their last sign-in (active = last 30 days).
 
@@ -91,7 +93,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 248 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 254 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -114,6 +116,7 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
 9. The owner's PC kept showing the removed shoe-photo watch because it had an old copy. Now `start.bat`/`start.sh` update
    themselves; `visible_products()` and the product page hide `REMOVED_SLUGS` even if an old database still has them; the
    homepage (New arrivals, Featured, hero card) only shows in-stock watches.
+10. `flask ensure-admin`, run by start.bat: creates the admin from `ADMIN_EMAIL`/`ADMIN_PASSWORD` in the local `.env`.
 
 ## Open items / ideas
 
