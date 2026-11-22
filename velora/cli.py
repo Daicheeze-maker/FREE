@@ -159,6 +159,41 @@ def register_cli(app):
         db.session.commit()
         click.echo(f"Administrator {email} created.")
 
+    @app.cli.command("ensure-admin")
+    @click.option("--email", default=None, help="Defaults to ADMIN_EMAIL (e.g. in .env).")
+    @click.option("--password", default=None, help="Defaults to ADMIN_PASSWORD (e.g. in .env).")
+    @click.option("--name", default="Store Admin", show_default=True)
+    def ensure_admin(email, password, name):
+        """Make sure the store's admin exists (run by start.bat). Never changes an existing admin's password.
+
+        The login comes from the options or from ADMIN_EMAIL / ADMIN_PASSWORD in the local .env file, which is never
+        committed, so no password is stored in the repository. Without them this does nothing."""
+        import os
+        from .models import ROLE_ADMIN, SELLER_SUFFIX, User
+        email = (email or os.environ.get("ADMIN_EMAIL") or "").strip().lower()
+        password = password or os.environ.get("ADMIN_PASSWORD") or ""
+        if not email or not password:
+            return
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            user = User(email=email, full_name=name, role=ROLE_ADMIN)
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            click.echo(f" Admin account ready: {email}")
+            return
+        if user.role == ROLE_ADMIN:
+            return  # already there; the password may have been changed on purpose, so leave it alone
+        # The email was registered as a shop account: make it the admin with the requested password
+        linked = User.query.filter_by(email=email + SELLER_SUFFIX).first()
+        if linked is not None:
+            linked.is_active_account = False  # the old linked seller profile isn't needed by an admin
+        user.role = ROLE_ADMIN
+        user.set_password(password)
+        user.failed_login_count, user.locked_until, user.is_active_account = 0, None, True
+        db.session.commit()
+        click.echo(f" {email} is now an admin account.")
+
     @app.cli.command("refresh-rates")
     def refresh_rates():
         """Fetch latest exchange rates from Frankfurter into the cache."""

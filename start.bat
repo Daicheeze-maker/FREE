@@ -41,6 +41,8 @@ python -m pip install -q --disable-pip-version-check --retries 1 --timeout 10 -r
 python -m flask --app wsgi init-db >nul
 python -m flask --app wsgi seed >nul
 python -m flask --app wsgi upgrade-demo
+REM The store's admin account, if ADMIN_EMAIL and ADMIN_PASSWORD are set in the local .env file (never on GitHub)
+python -m flask --app wsgi ensure-admin
 python -m flask --app wsgi fill-photos
 
 set OPEN_BROWSER=1
