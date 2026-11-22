@@ -18,7 +18,9 @@ SORTS = {
 
 
 def slugify(text):
-    slug = re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-")
+    import unicodedata
+    text = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode()  # Étoile -> Etoile
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
     return slug[:200] or "item"
 
 

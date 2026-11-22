@@ -174,7 +174,7 @@ def test_production_requires_secret_key(monkeypatch):
 def test_store_sells_only_watches(client):
     names = [c.name for c in Category.query.order_by(Category.position)]
     assert names == ["Dress Watches", "Dive Watches", "Chronographs", "Field & Pilot", "Smart Watches", "Ladies Watches"]
-    assert Product.query.count() == 20
+    assert Product.query.count() == 80
     nav = client.get("/").get_data(as_text=True).split("header__nav")[1].split("</nav>")[0]
     import html as _h
     assert all(n in _h.unescape(nav) for n in names)
@@ -187,12 +187,23 @@ def test_every_product_is_a_watch_in_a_sensible_collection(app):
     expected = {"Dress Watches": ("Dress", "Leather Strap", "Skeleton"), "Dive Watches": ("Dive", "Diver"),
                 "Chronographs": ("Chrono",), "Field & Pilot": ("Field", "Pilot", "Explorer"),
                 "Smart Watches": ("Smart",), "Ladies Watches": ("Ladies", "Bracelet", "Mesh")}
+    from velora.catalog_more import MORE
+    from velora.services.catalog import slugify
+    newer = {slugify(r[1]) for r in MORE}
     for cat, words in expected.items():
         items = Product.query.join(Category).filter(Category.name == cat).all()
         assert items, cat
         for p in items:
+            if p.slug in newer:
+                continue
             assert "Watch" in p.name or "Diver" in p.name or "Chrono" in p.name, p.name
             assert any(w in p.name for w in words), (cat, p.name)
+    # the 60 newer watches: each sits in the collection its photo sheet was made for
+    sheet_cat = {"dress": "Dress Watches", "dive": "Dive Watches", "chrono": "Chronographs", "field": "Field & Pilot",
+                 "smart": "Smart Watches", "ladies": "Ladies Watches"}
+    for r in MORE:
+        p = Product.query.filter_by(slug=slugify(r[1])).one()
+        assert p.category.name == sheet_cat[r[0].split("-")[0]], (r[0], p.name)
 
 
 def test_site_photo_upload_and_reset(seller):
@@ -251,7 +262,7 @@ def test_seed_runs_when_catalog_empty_even_if_accounts_exist(tmp_path):
         db.session.add(early)
         db.session.commit()
         assert seed() is True
-        assert Category.query.count() == 6 and Product.query.count() == 20
+        assert Category.query.count() == 6 and Product.query.count() == 80
         assert User.query.filter_by(email="early@example.com").count() == 1
         assert seed() is False
 

@@ -44,7 +44,9 @@
     const t = pos - Math.floor(pos);
     if (imgA.getAttribute("src") !== list[i]) imgA.src = list[i];
     if (imgB.getAttribute("src") !== list[j]) imgB.src = list[j];
-    imgB.style.opacity = t.toFixed(3);         // cross-fade towards the next frame
+    // quick fade around the middle of each step: mostly one clean angle on screen, never a long see-through double image
+    const fade = Math.min(1, Math.max(0, (t - 0.38) / 0.24));
+    imgB.style.opacity = (fade * fade * (3 - 2 * fade)).toFixed(3);
     if (needle) needle.style.transform = `rotate(${a}deg)`;
     spin.setAttribute("aria-valuenow", String(Math.round(a)));
     spin.setAttribute("aria-valuetext", SIDES[Math.round((a / 360) * SIDES.length) % SIDES.length]);

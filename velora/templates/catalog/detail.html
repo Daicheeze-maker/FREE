@@ -16,7 +16,7 @@
       <div class="gallery__main">
         <img src="{{ image_src(product.primary_image) }}" alt="{{ product.primary_image.alt if product.primary_image else product.name }}" data-gallery-main width="800" height="1000" fetchpriority="high">
         {% if spin %}
-        <div class="spin" data-spin data-spin-data="{{ spin|tojson|forceescape }}" hidden
+        <div class="spin{% if spin.soft %} spin--soft{% endif %}" data-spin data-spin-data="{{ spin|tojson|forceescape }}" hidden
              role="slider" tabindex="0" aria-label="360° view of the {{ product.name }}. Drag left or right, or use the arrow keys, to turn it."
              aria-valuemin="0" aria-valuemax="359" aria-valuenow="0" aria-valuetext="Front">
           <img class="spin__frame" data-spin-a alt="" draggable="false">

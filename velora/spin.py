@@ -11,6 +11,10 @@ from flask import current_app
 from .services.catalog import slugify
 
 
+# Watches whose 360° frames were cut from small thumbnails: shown a bit smaller so they don't look blurry
+SOFT_FRAMES = {"spectrum-chronograph"}
+
+
 def spin_data(product):
     """{"colours": {name: {"main": url | None, "frames": [url, …]}}, "order": [names]} or None if the watch has no 360° view."""
     root = Path(current_app.static_folder) / "img" / "spin" / product.slug
@@ -27,4 +31,4 @@ def spin_data(product):
         base = f"{current_app.static_url_path}/img/spin/{product.slug}/{slugify(name)}"
         colours[name] = {"main": main, "frames": [f"{base}/{f.name}" for f in frames]}
         order.append(name)
-    return {"colours": colours, "order": order} if colours else None
+    return {"colours": colours, "order": order, "soft": product.slug in SOFT_FRAMES} if colours else None

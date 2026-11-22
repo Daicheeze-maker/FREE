@@ -44,7 +44,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Catalog: watches with options
 
-- 6 collections: Dress Watches, Dive Watches, Chronographs, Field & Pilot, Smart Watches, Ladies Watches. 20 watches (`velora/seed.py` `PRODUCTS`). Nothing is sold out in a fresh store.
+- 6 collections: Dress Watches, Dive Watches, Chronographs, Field & Pilot, Smart Watches, Ladies Watches. **80 watches** (`velora/seed.py` `PRODUCTS` = the original 20 + **60 from `velora/catalog_more.py`**, 10 per collection). Nothing is sold out in a fresh store.
 - **Spectrum Chronograph** (Chronographs): 10 colour editions (Black, White, Blue, Red, Green, Purple, Pink, Orange, Yellow, Teal),
   cut from the owner's grid image. One photo per colour (`static/img/watches/spectrum-<colour>.webp`) and a **drag-to-turn 360° view**.
 - Every watch has **case sizes** (`Product.sizes`), **colours** (`Product.colors`) and optional **engraving**
@@ -69,6 +69,16 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - To add more own photos: put them in the Drive folder, download, convert to WebP in `velora/static/img/watches/`,
   add to `OWN_PHOTOS`, run tests.
 
+## Generated watch photos (the 60 in `catalog_more.py`)
+
+- Made with **Gemini (`gemini-3.1-flash-image`) through the Figma MCP** (`generate_image`, owner's Figma student team,
+  file "Aurelune watch photos"). Canva's generator only returned 200 px previews; Higgsfield had no credits.
+- One image per watch: an **8-angle turntable sheet** (2 rows × 4 tiles, 45° steps: front, front-right, right, back-right,
+  back, back-left, left, front-left). One sheet keeps the watch identical across views (separate calls don't).
+- Sliced into `static/img/spin/<slug>/<colour>/01…08.webp` (360° frames) and `static/img/watches/<slug>-<colour>.webp`
+  (main photo = front tile on a 4:5 canvas). Download host `www.figma.com` was added to the "FREE" cloud environment.
+- Each new watch has one colour (the one in its photo), two case sizes, and engraving except most smart watches.
+
 ## 360° view
 
 - `velora/spin.py` `spin_data(product)` finds frames in `velora/static/img/spin/<product-slug>/<colour-slug>/01.webp…` (turning
@@ -76,6 +86,8 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
   in a folder like that and the product page shows the **360° View** button.
 - `static/js/spin.js`: pointer drag (mouse/touch/pen) with a short glide, cross-fade between frames, arrow keys/Home/Escape,
   a small automatic half-turn on open (skipped with reduced motion), colour buttons and colour thumbnails switch photo + frames.
+- Frames fill the viewer (`object-fit: cover`); watches in `spin.SOFT_FRAMES` (Spectrum) are shown smaller. Between frames a
+  short fade happens around the middle of each step (no long see-through double image).
 - Spectrum's 6 frames per colour = front, 3/4, side, back from the image + mirrored side and 3/4. They come from ~70 px
   thumbnails, so they are soft; better frames (e.g. 24–36 photos per turn) can replace them file for file.
 
@@ -108,7 +120,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 298 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 304 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -137,6 +149,8 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
     X-Forwarded-For). `create-admin.bat` now always stays open and says what happened.
 12. **Seller applications:** no more automatic seller profiles; buyers apply, the admin approves/rejects (owner's idea).
 13. **Phone numbers per country** (country picker, digit limits, libphonenumber validation, E.164 storage).
+15. **60 more watches** with Gemini-generated photos and 8-frame 360° views (see "Generated watch photos"); `slugify`
+    now turns accents into plain letters (Étoile → etoile).
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
     `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.

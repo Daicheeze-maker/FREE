@@ -129,6 +129,13 @@ PRODUCTS = [
      "Black,White,Blue,Red,Green,Purple,Pink,Orange,Yellow,Teal", 500),
 ]
 
+# 60 more watches (10 per collection) with their own generated photos and 360° frames: velora/catalog_more.py
+from .catalog_more import MORE as _MORE  # noqa: E402
+
+_FALLBACK = {0: V1, 1: V4, 2: V2, 3: V1, 4: SW1, 5: V3}  # a known-good stock photo per collection, if a file were missing
+PRODUCTS += [(r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], False, r[9], [_FALLBACK[r[3]]], r[10], r[11], r[12], r[13], r[14], r[15])
+             for r in _MORE]
+
 WATCH_SLUGS = {slugify(row[0]) for row in PRODUCTS}
 
 # The store's own photos (velora/static/img/watches/), first one is the cover. They ship with the project, so they
@@ -148,6 +155,7 @@ OWN_PHOTOS = {
     "spectrum-chronograph": [f"spectrum-{c}" for c in ("black", "white", "blue", "red", "green", "purple", "pink",
                                                          "orange", "yellow", "teal")],
 }
+OWN_PHOTOS.update({slugify(r[1]): [f"{slugify(r[1])}-{slugify(r[14])}"] for r in _MORE})
 OWN_CREDIT = "Store photo"
 
 
