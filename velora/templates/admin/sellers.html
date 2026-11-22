@@ -4,7 +4,7 @@
 {% block page_title %}Active sellers{% endblock %}
 {% block actions %}<a class="btn btn--ghost btn--sm" href="{{ url_for('admin.users', role='seller') }}">{{ icon('users') }} Manage seller accounts</a>{% endblock %}
 {% block content %}
-<p class="alert alert--info">{{ icon('info') }} <span><strong>{{ active }}</strong> of {{ sellers|length }} seller profile{{ '' if sellers|length == 1 else 's' }} signed in during the last 30 days. Every account has a seller profile; people who registered as sellers appear here as soon as they sign up.</span></p>
+<p class="alert alert--info">{{ icon('info') }} <span><strong>{{ active }}</strong> of {{ sellers|length }} seller profile{{ '' if sellers|length == 1 else 's' }} signed in during the last 30 days. Sellers are added by approving their application under <a href="{{ url_for('admin.seller_requests') }}">Seller requests</a>.</span></p>
 {% if sellers %}
 <div class="table-wrap"><table class="table">
   <thead><tr><th>Seller</th><th>Shop owner (buyer profile)</th><th>Status</th><th class="num">Order updates</th><th>Joined</th><th>Last signed in</th><th><span class="sr-only">Actions</span></th></tr></thead>
@@ -14,7 +14,8 @@
     <td>{% if not u.is_active_account %}<span class="status status--cancelled">Disabled</span>{% elif s.active %}<span class="status status--active">Active</span>{% else %}<span class="status status--draft">Not active lately</span>{% endif %}</td>
     <td class="num">{{ s.actions }}</td>
     <td>{{ u.created_at|dt }}</td><td>{{ u.last_login_at|dtt if u.last_login_at else 'Never' }}</td>
-    <td><a class="btn btn--ghost btn--sm" href="{{ url_for('admin.user_detail', user_id=u.id) }}">Manage</a></td>
+    <td style="white-space:nowrap"><a class="btn btn--ghost btn--sm" href="{{ url_for('admin.user_detail', user_id=u.id) }}">Manage</a>
+      {% if u.is_active_account %}<form method="post" action="{{ url_for('admin.seller_revoke', user_id=u.id) }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--link btn--sm" type="submit">Remove seller access</button></form>{% endif %}</td>
   </tr>{% endfor %}</tbody>
 </table></div>
 {% else %}{{ empty('store', 'No sellers yet', 'Sellers appear here when someone creates an account.') }}{% endif %}

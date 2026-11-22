@@ -47,8 +47,19 @@ class RegisterForm(FlaskForm):
     email = EmailField("Email", validators=[DataRequired(), Email(), Length(max=255)], filters=[strip])
     password = PasswordField("Password", validators=[DataRequired(), PasswordStrength(), Length(max=128)])
     confirm = PasswordField("Confirm password", validators=[DataRequired(), EqualTo("password", "Passwords must match.")])
-    account_type = RadioField("I want to", choices=[("buyer", "Shop (buyer account)"), ("seller", "Sell (seller account)")], default="buyer", validators=[Optional()])
+    account_type = RadioField("I want to", choices=[("buyer", "Shop (buyer account)"), ("seller", "Shop and apply to sell")], default="buyer", validators=[Optional()])
     accept = BooleanField("I agree to the terms and privacy policy", validators=[DataRequired("Please accept to continue.")])
+
+
+class SellerApplicationForm(FlaskForm):
+    shop_name = StringField("Shop name", validators=[DataRequired(), Length(min=2, max=80)], filters=[strip])
+    phone = StringField("Contact phone", validators=[DataRequired(), Length(min=7, max=40), Regexp(r"^[0-9 +()-]+$", message="Enter a valid phone number.")], filters=[strip])
+    about = TextAreaField("What will you sell?", validators=[DataRequired(), Length(min=20, max=1000, message="Tell the admin a little more (20 to 1,000 characters).")], filters=[strip])
+    agree = BooleanField("I'll only sell genuine watches and follow the store's seller rules", validators=[DataRequired("Please agree to continue.")])
+
+
+class SellerDecisionForm(FlaskForm):
+    note = StringField("Note to the applicant (optional)", validators=[Optional(), Length(max=300)], filters=[strip])
 
 
 class AdminSetupForm(FlaskForm):

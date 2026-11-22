@@ -75,7 +75,7 @@ def test_account_created_on_the_site_is_saved_in_the_database(fresh):
     assert r.status_code == 302
     db.session.expire_all()
     u = get_user("real@example.com")
-    assert u and u.balance_minor == 50_000_000 and get_user("real@example.com#seller")
+    assert u and u.balance_minor == 50_000_000 and get_user("real@example.com#seller") is None  # selling needs approval
     assert Notification.query.filter_by(user_id=u.id).count() == 1
     # a different browser (new client) signs in with the saved password, and only that password
     other = fresh.test_client()

@@ -1,0 +1,50 @@
+{% extends "account/_layout.html" %}
+{% from "_macros.html" import icon, field %}
+{% block page_title %}Sell on {{ brand }}{% endblock %}
+{% block heading %}Sell on {{ brand }}{% endblock %}
+{% block account %}
+<div class="account-grid">
+  <div>
+    {% if profile %}
+    <section class="card sell-status sell-status--ok" data-reveal>
+      <h2>{{ icon('badge-check') }} You're a seller</h2>
+      <p>Your shop <strong>{{ profile.full_name }}</strong> is approved. Switch to your seller profile to add watches and handle orders.</p>
+      <form method="post" action="{{ url_for('auth.switch_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--dark" type="submit">{{ icon('store', 'ic--sm') }} Switch to seller profile</button></form>
+    </section>
+    {% elif last and last.status == 'pending' %}
+    <section class="card sell-status sell-status--wait" data-reveal>
+      <h2>{{ icon('hourglass') }} Waiting for the admin</h2>
+      <p>You applied on {{ last.created_at|dt }} to sell as <strong>{{ last.shop_name }}</strong>. The admin will approve or reject it, and you'll get a notification with the answer.</p>
+      <dl class="kv"><dt>Shop name</dt><dd>{{ last.shop_name }}</dd><dt>Phone</dt><dd>{{ last.phone }}</dd><dt>What you'll sell</dt><dd>{{ last.about }}</dd></dl>
+    </section>
+    {% else %}
+      {% if last and last.status == 'rejected' %}
+      <p class="alert alert--error">{{ icon('circle-alert') }} <span>Your last application wasn't approved{% if last.admin_note %}: <em>“{{ last.admin_note }}”</em>{% endif %}. You can change your details and apply again.</span></p>
+      {% endif %}
+      <section class="card" data-reveal>
+        <h2>{{ icon('store') }} Apply to sell</h2>
+        <p class="muted">Tell us about your shop. An admin reviews every application; once you're approved you get a seller profile with your own Seller studio.</p>
+        <form method="post" novalidate>
+          {{ form.csrf_token }}
+          {{ field(form.shop_name, "e.g. Manila Time House") }}
+          {{ field(form.phone, "+63 917 000 0000", autocomplete="tel") }}
+          {{ field(form.about, "Which watches will you sell? New or pre-owned? Where do they come from?") }}
+          {{ field(form.agree) }}
+          <button class="btn btn--dark btn--lg" type="submit" data-loading-text="Sending…">{{ icon('send', 'ic--sm') }} Send application</button>
+        </form>
+      </section>
+    {% endif %}
+  </div>
+  <aside>
+    <section class="card" data-reveal>
+      <h2 style="font-size:17px">{{ icon('list-checks') }} How it works</h2>
+      <ol class="steps-list">
+        <li><strong>Apply</strong> with your shop name and what you'll sell.</li>
+        <li><strong>The admin reviews</strong> it and approves or rejects it.</li>
+        <li><strong>Start selling:</strong> account menu → <em>Switch to seller profile</em> opens your Seller studio.</li>
+      </ol>
+      <p class="muted" style="font-size:13px;margin:0">You keep your buyer account and its demo credit either way.</p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

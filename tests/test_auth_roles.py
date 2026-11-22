@@ -48,14 +48,13 @@ def test_buyer_must_use_the_right_password(client):
     assert client.get("/account/").status_code == 200
 
 
-def test_register_creates_saved_linked_buyer_and_seller_profiles(client):
+def test_register_creates_a_buyer_only_selling_needs_an_application(client):
     register(client, "both@example.com")
     buyer = get_user("both@example.com")
-    seller = get_user("both@example.com#seller")
-    assert buyer.role == "customer" and seller.role == "seller"
-    assert buyer.linked_profile.id == seller.id and seller.linked_profile.id == buyer.id
-    assert buyer.balance_minor == 50_000_000
-    assert "Switch to seller profile" in client.get("/account/").get_data(as_text=True)
+    assert buyer.role == "customer" and buyer.balance_minor == 50_000_000
+    assert get_user("both@example.com#seller") is None and buyer.linked_profile is None
+    page = client.get("/account/").get_data(as_text=True)
+    assert "Switch to seller profile" not in page and "Sell on" in page
 
 
 def test_unknown_email_is_not_auto_created(client):

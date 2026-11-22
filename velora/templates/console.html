@@ -18,6 +18,8 @@
       <p class="side-label">Administration</p>
       {{ nav('admin.dashboard', 'Overview', 'gauge') }}
       {{ nav('admin.users', 'Users & roles', 'users', 'admin.user') }}
+      {% set waiting = pending_seller_requests() %}
+      <a href="{{ url_for('admin.seller_requests') }}" class="side-link {% if request.endpoint == 'admin.seller_requests' %}is-active{% endif %}">{{ icon('user-check') }}<span>Seller requests</span>{% if waiting %}<span class="count-pill">{{ waiting }}</span>{% endif %}</a>
       {{ nav('admin.sellers', 'Active sellers', 'store') }}
       {{ nav('admin.reports_view', 'Reports', 'chart-column') }}
       {{ nav('admin.api_health_view', 'API health', 'activity') }}

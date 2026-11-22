@@ -4,10 +4,11 @@ from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 
 from ..extensions import db
-from ..forms import AddressForm, CancelOrderForm, PasswordChangeForm, ProfileForm
+from ..forms import AddressForm, CancelOrderForm, PasswordChangeForm, ProfileForm, SellerApplicationForm
 from ..models import (PRODUCT_ACTIVE, Address, Notification, Order, OrderStatus, Product, ProductReview,
                       WishlistItem)
 from ..security import roles_required
+from ..services import sellers
 from ..services.orders import change_status
 from .main import recently_viewed
 
@@ -235,3 +236,27 @@ def open_notification(note_id):
     db.session.commit()
     link = note.link if note.link and note.link.startswith("/") and not note.link.startswith("//") else url_for("account.notifications")
     return redirect(link)
+
+
+@bp.route("/sell", methods=["GET", "POST"])
+@customer_only
+def seller_application():
+    """Apply to sell. An admin approves or rejects; approval creates the seller profile."""
+    profile = sellers.seller_profile_of(current_user)
+    last = sellers.latest_application(current_user)
+    can_apply = profile is None and (last is None or last.status == "rejected")
+    form = SellerApplicationForm()
+    if request.method == "GET" and last is not None and can_apply:
+        form.shop_name.data, form.phone.data, form.about.data = last.shop_name, last.phone, last.about
+    if request.method == "GET" and not form.phone.data:
+        form.phone.data = current_user.phone or ""
+    if can_apply and form.validate_on_submit():
+        try:
+            sellers.apply(current_user, form.shop_name.data, form.phone.data, form.about.data)
+        except ValueError as exc:
+            flash(str(exc), "error")
+        else:
+            db.session.commit()
+            flash("Application sent! The admin will review it, and you'll get a notification with the answer.", "success")
+        return redirect(url_for("account.seller_application"))
+    return render_template("account/sell.html", form=form, profile=profile, last=last, can_apply=can_apply)

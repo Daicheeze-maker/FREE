@@ -6,14 +6,14 @@ from flask_login import current_user
 from sqlalchemy import or_
 
 from ..extensions import db
-from ..forms import SettingsForm, UserAdminForm
+from ..forms import SellerDecisionForm, SettingsForm, UserAdminForm
 from ..models import (ROLE_ADMIN, ROLES, SELLER_SUFFIX, STARTING_CREDIT_MINOR, ApiStatus, AuditLog, ExchangeRateCache, NewsletterSubscription, Order,
                       StoreSetting, User, get_int_setting, get_setting, utcnow)
 from ..money import to_major
 from ..security import audit, roles_required
 from ..services import api_health, currency, reports
 from ..services import openfoodfacts as off
-from ..services import mapbox, pexels
+from ..services import mapbox, pexels, sellers as seller_service
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -73,6 +73,48 @@ def sellers():
                  "actions": handled.get(u.id, 0)} for u in rows]
     return render_template("admin/sellers.html", sellers=sellers_, now=now,
                            active=sum(1 for s in sellers_ if s["active"]))
+
+
+@bp.route("/seller-requests")
+def seller_requests():
+    from ..models import SellerApplication
+    pending = SellerApplication.query.filter_by(status="pending").order_by(SellerApplication.created_at).all()
+    decided = (SellerApplication.query.filter(SellerApplication.status != "pending")
+               .order_by(SellerApplication.reviewed_at.desc()).limit(50).all())
+    return render_template("admin/seller_requests.html", pending=pending, decided=decided, form=SellerDecisionForm())
+
+
+@bp.post("/seller-requests/<int:app_id>/<decision>")
+def seller_decide(app_id, decision):
+    from ..models import SellerApplication
+    app = db.session.get(SellerApplication, app_id) or abort(404)
+    form = SellerDecisionForm()
+    if decision not in ("approve", "reject") or not form.validate():
+        abort(400)
+    try:
+        if decision == "approve":
+            seller_service.approve(app, current_user)
+            msg = f"Approved: {app.user.full_name} can now sell as “{app.shop_name}”."
+        else:
+            seller_service.reject(app, current_user, form.note.data)
+            msg = f"Rejected the application from {app.user.full_name}."
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("admin.seller_requests"))
+    db.session.commit()
+    flash(msg, "success")
+    return redirect(url_for("admin.seller_requests"))
+
+
+@bp.post("/sellers/<int:user_id>/revoke")
+def seller_revoke(user_id):
+    seller = db.session.get(User, user_id) or abort(404)
+    if seller.role != "seller":
+        abort(404)
+    seller_service.revoke(seller, current_user)
+    db.session.commit()
+    flash(f"Seller access removed for {seller.full_name}. Their buyer account still works.", "info")
+    return redirect(url_for("admin.sellers"))
 
 
 @bp.route("/users/<int:user_id>", methods=["GET", "POST"])

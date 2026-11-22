@@ -1,0 +1,39 @@
+{% extends "console.html" %}
+{% from "_macros.html" import icon, empty %}
+{% block title %}Seller requests · Admin{% endblock %}
+{% block page_title %}Seller requests{% endblock %}
+{% block actions %}<a class="btn btn--ghost btn--sm" href="{{ url_for('admin.sellers') }}">{{ icon('store') }} Active sellers</a>{% endblock %}
+{% block content %}
+<p class="alert alert--info">{{ icon('info') }} <span>Buyers apply from <em>Sell on {{ brand }}</em>. Approving one gives them a seller profile and Seller studio; rejecting sends them your note, and they can apply again.</span></p>
+<h2 style="font-size:18px;margin:22px 0 12px">Waiting for you ({{ pending|length }})</h2>
+{% if pending %}
+<div class="req-grid">
+  {% for a in pending %}
+  <section class="card req" data-reveal-item>
+    <div class="req__head"><span class="avatar">{{ a.user.full_name[:1] }}</span><div><strong>{{ a.shop_name }}</strong><small>{{ a.user.full_name }} · {{ a.user.email }}</small></div></div>
+    <dl class="kv"><dt>Phone</dt><dd>{{ a.phone }}</dd><dt>Applied</dt><dd>{{ a.created_at|dtt }}</dd><dt>What they'll sell</dt><dd>{{ a.about }}</dd></dl>
+    <div class="req__actions">
+      <form method="post" action="{{ url_for('admin.seller_decide', app_id=a.id, decision='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--accent btn--sm" type="submit">{{ icon('check', 'ic--sm') }} Approve</button></form>
+      <form method="post" action="{{ url_for('admin.seller_decide', app_id=a.id, decision='reject') }}" class="req__reject">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="sr-only" for="note-{{ a.id }}">Reason for rejecting</label>
+        <input id="note-{{ a.id }}" class="input" name="note" maxlength="300" placeholder="Reason (optional, sent to them)">
+        <button class="btn btn--ghost btn--sm" type="submit">{{ icon('x', 'ic--sm') }} Reject</button>
+      </form>
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% else %}{{ empty('inbox', 'No requests waiting', 'New seller applications show up here.') }}{% endif %}
+{% if decided %}
+<h2 style="font-size:18px;margin:28px 0 12px">Decided</h2>
+<div class="table-wrap"><table class="table">
+  <thead><tr><th>Shop</th><th>Applicant</th><th>Decision</th><th>When</th><th>By</th><th>Note</th></tr></thead>
+  <tbody>{% for a in decided %}<tr>
+    <td><strong>{{ a.shop_name }}</strong></td><td>{{ a.user.full_name }}<br><small class="muted">{{ a.user.email }}</small></td>
+    <td>{% if a.status == 'approved' %}<span class="status status--active">Approved</span>{% else %}<span class="status status--cancelled">Rejected</span>{% endif %}</td>
+    <td>{{ a.reviewed_at|dtt if a.reviewed_at else '—' }}</td><td>{{ a.reviewed_by.full_name if a.reviewed_by else '—' }}</td><td>{{ a.admin_note or '—' }}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

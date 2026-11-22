@@ -17,7 +17,7 @@
         <fieldset class="field account-type">
           <legend class="field__label">I want to</legend>
           <div class="choice-grid choice-grid--2">
-            {% for value, label, hint, ic in (('buyer', 'Shop', 'Buyer account · ₱500,000 demo credit', 'shopping-bag'), ('seller', 'Sell', 'Seller account · opens Seller studio', 'store')) %}
+            {% for value, label, hint, ic in (('buyer', 'Shop', 'Buyer account · ₱500,000 demo credit', 'shopping-bag'), ('seller', 'Sell', 'Shop, then apply to sell · an admin approves', 'store')) %}
             <label class="choice"><input type="radio" name="account_type" value="{{ value }}" {% if (form.account_type.data or 'buyer') == value %}checked{% endif %}><span class="choice__card"><strong>{{ icon(ic, 'ic--sm') }} {{ label }}</strong>{{ hint }}</span></label>
             {% endfor %}
           </div>

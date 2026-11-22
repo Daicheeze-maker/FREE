@@ -28,8 +28,12 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 - **No demo accounts.** People register on the site; `start.bat`/`upgrade-demo` deletes the old sample accounts
   (`buyer1/buyer2/admin@velora.example` + `#seller` profiles) unless they have a real (non-`seed-`) order.
-- Register asks **Shop or Sell**. Every buyer gets a linked seller profile (email + `#seller`, `SELLER_SUFFIX`);
-  "Sell" signs straight into the seller profile and opens Seller studio. Switch profiles from the account menu / sidebar.
+- **Selling is by application (marketplace style).** Everyone registers as a buyer. Register's **Sell** choice (or account
+  menu → *Sell on Aurelune*, or My account → *Sell*) opens `/account/sell`: shop name, phone, what they'll sell. Only an admin
+  decides, at **Admin → Seller requests** (`/admin/seller-requests`, badge with the pending count). Approval creates the
+  linked seller profile (email + `#seller`, `SELLER_SUFFIX`, named after the shop); rejection sends the admin's note and they can
+  re-apply. Admin → Active sellers can **Remove seller access**. Logic: `velora/services/sellers.py`; model `SellerApplication`.
+  `User.linked_profile` only returns switched-on profiles. Seller profiles from older versions were kept as they are.
 - Login checks the real password (no auto-registration).
 - **Easiest for the owner:** start the store, Sign in page → **Set up the admin account** (one-time page).
 - Admins are also made with `create-admin.bat` (double-click) / `python -m flask --app wsgi create-admin`, or by `start.bat`
@@ -94,7 +98,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 261 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 269 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -121,6 +125,7 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
 11. Double-clicking `create-admin.bat` did nothing on the owner's PC. Added a one-time **Set up the admin account** page
     (`/account/setup-admin`, linked from the sign-in page): only while the store has no admin, only from 127.0.0.1 (no
     X-Forwarded-For). `create-admin.bat` now always stays open and says what happened.
+12. **Seller applications:** no more automatic seller profiles; buyers apply, the admin approves/rejects (owner's idea).
 
 ## Open items / ideas
 

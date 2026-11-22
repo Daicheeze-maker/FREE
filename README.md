@@ -53,7 +53,7 @@ The store is called **Aurelune**. To use another name, put `STORE_NAME=Your Name
 The store starts with **no accounts and no demo logins**. Click **Create account** (top right) and register. Your account is saved in the database (`instance/velora.db`) with a securely hashed password, and you sign in with the same email and password every time.
 
 - Every new **buyer** starts with **₱500,000 of demo credit**, spent at checkout (an admin can reset it under *Admin → Users → (buyer) → Demo credit*).
-- On **Create account** you choose **Shop** or **Sell**. *Sell* signs you in to your seller profile and opens **Seller studio**. **Admins** see every seller (and when they last signed in) under **Admin → Active sellers**.
+- **Selling works like a marketplace:** on **Create account** choose **Sell** (or use *Sell on Aurelune* in the account menu later) and fill in a short seller application. An admin approves or rejects it under **Admin → Seller requests**; once approved, *Switch to seller profile* opens **Seller studio**. **Admins** see every seller (and when they last signed in) under **Admin → Active sellers**.
 - Every buyer also gets a **linked seller profile**: open the account menu and choose **Switch to seller profile** (and back). What a buyer purchases shows up in the *Orders* of the seller profile, which can ship it and mark it delivered. Make a second account to get a second buyer + seller.
 - **An administrator** is created from the terminal (it is never self-registered):
 
@@ -262,7 +262,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 261 tests. External APIs are mocked, so no network is needed. They cover:
+There are 269 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

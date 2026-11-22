@@ -107,6 +107,7 @@ def _register_template_helpers(app):
             "brand": app.config["BRAND_NAME"],
             "photo_alts": alt_next(),
             "asset_v": ASSET_VERSION,
+            "pending_seller_requests": (lambda: __import__("velora.services.sellers", fromlist=["x"]).pending_count()),
         }
 
     @app.template_filter("dt")

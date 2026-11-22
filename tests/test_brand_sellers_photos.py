@@ -40,16 +40,13 @@ def test_brand_name_can_be_changed_from_the_environment(tmp_path):
 
 # ---------------------------------------------------------------- seller sign-up
 
-def test_registering_as_a_seller_opens_seller_studio(client):
+def test_choosing_sell_takes_you_to_the_seller_application(client):
     r = register(client, "shop@example.com", "seller")
-    assert r.status_code == 302 and r.headers["Location"].endswith("/seller/")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/account/sell")
     db.session.expire_all()
-    assert get_user("shop@example.com#seller") is not None and get_user("shop@example.com").role == "customer"
-    assert get_user("shop@example.com#seller").last_login_at is not None
-    assert client.get("/seller/").status_code == 200
-    assert client.get("/account/").status_code == 403  # in the seller profile; one click to the buyer profile
-    assert client.post("/account/switch-profile").status_code == 302
-    assert client.get("/account/").status_code == 200
+    assert get_user("shop@example.com").role == "customer" and get_user("shop@example.com#seller") is None
+    assert client.get("/seller/").status_code == 403  # no Seller studio until the admin approves
+    assert "Apply to sell" in client.get("/account/sell").get_data(as_text=True)
 
 
 def test_registering_as_a_buyer_goes_to_the_account(client):
@@ -74,6 +71,11 @@ def test_bad_account_type_is_rejected(client):
 def test_admin_sees_active_sellers(app, admin, client):
     other = app.test_client()
     register(other, "newshop@example.com", "seller", "New Shop")
+    other.post("/account/sell", data={"shop_name": "New Shop", "phone": "+63 917 555 0100",
+                                      "about": "Pre-owned dive watches, serviced and tested.", "agree": "y"})
+    from velora.models import SellerApplication
+    app_id = SellerApplication.query.filter_by(shop_name="New Shop").one().id
+    admin.post(f"/admin/seller-requests/{app_id}/approve")
     page = admin.get("/admin/sellers").get_data(as_text=True)
     assert "newshop@example.com#seller" in page and "New Shop" in page and "Active" in page
     assert "newshop@example.com</a>" in page  # the owner (buyer profile) is shown

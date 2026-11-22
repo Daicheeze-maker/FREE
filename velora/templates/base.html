@@ -80,6 +80,7 @@
               <a role="menuitem" href="{{ url_for('seller.dashboard') }}">{{ icon('store') }} Seller studio</a>
             {% endif %}
             <a role="menuitem" href="{{ url_for('account.profile') }}">{{ icon('settings') }} Profile & password</a>
+            {% if current_user.role == 'customer' and not current_user.linked_profile %}<a role="menuitem" href="{{ url_for('account.seller_application') }}">{{ icon('store') }} Sell on {{ brand }}</a>{% endif %}
             {% if current_user.linked_profile %}<form method="post" action="{{ url_for('auth.switch_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button role="menuitem" type="submit">{{ icon('store' if current_user.role == 'customer' else 'user-round') }} Switch to {{ 'seller' if current_user.role == 'customer' else 'buyer' }} profile</button></form>{% endif %}
             <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button role="menuitem" type="submit">{{ icon('log-out') }} Sign out</button></form>
           {% else %}

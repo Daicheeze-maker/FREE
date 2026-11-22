@@ -1052,3 +1052,16 @@ details.disclosure[open] { padding-bottom: 8px; }
   backdrop-filter: blur(6px); transition: transform .2s var(--ease, ease), background-color .2s; }
 .spin-toggle:hover { transform: translateY(-1px); background: #111; }
 .spin-toggle[aria-pressed="true"] { background: var(--accent, #e39a35); color: #111; }
+
+/* Seller applications */
+.sell-status h2 { font-size: 20px; }
+.sell-status--ok { border-color: var(--ok, #2f7d55); }
+.sell-status--wait { border-color: var(--accent, #e39a35); }
+.steps-list { margin: 0 0 12px; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; }
+.req-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.req__head { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+.req__head small { display: block; color: var(--muted); }
+.req__actions { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; margin-top: 12px; }
+.req__reject { display: flex; gap: 8px; flex: 1; min-width: 220px; }
+.req__reject .input { flex: 1; height: 36px; }
+.side-link .count-pill { margin-left: auto; }

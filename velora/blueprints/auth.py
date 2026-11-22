@@ -59,13 +59,6 @@ def _page_exists(path, user):
     return True
 
 
-def _ensure_seller_profile(buyer):
-    """Every buyer gets a linked seller profile, reached with the Switch profile button."""
-    if buyer.linked_profile is None:
-        seller = User(email=buyer.email + SELLER_SUFFIX, full_name=buyer.full_name, role=ROLE_SELLER)
-        seller.set_password(secrets.token_urlsafe(24))
-        db.session.add(seller)
-
 
 @bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -86,8 +79,6 @@ def login():
             if not user.is_active_account:
                 flash("This account has been disabled. Contact support if you think this is a mistake.", "error")
                 return render_template("auth/login.html", form=form, admin_setup=admin_setup_open()), 403
-            if is_buyer:
-                _ensure_seller_profile(user)
             user.failed_login_count = 0
             user.locked_until = None
             user.last_login_at = now
@@ -149,17 +140,11 @@ def register():
             from ..services.orders import notify
             notify(user.id, f"Welcome to {current_app.config['BRAND_NAME']}", "Use WELCOME10 for 10% off your first order.",
                    url_for("catalog.listing"), icon="sparkles")
-            _ensure_seller_profile(user)
             db.session.commit()
             if (form.account_type.data or "buyer") == "seller":
-                # They chose to sell: open the linked seller profile and go straight to Seller studio
-                seller = user.linked_profile
-                logout_user()
-                login_user(seller)
-                seller.last_login_at = utcnow()
-                db.session.commit()
-                flash(f"Your seller account is ready. Welcome to your studio, {seller.first_name}! You can switch to your buyer profile any time from the sidebar.", "success")
-                return redirect(url_for("seller.dashboard"))
+                # Selling needs the admin's approval: take them straight to the application
+                flash("Your account is ready. Now tell us about your shop: an admin reviews every seller application.", "success")
+                return redirect(url_for("account.seller_application"))
             flash(f"Your account is ready. Welcome to {current_app.config['BRAND_NAME']}!", "success")
             nxt = request.args.get("next")
             return redirect(nxt if is_safe_redirect(nxt) else url_for("account.dashboard"))

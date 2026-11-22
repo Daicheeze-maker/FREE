@@ -72,7 +72,7 @@ class User(UserMixin, TimestampMixin, db.Model):
             email, role = self.email.removesuffix(SELLER_SUFFIX), ROLE_CUSTOMER
         else:
             return None
-        return User.query.filter_by(email=email, role=role).first()
+        return User.query.filter_by(email=email, role=role, is_active_account=True).first()
 
     @property
     def first_name(self):
@@ -423,6 +423,26 @@ class DiscountCode(TimestampMixin, db.Model):
         CheckConstraint("kind IN ('percent', 'fixed')", name="valid_kind"),
         CheckConstraint("value > 0", name="value_positive"),
     )
+
+
+APP_PENDING, APP_APPROVED, APP_REJECTED = "pending", "approved", "rejected"
+
+
+class SellerApplication(db.Model):
+    """A buyer asking to sell in the store. Only an admin can approve it; approval creates their seller profile."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    shop_name = db.Column(db.String(80), nullable=False)
+    phone = db.Column(db.String(40), nullable=False)
+    about = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(12), nullable=False, default=APP_PENDING, index=True)
+    admin_note = db.Column(db.String(300))
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    reviewed_at = db.Column(db.DateTime)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"))
+
+    user = db.relationship("User", foreign_keys=[user_id])
+    reviewed_by = db.relationship("User", foreign_keys=[reviewed_by_id])
 
 
 class Notification(db.Model):
