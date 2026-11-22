@@ -110,7 +110,8 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - Test everything before handing over (pytest + a real-browser check with Playwright). Be honest about what could not be checked
   (the cloud sandbox can't reach most image hosts).
 - Always push to the branch and send the updated zip.
-- Header: logo left; centre menu = **Shop ▾** (mega menu with the 6 collections + See all), New arrivals, Best sellers;
+- Header: logo left; centre menu = **Shop ▾** (mega menu with the 6 collections, each with a
+  watch-photo thumbnail from `static/img/collections/<slug>.webp`, cropped from the generated photos, + See all), New arrivals, Best sellers;
   search, currency, theme, account, bag on the right (owner found 6 links too crowded).
 - Top menu is hidden on collection pages (left "Collections" list is used there). Back button on every page except home,
   sign-in, register and checkout.
@@ -151,6 +152,7 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
 16. **Only the generated watches remain** (owner: "remove every product/image that's not from what you made"): the first 20
     watches, the Spectrum Chronograph and the Drive photos are gone; homepage/sign-in photos are generated ones.
 17. Calmer header: the six collection links moved into a Shop ▾ menu; logo moved to the left.
+18. Shop menu icons replaced by real watch thumbnails (owner: line icons looked unprofessional).
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
     `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.
