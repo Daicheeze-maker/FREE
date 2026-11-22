@@ -37,7 +37,8 @@ def demo_status():
     wanted = {slugify(c[0]) for c in CATEGORIES}
     if {c.slug for c in Category.query.all()} != wanted:
         return "stale"
-    if {p.slug for p in Product.query.all()} < {slugify(r[0]) for r in PRODUCTS}:
+    # any demo watch missing = stale (even if the store also has watches someone added themselves)
+    if not {slugify(r[0]) for r in PRODUCTS} <= {p.slug for p in Product.query.all()}:
         return "stale"
     from .seed import OWN_PHOTOS, REMOVED_SLUGS, has_wrong_photo, own_photo_url
     if Product.query.filter(Product.slug.in_(list(REMOVED_SLUGS))).count():

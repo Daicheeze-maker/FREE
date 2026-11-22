@@ -89,7 +89,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 244 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 245 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -108,6 +108,7 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
 7. Removed the sold-out Crystal Bezel Watch (`seed.REMOVED_SLUGS`). Fixed wrong stock photos: one Unsplash link was a shoe,
    and the Smart Fitness Watch showed an analog watch (`seed.WRONG_PHOTO_IDS` / `WRONG_PHOTO_ON`; `refresh_catalog` repairs
    existing stores). Verified-on-screen smartwatch photos: `SW1`, `SW2` in `seed.py`.
+8. Fixed `demo_status()`: a store with a seller-made watch was never marked stale, so new demo watches (Spectrum) were not added.
 
 ## Open items / ideas
 

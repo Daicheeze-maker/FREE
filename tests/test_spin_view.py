@@ -71,3 +71,27 @@ def test_spin_script_supports_drag_touch_keys_and_reduced_motion(client):
         assert needle in js, needle
     css = client.get("/static/css/app.css").get_data(as_text=True)
     assert "touch-action: pan-y" in css  # vertical page scrolling still works on phones
+
+
+def test_start_up_adds_the_new_watch_even_when_the_seller_added_watches_of_their_own(tmp_path):
+    """Regression: a store with a seller-made watch never got new demo watches, so the Spectrum Chronograph was missing."""
+    from velora import create_app
+    from velora.cli import demo_status, init_database
+    from velora.models import Category
+    from velora.seed import seed
+    app = create_app("testing", SQLALCHEMY_DATABASE_URI=f"sqlite:///{tmp_path / 'mine.db'}")
+    with app.app_context():
+        init_database()
+        seed()
+        db.session.delete(Product.query.filter_by(slug="spectrum-chronograph").one())  # yesterday's store
+        db.session.add(Product(name="My Own Watch", slug="my-own-watch", sku="OWN-1", brand="Me",
+                               category=Category.query.first(), price_minor=100000, stock=2, short_description="x",
+                               description="x"))
+        db.session.commit()
+        assert demo_status() == "stale"
+    out = app.test_cli_runner().invoke(args=["upgrade-demo"]).output
+    assert "added Spectrum Chronograph" in out
+    with app.app_context():
+        assert Product.query.filter_by(slug="spectrum-chronograph").one().category.slug == "chronographs"
+        assert Product.query.filter_by(slug="my-own-watch").count() == 1  # the seller's watch stays
+        assert demo_status() == "current"
