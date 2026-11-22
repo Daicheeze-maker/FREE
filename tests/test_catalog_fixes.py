@@ -283,3 +283,11 @@ def test_fill_looks_at_a_second_page_when_the_first_is_all_used(seller, keyed):
         from velora.blueprints import seller as seller_module
         assert seller_module._pick_photo("fashion model", used={1, 2}).id == 3  # page 1 exhausted -> page 2
     assert seen == [1, 2]
+
+
+def test_top_bar_is_short_shop_menu_holds_the_collections(client):
+    html = client.get("/").get_data(as_text=True)
+    nav = html.split('class="header__nav"')[1].split("</nav>")[0]
+    assert "Shop" in nav and "New arrivals" in nav and "Best sellers" in nav
+    assert nav.count('class="mega-item"') == 6 and "See all watches" in nav
+    assert html.index('class="logo"') < html.index('class="header__nav"')  # logo on the left

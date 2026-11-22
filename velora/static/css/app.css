@@ -1071,3 +1071,16 @@ details.disclosure[open] { padding-bottom: 8px; }
 .phone-input { display: grid; grid-template-columns: minmax(118px, 136px) 1fr; gap: 8px; }
 .phone-input__country { padding-right: 28px; }
 .phone-input__number { letter-spacing: .02em; }
+
+/* Header: logo left, a short centred menu (Shop ▾ holds the six collections), tools right */
+.header__row { grid-template-columns: auto 1fr auto; gap: 24px; }
+.header__nav { justify-content: center; gap: 4px; }
+.header__nav .nav-link { padding: 8px 14px; font-size: 14px; }
+.nav-mega { left: 50%; transform: translate(-50%, -6px) scale(.98); transform-origin: top center; width: min(620px, 90vw); }
+.dropdown.is-open .nav-mega { transform: translate(-50%, 0); }
+.nav-mega__all { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px;
+  margin-top: 4px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 600; text-decoration: none; }
+.nav-mega__all:hover { color: var(--accent); }
+.search input { width: 190px; }
+.search input:focus { width: 240px; }
+@media (max-width: 1180px) and (min-width: 961px) { .search input, .search input:focus { width: 172px; } .header__nav .nav-link { padding: 8px 10px; } }

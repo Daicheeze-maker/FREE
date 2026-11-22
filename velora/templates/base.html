@@ -22,14 +22,23 @@
     <button class="icon-btn header__menu" type="button" data-open-drawer="mobile-nav" aria-label="Open menu" aria-controls="mobile-nav" aria-expanded="false">{{ icon('menu') }}</button>
     {# Shop pages already have the Collections list on the left, so the top menu is hidden there. #}
     {% set hide_menu = request.endpoint == 'catalog.listing' %}
+    <a href="{{ url_for('main.home') }}" class="logo" aria-label="{{ brand }} home">{{ brand|lower }}<span class="logo__dot">.</span><small>market</small></a>
     <nav class="header__nav" aria-label="Primary"{% if hide_menu %} hidden{% endif %}>
-{% if not hide_menu %}      {% set current_slug = (request.view_args or {}).get('slug') if request.endpoint == 'catalog.listing' else None %}
-      {% for c in nav_categories %}
-      <a href="{{ url_for('catalog.listing', slug=c.slug) }}" class="nav-link {% if current_slug == c.slug %}is-active{% endif %}" {% if current_slug == c.slug %}aria-current="page"{% endif %}>{{ c.name }}</a>
-      {% endfor %}
+{% if not hide_menu %}
+      {# All six collections sit in one Shop menu, so the bar stays short and calm #}
+      <div class="dropdown" data-dropdown>
+        <button class="nav-link dropdown__toggle" type="button" aria-expanded="false" aria-haspopup="true">Shop {{ icon('chevron-down', 'ic--sm') }}</button>
+        <div class="dropdown__panel dropdown__panel--mega nav-mega">
+          {% for c in nav_categories %}
+          <a class="mega-item" href="{{ url_for('catalog.listing', slug=c.slug) }}"><span class="mega-item__icon">{{ icon(c.icon or 'watch') }}</span><span><strong>{{ c.name }}</strong><small>{{ c.description }}</small></span></a>
+          {% endfor %}
+          <a class="nav-mega__all" href="{{ url_for('catalog.listing') }}">See all watches {{ icon('arrow-right', 'ic--sm') }}</a>
+        </div>
+      </div>
+      <a class="nav-link" href="{{ url_for('catalog.listing', sort='newest') }}">New arrivals</a>
+      <a class="nav-link" href="{{ url_for('catalog.listing', sort='popular') }}">Best sellers</a>
 {% endif %}
     </nav>
-    <a href="{{ url_for('main.home') }}" class="logo" aria-label="{{ brand }} home">{{ brand|lower }}<span class="logo__dot">.</span><small>market</small></a>
     <div class="header__actions">
       <form class="search" action="{{ url_for('catalog.listing') }}" method="get" role="search">
         {{ icon('search') }}
