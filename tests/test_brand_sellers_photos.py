@@ -160,18 +160,20 @@ def fake_openverse():
 def test_fill_photos_works_without_any_key(app):
     from velora.services import photo_fill
     ProductImage.query.filter(ProductImage.product_id.in_(
-        [p.id for p in Product.query.filter(Product.slug.in_(["minimalist-leather-strap-watch", "smart-fitness-watch"]))])).delete(synchronize_session=False)
+        [p.id for p in Product.query.filter(Product.slug.in_(["sottile-ultra-thin-38", "pulse-active"]))])).delete(synchronize_session=False)
     db.session.commit()
     p, calls = fake_openverse()
     with p, patch("velora.services.photo_check.check_remote", return_value={}):
         res = photo_fill.fill_products(limit=50)
-    assert res.source == "Openverse" and "Minimalist Leather Strap Watch" in res.done
+    assert res.source == "Openverse" and "Sottile Ultra-Thin 38" in res.done
     db.session.expire_all()
-    shoe = Product.query.filter_by(slug="minimalist-leather-strap-watch").one()
+    shoe = Product.query.filter_by(slug="sottile-ultra-thin-38").one()
     assert shoe.primary_image.filename.endswith(".webp") and "Openverse" in shoe.primary_image.credit and "CC BY 2.0" in shoe.primary_image.credit
 
 
 def test_fill_photos_command_never_breaks_start_up_when_offline(app):
+    ProductImage.query.filter(ProductImage.product_id == Product.query.filter_by(slug="pulse-active").one().id).delete()
+    db.session.commit()
     with patch("velora.services.openverse.requests.get", side_effect=requests.ConnectionError("offline")), \
             patch("velora.services.photo_check.check_remote", return_value={}):
         out = app.test_cli_runner().invoke(args=["fill-photos"])
@@ -199,21 +201,21 @@ def test_collection_pages_render_a_photo_for_every_card(client):
     for slug in ("dress-watches", "dive-watches", "chronographs", "field-pilot", "smart-watches", "ladies-watches"):
         page = client.get(f"/shop/c/{slug}").get_data(as_text=True)
         cards = page.count('class="pcard"')
-        assert cards >= 3 and page.count("images.unsplash.com/photo-") >= cards, slug
+        assert cards >= 3 and page.count("/static/img/watches/") >= cards, slug
 
 
 def test_photo_less_watches_get_a_photo_on_refresh_without_touching_others(app):
     from velora.seed import refresh_catalog
-    watch = Product.query.filter_by(slug="moonphase-automatic-dress-watch").one()
-    keep = Product.query.filter_by(slug="smart-fitness-watch").one()
+    watch = Product.query.filter_by(slug="luna-blue-moonphase-40").one()
+    keep = Product.query.filter_by(slug="pulse-active").one()
     ProductImage.query.filter_by(product_id=watch.id).delete()
     before = [i.url for i in keep.images]
     db.session.commit()
     changes = refresh_catalog()
     db.session.expire_all()
-    assert "added a photo to Moonphase Automatic Dress Watch" in changes
-    assert Product.query.filter_by(slug="moonphase-automatic-dress-watch").one().images
-    assert [i.url for i in Product.query.filter_by(slug="smart-fitness-watch").one().images] == before
+    assert "added the store's own photos to Luna Blue Moonphase 40" in changes
+    assert Product.query.filter_by(slug="luna-blue-moonphase-40").one().images
+    assert [i.url for i in Product.query.filter_by(slug="pulse-active").one().images] == before
 
 
 def test_page_carries_the_photo_fallback_chain_for_the_browser(client):
@@ -221,7 +223,7 @@ def test_page_carries_the_photo_fallback_chain_for_the_browser(client):
     page = client.get("/").get_data(as_text=True)
     raw = re.search(r'data-photo-alts="([^"]*)"', page).group(1)
     chain = json.loads(h.unescape(raw))
-    assert chain["1508685096489-7aacd43bd3b1"].startswith("https://images.unsplash.com/photo-1524805444758")
+    assert isinstance(chain, dict)
     # every chain ends on a photo that is known to load, and every watch has somewhere to go if its first photo is gone
     from velora.seed import PRODUCTS
     for row in PRODUCTS:
@@ -252,39 +254,39 @@ def test_store_photos_ship_with_the_project_and_are_used(client):
         assert [i.url for i in p.images] == [own_photo_url(n) for n in names], slug
         for n in names:
             assert client.get(own_photo_url(n)).status_code == 200, n
-    html = client.get("/shop/p/chronograph-steel-watch").get_data(as_text=True)
-    assert html.count("/static/img/watches/fluted-blue-chrono-") >= 3  # front, side and back in the gallery
+    html = client.get("/shop/p/panda-racing-42").get_data(as_text=True)
+    assert "/static/img/watches/panda-racing-42-white.webp" in html
 
 
 def test_store_photos_count_as_working_and_are_never_replaced(app):
     from velora.services import photo_check
-    p = Product.query.filter_by(slug="navy-diver-rubber" if False else "pro-dive-rubber-strap-watch").one()
+    p = Product.query.filter_by(slug="abyss-300-black").one()
     assert photo_check.working_images(p, {}) == list(p.images)
     assert photo_check.static_ok("/static/../velora/seed.py") is False  # no peeking outside the static folder
 
 
 def test_refresh_gives_old_stock_photos_the_store_photos_but_keeps_seller_uploads(app):
     from velora.seed import apply_own_photos, refresh_catalog
-    watch = Product.query.filter_by(slug="pilot-aviator-watch").one()
+    watch = Product.query.filter_by(slug="aviator-44").one()
     for img in list(watch.images):
         watch.images.remove(img)
     watch.images.append(ProductImage(url="https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?w=900", alt="x", credit="Unsplash"))
-    mine = Product.query.filter_by(slug="field-automatic-watch").one()
+    mine = Product.query.filter_by(slug="trail-field-40").one()
     for pos, img in enumerate(mine.images, 1):
         img.position = pos
     mine.images.insert(0, ProductImage(filename="seller.webp", alt="mine", position=0))
     db.session.commit()
-    assert "added the store's own photos to Pilot Aviator Watch" in refresh_catalog()
+    assert "added the store's own photos to Aviator 44" in refresh_catalog()
     db.session.expire_all()
-    assert Product.query.filter_by(slug="pilot-aviator-watch").one().primary_image.url == "/static/img/watches/black-pilot-leather.webp"
-    assert Product.query.filter_by(slug="field-automatic-watch").one().primary_image.filename == "seller.webp"
+    assert Product.query.filter_by(slug="aviator-44").one().primary_image.url == "/static/img/watches/aviator-44-black.webp"
+    assert Product.query.filter_by(slug="trail-field-40").one().primary_image.filename == "seller.webp"
     assert refresh_catalog() == []
 
 
 def test_site_spots_use_the_store_photos(client):
     html = client.get("/").get_data(as_text=True)
-    assert "/static/img/watches/blue-skeleton-wrist.webp" in html and "/static/img/watches/watch-collection-gloves.webp" in html
-    assert "/static/img/watches/navy-diver-rubber.webp" in client.get("/account/login").get_data(as_text=True)
+    assert "/static/img/watches/luna-blue-moonphase-40-blue.webp" in html and "/static/img/watches/abyss-300-black-black.webp" in html
+    assert "/static/img/watches/riviera-blue-chrono-41-blue.webp" in client.get("/account/login").get_data(as_text=True)
 
 
 # ---------------------------------------------------------------- wrong photos and the sold-out watch are gone
@@ -293,8 +295,8 @@ def test_no_shoe_photo_and_smart_watches_show_smart_watches(app):
     from velora.seed import PRODUCTS
     for row in PRODUCTS:
         assert "1560343090-f0409e92791a" not in row[10], row[0]  # that link is a photo of a shoe
-    fitness = Product.query.filter_by(slug="smart-fitness-watch").one()
-    gps = Product.query.filter_by(slug="smart-gps-sport-watch").one()
+    fitness = Product.query.filter_by(slug="pulse-active").one()
+    gps = Product.query.filter_by(slug="pulse-summit-rugged").one()
     for p in (fitness, gps):
         assert "1434056886845" not in p.primary_image.url  # the analog watch photo is not on a smart watch
     assert Product.query.filter_by(slug="crystal-bezel-watch").first() is None
@@ -310,7 +312,7 @@ def test_start_up_removes_the_sold_out_watch_and_repairs_wrong_photos(app):
                       category=ladies, price_minor=1350000, stock=0, short_description="x", description="x")
     crystal.images.append(ProductImage(url="https://images.unsplash.com/photo-1560343090-f0409e92791a?w=900", alt="x", credit="Unsplash"))
     db.session.add(crystal)
-    fitness = Product.query.filter_by(slug="smart-fitness-watch").one()
+    fitness = Product.query.filter_by(slug="pulse-active").one()
     for img in list(fitness.images):
         fitness.images.remove(img)
     fitness.images.append(ProductImage(url="https://images.unsplash.com/photo-1434056886845-dac89ffe9b56?w=900", alt="x", credit="Unsplash"))
@@ -318,10 +320,10 @@ def test_start_up_removes_the_sold_out_watch_and_repairs_wrong_photos(app):
     assert demo_status() == "stale"
     changes = refresh_catalog()
     assert "removed 1 product(s) the store no longer sells" in changes
-    assert "replaced a wrong photo on Smart Fitness Watch" in changes
+    assert "added the store's own photos to Pulse Active" in changes
     db.session.expire_all()
     assert Product.query.filter_by(slug="crystal-bezel-watch").first() is None
-    assert "1546868871" in Product.query.filter_by(slug="smart-fitness-watch").one().primary_image.url
+    assert Product.query.filter_by(slug="pulse-active").one().primary_image.url == "/static/img/watches/pulse-active-black.webp"
     assert demo_status() == "current" and refresh_catalog() == []
 
 

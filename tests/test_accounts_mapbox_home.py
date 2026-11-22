@@ -197,7 +197,7 @@ def test_home_page_has_real_photos_not_the_placeholder(client):
         chunk = page.split(slot_class)[1][:400]
         assert "model-placeholder" not in chunk, slot_class
     assert "model-placeholder" not in page.split("hero__photo")[1].split("</div>")[0]
-    assert re.search(r'hero__photo"><img src="/static/img/watches/[a-z-]+\.webp"', page)  # the store's own photo
+    assert re.search(r'hero__photo"><img src="/static/img/watches/[a-z0-9-]+\.webp"', page)  # the store's own photo
 
 
 def test_site_photo_falls_back_to_placeholder_when_catalog_has_no_photo(client, monkeypatch):

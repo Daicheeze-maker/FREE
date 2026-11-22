@@ -12,9 +12,9 @@ def test_home_and_catalog_render(client):
 
 def test_search_matches_name_and_category(client):
     html = client.get("/shop/?q=skeleton").get_data(as_text=True)
-    assert "Slim Skeleton Watch" in html
+    assert "Squelette Rose 40" in html
     html = client.get("/shop/?q=dive").get_data(as_text=True)  # matches the category name
-    assert "Diver Automatic 200m" in html
+    assert "Abyss 300 Black" in html
 
 
 def test_search_empty_state(client):
@@ -23,16 +23,16 @@ def test_search_empty_state(client):
 
 
 def test_filters_and_sorting(client):
-    html = client.get("/shop/?sort=price_asc&max=6500").get_data(as_text=True)
-    assert "Moonphase Automatic Dress Watch" not in html  # ₱24,900
-    assert "Petite Mesh Watch" in html  # ₱5,990
-    p = Product.query.filter_by(slug="petite-mesh-watch").one()
+    html = client.get("/shop/?sort=price_asc&max=8000").get_data(as_text=True)
+    assert "Luna Blue Moonphase 40" not in html  # ₱24,900
+    assert "Azure Mesh 32" in html  # ₱7,900
+    p = Product.query.filter_by(slug="azure-mesh-32").one()
     p.stock = 0
     db.session.commit()
-    html = client.get("/shop/?availability=in_stock&q=petite").get_data(as_text=True)
-    assert "Petite Mesh Watch" not in html  # stock 0
+    html = client.get("/shop/?availability=in_stock&q=azure").get_data(as_text=True)
+    assert "Azure Mesh 32" not in html  # stock 0
     html = client.get("/shop/?brand=Pulse").get_data(as_text=True)
-    assert "Smart Fitness Watch" in html and "Petite Mesh" not in html
+    assert "Pulse Active" in html and "Petite Mesh" not in html
 
 
 def test_category_page_and_ajax_partial(client):
@@ -67,7 +67,7 @@ def test_guest_session_cart_add_update_remove(client):
 
 
 def test_cannot_add_sold_out(client):
-    p = Product.query.filter_by(slug="petite-mesh-watch").one()
+    p = Product.query.filter_by(slug="azure-mesh-32").one()
     p.stock = 0
     db.session.commit()
     r = client.post(f"/cart/add/{p.id}", headers={"X-Requested-With": "fetch"})
@@ -95,7 +95,7 @@ def test_customer_cart_is_persistent(app):
 
 
 def test_wishlist_toggle(customer):
-    p = Product.query.filter_by(name="Petite Mesh Watch").first()
+    p = Product.query.filter_by(name="Azure Mesh 32").first()
     r = customer.post(f"/account/wishlist/{p.id}", headers={"X-Requested-With": "fetch"})
     assert r.json["saved"] is True
     r = customer.post(f"/account/wishlist/{p.id}", headers={"X-Requested-With": "fetch"})

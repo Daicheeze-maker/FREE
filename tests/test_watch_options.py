@@ -42,7 +42,7 @@ def test_watch_page_offers_size_colour_and_engraving(client):
 
 
 def test_a_watch_without_engraving_has_no_engraving_box(client):
-    html = client.get("/shop/p/smart-gps-sport-watch").get_data(as_text=True)
+    html = client.get("/shop/p/pulse-summit-rugged").get_data(as_text=True)
     assert "data-engrave-toggle" not in html and 'name="size"' in html
 
 
@@ -75,7 +75,7 @@ def test_engraving_rules(client):
     assert add(client, p, size=size, color=color, engraving="<b>hi</b>").status_code == 409
     r = add(client, p, size=size, color=color, engraving="a|b")
     assert r.json["ok"] and "a b" in r.json["drawer"] and "a|b" not in r.json["drawer"]  # '|' is stripped, never stored
-    gps = Product.query.filter_by(slug="smart-gps-sport-watch").one()
+    gps = Product.query.filter_by(slug="pulse-summit-rugged").one()
     r = add(client, gps, size=gps.size_list[0], color=gps.color_list[0], engraving="Hello")
     assert r.status_code == 409 and "can't be engraved" in r.json["error"]
     r = add(client, p, size=size, color=color, engraving="J & M 2026")
@@ -95,7 +95,7 @@ def test_different_options_are_different_lines_sharing_stock(client):
     p = optioned_product()
     s0, c0 = opts(p)
     s1 = p.size_list[1] if len(p.size_list) > 1 else s0
-    c1 = p.color_list[1]
+    c1 = p.color_list[1] if len(p.color_list) > 1 else c0
     add(client, p, 2, s0, c0)
     add(client, p, 1, s1, c1)
     add(client, p, 1, s0, c0, engraving="MJ")
@@ -182,7 +182,7 @@ def test_options_are_saved_on_the_order_and_shown_everywhere(customer):
 # ------------------------------------------------------------------ the seller
 
 def test_seller_edits_sizes_colours_and_engraving(seller):
-    p = Product.query.filter_by(slug="chronograph-steel-watch").one()
+    p = Product.query.filter_by(slug="panda-racing-42").one()
     data = {"name": p.name, "brand": p.brand, "category_id": p.category_id, "short_description": "x", "description": "y",
             "price": "11500", "stock": "10", "status": "active", "sizes": "38 mm, 42 mm ", "colors": "Steel, Black",
             "engraving_fee": "750", "engraving_max": "12"}

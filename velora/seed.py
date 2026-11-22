@@ -1,8 +1,6 @@
 """Repeatable demo data: a watch store. Safe to run more than once: it only seeds an empty database.
 
-Photos are hot-linked from Unsplash (free to use under the Unsplash License). Every watch lists a few candidate photos:
-the first is stored, and the browser moves on to the next one by itself if a photo has gone from Unsplash.
-If none loads, the storefront swaps in a local placeholder. `fill-photos` can replace any of them.
+Every watch uses its own generated photo from velora/static/img/watches/ (they ship with the project, so they always load).
 """
 import random
 import secrets
@@ -39,7 +37,7 @@ STRAP_COLORS = "Black,Brown,Tan"
 
 # (name, brand, category idx, price ₱, compare_at, stock, note, origin, featured, sold, photo ids (first one is stored),
 #  short description, description, specs, case sizes, colours, engraving fee ₱ or None)
-PRODUCTS = [
+_OLD = [
     ("Minimalist Leather Strap Watch", "Horloge & Co", 0, 6990, None, 24, "Quartz · 3 ATM", "Swiss movement", True, 260,
      [V1], "Clean dial · genuine leather strap",
      "An everyday dress watch with a clean, uncluttered dial, slim case and a genuine leather strap that softens with wear.",
@@ -133,28 +131,17 @@ PRODUCTS = [
 from .catalog_more import MORE as _MORE  # noqa: E402
 
 _FALLBACK = {0: V1, 1: V4, 2: V2, 3: V1, 4: SW1, 5: V3}  # a known-good stock photo per collection, if a file were missing
-PRODUCTS += [(r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], False, r[9], [_FALLBACK[r[3]]], r[10], r[11], r[12], r[13], r[14], r[15])
-             for r in _MORE]
+# Featured on the homepage: the two best sellers of each collection
+_FEATURED = {r[0] for c in range(6) for r in sorted((m for m in _MORE if m[3] == c), key=lambda m: -m[9])[:2]}
+# The store sells only the watches whose photos and 360° views were generated for it (velora/catalog_more.py)
+PRODUCTS = [(r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[0] in _FEATURED, r[9], [_FALLBACK[r[3]]], r[10], r[11], r[12],
+             r[13], r[14], r[15]) for r in _MORE]
 
 WATCH_SLUGS = {slugify(row[0]) for row in PRODUCTS}
 
 # The store's own photos (velora/static/img/watches/), first one is the cover. They ship with the project, so they
-# always load. Watches not listed here use the Unsplash photos in PRODUCTS.
-OWN_PHOTOS = {
-    "minimalist-leather-strap-watch": ["rose-gold-dress-black-strap"],
-    "classic-gold-tone-dress-watch": ["rose-gold-dress-closeup", "rose-gold-dress-angle"],
-    "slim-skeleton-watch": ["blue-skeleton-wrist", "blue-skeleton-tourbillon", "blue-skeleton-outdoor"],
-    "diver-automatic-200m": ["black-dial-luminor-rock"],
-    "pro-dive-rubber-strap-watch": ["navy-diver-rubber"],
-    "chronograph-steel-watch": ["fluted-blue-chrono-front", "fluted-blue-chrono-side", "fluted-blue-chrono-back"],
-    "racing-chronograph-leather": ["blue-steel-chrono-front", "blue-steel-chrono-side", "blue-steel-chrono-back"],
-    "tachymeter-sport-chrono": ["panda-chrono-wrist", "panda-chrono-display"],
-    "pilot-aviator-watch": ["black-pilot-leather"],
-    "field-automatic-watch": ["green-field-leather-rope", "green-field-leather-front", "green-field-leather-side"],
-    # one photo per colour edition, in the same order as its colours (the 360° frames are in static/img/spin/)
-    "spectrum-chronograph": [f"spectrum-{c}" for c in ("black", "white", "blue", "red", "green", "purple", "pink",
-                                                         "orange", "yellow", "teal")],
-}
+# always load.
+OWN_PHOTOS = {}
 OWN_PHOTOS.update({slugify(r[1]): [f"{slugify(r[1])}-{slugify(r[14])}"] for r in _MORE})
 OWN_CREDIT = "Store photo"
 
@@ -227,7 +214,8 @@ REVIEWS = [
 # Collections an earlier release sold (fashion, jewelry, bags, gifts, cars). They are removed when the store becomes a watch store.
 OLD_COLLECTIONS = {"women", "men", "shoes", "accessories", "jewelry", "bags", "gifts-gourmet", "cars"}
 # Watches an earlier release sold that the store no longer carries
-REMOVED_SLUGS = {"crystal-bezel-watch"}
+# (the first 20 watches and the Spectrum Chronograph went when the store switched to only its generated photos)
+REMOVED_SLUGS = {"crystal-bezel-watch"} | {slugify(r[0]) for r in _OLD}
 # Stock photos an earlier release used that turned out to be wrong (a shoe, an analog watch on a smart watch...)
 WRONG_PHOTO_IDS = {"1560343090-f0409e92791a"}
 WRONG_PHOTO_ON = {"smart-fitness-watch": {"1434056886845-dac89ffe9b56"}, "smart-hybrid-watch": {"1546868871-7041f2a55e12"}}
@@ -306,6 +294,12 @@ def refresh_catalog():
         elif not product.images:
             product.images.append(ProductImage(url=U(row[10][0]), alt=product.name, position=0, credit="Unsplash"))
             changes.append(f"added a photo to {product.name}")
+    # Homepage "Featured" would be empty after the old watches went: feature the demo's picks (only if nothing is featured)
+    if not Product.query.filter(Product.is_featured.is_(True), Product.slug.notin_(list(REMOVED_SLUGS))).count():
+        for slug, (i, row) in rows.items():
+            if row[8] and existing.get(slug) is not None:
+                existing[slug].is_featured = True
+        changes.append("picked the featured watches")
     # Watches someone added themselves stay, in the first watch collection
     first = cats[slugify(CATEGORIES[0][0])]
     for p in Product.query.all():

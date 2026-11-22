@@ -77,7 +77,7 @@ def test_archive_and_restore(seller):
 
 
 def test_restock(seller):
-    p = Product.query.filter_by(slug="petite-mesh-watch").one()
+    p = Product.query.filter_by(slug="azure-mesh-32").one()
     p.stock = 0
     db.session.commit()
     seller.post(f"/seller/inventory/{p.id}", data={"add": "15"})
@@ -174,7 +174,7 @@ def test_production_requires_secret_key(monkeypatch):
 def test_store_sells_only_watches(client):
     names = [c.name for c in Category.query.order_by(Category.position)]
     assert names == ["Dress Watches", "Dive Watches", "Chronographs", "Field & Pilot", "Smart Watches", "Ladies Watches"]
-    assert Product.query.count() == 80
+    assert Product.query.count() == 60
     nav = client.get("/").get_data(as_text=True).split("header__nav")[1].split("</nav>")[0]
     import html as _h
     assert all(n in _h.unescape(nav) for n in names)
@@ -230,7 +230,7 @@ def test_customer_cannot_change_site_photos(customer):
 
 
 def test_uploaded_product_photo_becomes_cover(seller):
-    p = Product.query.filter_by(slug="minimalist-leather-strap-watch").first()
+    p = Product.query.filter_by(slug="sottile-ultra-thin-38").first()
     data = _product_form(name=p.name, category_id=p.category_id, price="6990", stock=str(p.stock), make_cover="y")
     data["image"] = (_png_bytes(), "model.png")
     assert seller.post(f"/seller/products/{p.id}", data=data, content_type="multipart/form-data").status_code == 302
@@ -241,13 +241,13 @@ def test_uploaded_product_photo_becomes_cover(seller):
 
 def test_load_model_photos_folder(app, tmp_path):
     from velora.cli import load_model_photos
-    (tmp_path / "products" / "chronograph-steel-watch").mkdir(parents=True)
+    (tmp_path / "products" / "panda-racing-42").mkdir(parents=True)
     Image.new("RGB", (60, 80), (200, 20, 20)).save(tmp_path / "hero.jpg")
-    Image.new("RGB", (60, 80), (20, 20, 200)).save(tmp_path / "products" / "chronograph-steel-watch" / "01.jpg")
+    Image.new("RGB", (60, 80), (20, 20, 200)).save(tmp_path / "products" / "panda-racing-42" / "01.jpg")
     (tmp_path / "products" / "not-a-product").mkdir()
     report = load_model_photos(tmp_path)
     assert report["slots"] == 1 and report["products"] == 1 and report["skipped"]
-    p = Product.query.filter_by(slug="chronograph-steel-watch").first()
+    p = Product.query.filter_by(slug="panda-racing-42").first()
     assert p.primary_image.filename and db.session.get(StoreSetting, "photo_hero")
 
 
@@ -262,7 +262,7 @@ def test_seed_runs_when_catalog_empty_even_if_accounts_exist(tmp_path):
         db.session.add(early)
         db.session.commit()
         assert seed() is True
-        assert Category.query.count() == 6 and Product.query.count() == 80
+        assert Category.query.count() == 6 and Product.query.count() == 60
         assert User.query.filter_by(email="early@example.com").count() == 1
         assert seed() is False
 

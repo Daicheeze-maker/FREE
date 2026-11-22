@@ -84,14 +84,14 @@ Portrait photos (taller than wide) look best. Every image is checked, resized an
 
 | Collection | Examples |
 |---|---|
-| Dress Watches | minimalist leather strap, gold-tone dress watch, moonphase automatic, skeleton |
-| Dive Watches | automatic diver 200 m, titanium diver, rubber-strap diver |
-| Chronographs | steel chronograph, racing chronograph, tachymeter sport chrono, Spectrum Chronograph (10 colours, 360° view) |
-| Field & Pilot | field automatic, pilot aviator, explorer on canvas |
-| Smart Watches | fitness watch, hybrid watch, GPS sport watch |
-| Ladies Watches | rose gold bracelet, pearl dial, petite mesh |
+| Dress Watches | Sottile Ultra-Thin 38, Luna Blue Moonphase 40, Squelette Rose 40, Tank Classique … |
+| Dive Watches | Abyss 300 Black, Reef Green 40, Ember Diver 43, Lagoon Turquoise 42 … |
+| Chronographs | Panda Racing 42, Riviera Blue Chrono 41, Stealth Yellow Chrono 43 … |
+| Field & Pilot | Trail Field 40, Khaki Field 38, Aviator 44, Meridian GMT 42 … |
+| Smart Watches | Pulse Active, Pulse Summit Rugged, Pulse Band Slim, Pulse Hybrid Leather … |
+| Ladies Watches | Perle Rose 28, Étoile Diamond 30, Azure Mesh 32, Malachite Carré 26 … |
 
-That is **80 watches**: the original 20 plus 60 more (10 per collection) whose photos and 8-angle 360° views were generated for the store with Gemini. Every one of them has a **360° View** you can drag. The **Spectrum Chronograph** comes in ten colour editions, each with its own photo, and has a **360° View**: drag the watch (or use the arrow keys) to turn it all the way around; picking a colour changes the photo and the 360° view. The photos of 10 of them, and of the homepage and sign-in spots, are the store's own (from the owner's Google Drive folder, saved in `velora/static/img/watches/`, so they load even offline); the others use stock photos. **Every watch has options** that the buyer picks on its page:
+That is **60 watches**, 10 per collection. Every photo in the store, including the homepage and sign-in pictures, was generated for it with Gemini in one consistent studio style, and every watch has a **360° View**: drag the watch (or use the arrow keys) to turn it all the way around. The photos ship in `velora/static/img/`, so they load even offline. **Every watch has options** that the buyer picks on its page:
 
 - **Case size** (for example 38 mm / 42 mm / 44 mm), **colour** (with colour swatches), and a **personal engraving** (up to 20 characters, with its own fee, on watches that offer it).
 - Size and colour are required before a watch can go into the bag; the same watch in two different sizes, colours or engravings is two bag lines (stock is shared). The engraving fee is added **by the server**, never by the browser, and the chosen options are saved on the order and shown in the bag, checkout, confirmation, order history, seller order page and the orders CSV.
@@ -103,7 +103,7 @@ That is **80 watches**: the original 20 plus 60 more (10 per collection) whose p
 
 ## 2. Running in a Virtual Machine
 
-The app needs **outbound internet only for the two optional APIs** and for product photos, which are hot-linked from Unsplash. Shopping, cart, checkout and the dashboards all work offline from the local SQLite database. When an API is unreachable, the related feature shows a clear “unavailable” state.
+The app needs **outbound internet only for the two optional APIs** (product photos ship with the project). Shopping, cart, checkout and the dashboards all work offline from the local SQLite database. When an API is unreachable, the related feature shows a clear “unavailable” state.
 
 ### Networking modes
 
@@ -266,7 +266,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 304 tests. External APIs are mocked, so no network is needed. They cover:
+There are 303 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**
@@ -312,7 +312,7 @@ serve.py  wsgi.py      Waitress runner / WSGI entry point
 ## 9. Known limitations
 
 - **Payments are simulated** by design (`DemoPaymentProvider`). A real gateway needs a new `PaymentProvider`, webhooks and PCI-compliant hosted fields. Car listings are demo items: a real dealership would take a reservation deposit rather than full checkout.
-- **Stock photos** are hot-linked from Unsplash and couldn't be checked from the build sandbox, which had no outbound access to those hosts. Run `python -m flask --app wsgi check-images` in your VM. Any failing image automatically shows the local placeholder. Replace them with your own model photos anytime (see section 1).
+- **Photos** are AI-generated (Gemini) for this demo; the products and brands are made up.
 - SQLite is fine for a single VM and moderate traffic. With many concurrent writers, move to PostgreSQL by setting `DATABASE_URL`; the code is ORM-only. The per-IP login throttle is per-process, while the per-account lockout is shared through the database.
 - No outbound email: notifications are in-app. Password reset by email isn't implemented, but admins can manage accounts.
 - Exchange rates are ECB daily reference rates, so they don't move intraday and are for display only.

@@ -132,10 +132,10 @@ def test_search_defaults_to_a_sensible_query_per_target(seller, ready):
     with fake_pexels([photo(1)]) as calls:
         seller.get("/seller/find-photos?target=slot:hero")
     assert calls[0][1]["params"]["query"] == "wristwatch on wrist close up"
-    shades = Product.query.filter_by(slug="diver-automatic-200m").one()
+    shades = Product.query.filter_by(slug="abyss-300-black").one()
     with fake_pexels([photo(1)]) as calls:
         seller.get(f"/seller/find-photos?target=product:{shades.id}")
-    assert calls[0][1]["params"]["query"] == "automatic dive watch"  # specific to the product
+    assert calls[0][1]["params"]["query"] == "diver watch wrist"  # one that suits its collection
 
 
 def test_search_drops_photos_from_other_hosts(app):
@@ -195,7 +195,7 @@ def test_replacing_a_photo_deletes_the_old_file_and_own_uploads_clear_the_credit
 
 
 def test_use_photo_as_a_product_cover(seller, ready):
-    p = Product.query.filter_by(slug="minimalist-leather-strap-watch").one()
+    p = Product.query.filter_by(slug="sottile-ultra-thin-38").one()
     old_cover = p.primary_image.url
     with fake_pexels([photo(41, who="Mia Cruz")]):
         r = seller.post("/seller/find-photos/use", data={"target": f"product:{p.id}", "photo_id": 41})

@@ -44,9 +44,11 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Catalog: watches with options
 
-- 6 collections: Dress Watches, Dive Watches, Chronographs, Field & Pilot, Smart Watches, Ladies Watches. **80 watches** (`velora/seed.py` `PRODUCTS` = the original 20 + **60 from `velora/catalog_more.py`**, 10 per collection). Nothing is sold out in a fresh store.
-- **Spectrum Chronograph** (Chronographs): 10 colour editions (Black, White, Blue, Red, Green, Purple, Pink, Orange, Yellow, Teal),
-  cut from the owner's grid image. One photo per colour (`static/img/watches/spectrum-<colour>.webp`) and a **drag-to-turn 360° view**.
+- 6 collections: Dress Watches, Dive Watches, Chronographs, Field & Pilot, Smart Watches, Ladies Watches. **60 watches**, 10 per
+  collection, all from `velora/catalog_more.py` (`seed.PRODUCTS` is built from it). Nothing is sold out in a fresh store.
+- **Only generated photos** (owner's wish, for a consistent, clean look). The first 20 watches (`seed._OLD`) and the Spectrum
+  Chronograph are in `seed.REMOVED_SLUGS`: start-up deletes them from older stores (order history keeps its snapshots) and
+  features the 2 best sellers per collection if nothing is featured. Watches a seller added are kept.
 - Every watch has **case sizes** (`Product.sizes`), **colours** (`Product.colors`) and optional **engraving**
   (`engraving_fee_minor`, None = not offered; `engraving_max` chars, default 20).
 - A cart line is keyed by `"size|colour|engraving"`, stored in the (historically named) `size` column of `CartItem`;
@@ -58,16 +60,11 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Photos
 
-- **The store's own photos** come from the owner's Google Drive folder
-  (https://drive.google.com/drive/folders/1LeR_NbqxLa181UPOy0WyuAwNDTxm9b0d). They are converted to WebP and committed in
-  `velora/static/img/watches/`, mapped to watches in `seed.OWN_PHOTOS` (several angles each) and to homepage/sign-in
-  spots in `photos.DEFAULT_SLOT_FILES`. They always load, even offline. `refresh_catalog` swaps stock photos for them but
-  never replaces a photo a seller uploaded.
-- Watches without an own photo use Unsplash links with a fallback chain (`seed.alt_next()` → `data-photo-alts` on `<body>` →
-  `app.js` `recover()`), ending on a known-good photo, then a local placeholder.
-- `fill-photos` / Products → "Fill missing & broken photos": Pexels if a key is set, otherwise Openverse (no key).
-- To add more own photos: put them in the Drive folder, download, convert to WebP in `velora/static/img/watches/`,
-  add to `OWN_PHOTOS`, run tests.
+- Every product photo and the homepage/sign-in spots (`photos.DEFAULT_SLOT_FILES`) are the generated photos in
+  `velora/static/img/watches/` (mapped by `seed.OWN_PHOTOS`); they always load, even offline. The owner's Google Drive photos
+  and the Spectrum images were removed (still in git history before this change if ever wanted back).
+- `fill-photos` / Products → "Fill missing & broken photos" (Pexels if a key is set, else Openverse) only fills watches
+  that have no working photo, e.g. one a seller added.
 
 ## Generated watch photos (the 60 in `catalog_more.py`)
 
@@ -86,10 +83,8 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
   in a folder like that and the product page shows the **360° View** button.
 - `static/js/spin.js`: pointer drag (mouse/touch/pen) with a short glide, cross-fade between frames, arrow keys/Home/Escape,
   a small automatic half-turn on open (skipped with reduced motion), colour buttons and colour thumbnails switch photo + frames.
-- Frames fill the viewer (`object-fit: cover`); watches in `spin.SOFT_FRAMES` (Spectrum) are shown smaller. Between frames a
+- Frames fill the viewer (`object-fit: cover`); watches in `spin.SOFT_FRAMES` (now empty) would be shown smaller. Between frames a
   short fade happens around the middle of each step (no long see-through double image).
-- Spectrum's 6 frames per colour = front, 3/4, side, back from the image + mirrored side and 3/4. They come from ~70 px
-  thumbnails, so they are soft; better frames (e.g. 24–36 photos per turn) can replace them file for file.
 
 ## Phone numbers
 
@@ -120,7 +115,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 304 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 303 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -151,18 +146,12 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
 13. **Phone numbers per country** (country picker, digit limits, libphonenumber validation, E.164 storage).
 15. **60 more watches** with Gemini-generated photos and 8-frame 360° views (see "Generated watch photos"); `slugify`
     now turns accents into plain letters (Étoile → etoile).
+16. **Only the generated watches remain** (owner: "remove every product/image that's not from what you made"): the first 20
+    watches, the Spectrum Chronograph and the Drive photos are gone; homepage/sign-in photos are generated ones.
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
     `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.
 
 ## Open items / ideas
 
-- Stock photos the owner has seen that only roughly match: Rose Gold Bracelet Watch shows a black-dial men's watch, Petite
-  Mesh Watch shows a leather-strap chronograph. Replace them with the owner's own photos when available.
-
-- Spectrum's 360° frames are low resolution (cut from small thumbnails); replace with real photos for a sharper turn.
-
-- 10 watches still use stock photos (Moonphase, Deep Blue Titanium, Explorer, the 3 smart watches, the 4 ladies' watches):
-  add photos for them to the Drive folder and map them in `OWN_PHOTOS`.
-- Several Drive photos show real brand logos (Rolex, Patek Philippe, Panerai, De Bethune) on watches the store sells under
-  invented brand names; fine for a class demo, not for a real shop.
+- Each generated watch has one colour and 8 frames per turn; a few frames show small inconsistencies (AI images).

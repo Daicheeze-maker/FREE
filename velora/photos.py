@@ -15,20 +15,20 @@ SLOTS = {
 
 # Until staff choose a photo, each slot shows one of the store's own photos (velora/static/img/watches/)
 DEFAULT_SLOT_FILES = {
-    "hero": "blue-skeleton-wrist",
-    "lookbook": "watch-collection-gloves",
-    "promo": "panda-chrono-wrist",
-    "login": "navy-diver-rubber",
-    "register": "green-field-leather-rope",
+    "hero": "luna-blue-moonphase-40-blue",
+    "lookbook": "abyss-300-black-black",
+    "promo": "panda-racing-42-white",
+    "login": "riviera-blue-chrono-41-blue",
+    "register": "trail-field-40-black",
 }
 
 # ...and if that file is missing, the photo of one of these watches (first one that has a photo)
 DEFAULT_SLOT_PRODUCTS = {
-    "hero": ("minimalist-leather-strap-watch", "chronograph-steel-watch", "diver-automatic-200m"),
-    "lookbook": ("classic-gold-tone-dress-watch", "diver-automatic-200m", "minimalist-leather-strap-watch"),
-    "promo": ("chronograph-steel-watch", "smart-fitness-watch", "minimalist-leather-strap-watch"),
-    "login": ("diver-automatic-200m", "classic-gold-tone-dress-watch", "minimalist-leather-strap-watch"),
-    "register": ("minimalist-leather-strap-watch", "smart-fitness-watch", "chronograph-steel-watch"),
+    "hero": ("luna-blue-moonphase-40", "panda-racing-42"),
+    "lookbook": ("abyss-300-black", "sottile-ultra-thin-38"),
+    "promo": ("panda-racing-42", "riviera-blue-chrono-41"),
+    "login": ("riviera-blue-chrono-41", "abyss-300-black"),
+    "register": ("trail-field-40", "scout-field-39"),
 }
 
 # What Find photos searches for when opened from a product (by collection slug)
@@ -42,28 +42,7 @@ PRODUCT_QUERIES = {
 }
 
 # What Find photos searches for, per watch (by product slug): specific, so the right watch shows up
-PRODUCT_PHOTO_QUERIES = {
-    "minimalist-leather-strap-watch": "minimalist wristwatch leather strap",
-    "classic-gold-tone-dress-watch": "gold dress watch",
-    "moonphase-automatic-dress-watch": "moonphase watch",
-    "slim-skeleton-watch": "skeleton watch",
-    "diver-automatic-200m": "automatic dive watch",
-    "deep-blue-titanium-diver": "blue dial dive watch",
-    "pro-dive-rubber-strap-watch": "dive watch rubber strap",
-    "chronograph-steel-watch": "steel chronograph watch",
-    "racing-chronograph-leather": "racing chronograph watch",
-    "tachymeter-sport-chrono": "tachymeter watch",
-    "field-automatic-watch": "field watch",
-    "pilot-aviator-watch": "pilot watch",
-    "explorer-canvas-strap-watch": "explorer watch canvas strap",
-    "smart-fitness-watch": "fitness smartwatch",
-    "smart-hybrid-watch": "hybrid smartwatch",
-    "smart-gps-sport-watch": "gps sport watch",
-    "rose-gold-bracelet-watch": "rose gold bracelet watch",
-    "pearl-dial-ladies-watch": "pearl dial watch women",
-    "petite-mesh-watch": "mesh strap watch women",
-    "spectrum-chronograph": "colorful rubber strap chronograph watch",
-}
+PRODUCT_PHOTO_QUERIES = {}
 
 
 def product_query(product):

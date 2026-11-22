@@ -24,7 +24,7 @@ def names(slug):
 def test_collections_and_their_order(app):
     ordered = [c.name for c in Category.query.order_by(Category.position)]
     assert ordered == ["Dress Watches", "Dive Watches", "Chronographs", "Field & Pilot", "Smart Watches", "Ladies Watches"]
-    assert [len(names(c.slug)) for c in Category.query.order_by(Category.position)] == [14, 13, 14, 13, 13, 13]
+    assert [len(names(c.slug)) for c in Category.query.order_by(Category.position)] == [10, 10, 10, 10, 10, 10]
 
 
 def test_every_watch_has_size_colour_and_a_photo(app):
@@ -33,7 +33,7 @@ def test_every_watch_has_size_colour_and_a_photo(app):
         assert p.images and p.primary_image.url.startswith(("https://images.unsplash.com/photo-", "/static/img/watches/")), p.name
         assert p.engraving_fee_minor is None or p.engraving_fee_minor >= 0
     assert Product.query.filter(Product.engraving_fee_minor.isnot(None)).count() >= 15
-    assert Product.query.filter_by(slug="smart-gps-sport-watch").one().offers_engraving is False
+    assert Product.query.filter_by(slug="pulse-summit-rugged").one().offers_engraving is False
 
 
 def blank_demo_photos():
@@ -59,7 +59,7 @@ def _fashion_store(app):
     """Put the database back the way the fashion releases left it: other collections, a loose watch, orders on them."""
     from velora.models import Cart, CartItem, OrderItem, WishlistItem
     seed(demo_accounts=True)
-    watch = Product.query.filter_by(slug="diver-automatic-200m").one()
+    watch = Product.query.filter_by(slug="abyss-300-black").one()
     old_watches = Category(name="Watches", slug="watches", icon="watch", description="x", position=0)
     women = Category(name="Women", slug="women", icon="shirt", description="x", position=1)
     db.session.add_all([old_watches, women])
@@ -116,8 +116,8 @@ def test_a_fashion_store_becomes_the_watch_store_and_keeps_orders(tmp_path):
         assert CartItem.query.filter_by(size="M").count() == 0 and WishlistItem.query.filter(
             WishlistItem.product_id.notin_([p.id for p in Product.query])).count() == 0
         assert db.session.get(StoreSetting, "photo_hero").value == "mine.webp"
-        diver = Product.query.filter_by(slug="diver-automatic-200m").one()
-        assert diver.category.slug == "dive-watches" and diver.size_list == ["40 mm", "42 mm", "44 mm"] and diver.offers_engraving
+        diver = Product.query.filter_by(slug="abyss-300-black").one()
+        assert diver.category.slug == "dive-watches" and diver.size_list == ["40 mm", "42 mm"] and diver.offers_engraving
         own = Product.query.filter_by(slug="my-own-watch").one()
         assert own.category.slug == "dress-watches"  # a watch the seller added is kept
     again = app.test_cli_runner().invoke(args=["upgrade-demo"]).output
@@ -130,11 +130,11 @@ def test_refresh_never_changes_a_catalog_that_is_already_right(app):
 
 
 def test_refresh_keeps_a_seller_s_own_edits(app):
-    watch = Product.query.filter_by(slug="chronograph-steel-watch").one()
+    watch = Product.query.filter_by(slug="panda-racing-42").one()
     watch.price_minor, watch.sizes = 123_400, "41 mm"  # the seller changed a price and the sizes
     db.session.commit()
     refresh_catalog()
-    watch = Product.query.filter_by(slug="chronograph-steel-watch").one()
+    watch = Product.query.filter_by(slug="panda-racing-42").one()
     assert watch.price_minor == 123_400 and watch.size_list == ["41 mm"]
 
 
@@ -153,19 +153,17 @@ def keyed(app):
 
 def test_fill_gives_photos_to_missing_and_broken_ones_and_leaves_working_ones(seller, keyed):
     blank_demo_photos()
-    tote = Product.query.filter_by(slug="smart-fitness-watch").one()
+    tote = Product.query.filter_by(slug="pulse-active").one()
     tote_url = tote.images[0].url
-    broken = Product.query.filter_by(slug="explorer-canvas-strap-watch").one()
-    broken_url = broken.images[0].url
+    broken = Product.query.filter_by(slug="khaki-field-38").one()
+    broken.images[0].url = broken_url = "https://images.unsplash.com/photo-gone?w=900"  # a photo link that stopped working
+    db.session.commit()
     pool = [photo(1000 + i) for i in range(60)]
     with fake_pexels(pool) as calls, \
             __import__("unittest.mock").mock.patch("velora.services.photo_check.remote_ok", _working_remote(tote_url)):
         r = seller.post("/seller/products/autofill-photos", follow_redirects=True)
     text = page(r)
-    from velora.seed import OWN_PHOTOS
-    own_kept = Product.query.filter(Product.slug.in_(list(OWN_PHOTOS)), Product.id.notin_(
-        [p.id for p in Product.query.order_by(Product.id).limit(9)])).count()
-    assert f"Added photos to {Product.query.count() - 1 - own_kept} product(s)" in text  # all but the working stock photo and the store's own photos
+    assert "Added photos to 10 product(s)" in text  # the 9 without a photo and the dead link; the store's own photos stay
     db.session.expire_all()
     tote = db.session.get(Product, tote.id)
     assert [i.url for i in tote.images] == [tote_url]  # a working photo is untouched
@@ -173,7 +171,7 @@ def test_fill_gives_photos_to_missing_and_broken_ones_and_leaves_working_ones(se
     assert broken.primary_image.filename and all(i.url != broken_url for i in broken.images)  # dead link replaced
     assert broken.primary_image.credit.startswith("Photo by ") and "Pexels" in broken.primary_image.credit
     searches = [kw["params"]["query"] for url, kw in calls if url.endswith("/search")]
-    assert "blue dial dive watch" in searches and "automatic dive watch" in searches  # specific, per watch
+    assert "dress wristwatch leather strap" in searches and "field watch canvas strap" in searches  # per collection
 
 
 def test_products_with_no_photo_at_all_are_filled_first(seller, keyed):
@@ -182,19 +180,20 @@ def test_products_with_no_photo_at_all_are_filled_first(seller, keyed):
             __import__("unittest.mock").mock.patch("velora.services.photo_check.remote_ok", _working_remote()):
         seller.post("/seller/products/autofill-photos")
     first = [kw["params"]["query"] for url, kw in calls if url.endswith("/search")][:9]
-    from velora.photos import PRODUCT_PHOTO_QUERIES
-    blank = {PRODUCT_PHOTO_QUERIES[p.slug] for p in Product.query.order_by(Product.id).limit(9)}
+    from velora.photos import product_query
+    blank = {product_query(p) for p in Product.query.order_by(Product.id).limit(9)}
     assert set(first) <= blank  # the empty ones before the ones with dead links
 
 
 def test_fill_uses_different_photos_and_second_press_finishes_the_job(seller, keyed):
+    blank_demo_photos()
     pool = [photo(2000 + i) for i in range(80)]
     with fake_pexels(pool), __import__("unittest.mock").mock.patch("velora.services.photo_check.remote_ok", _working_remote()):
         seller.post("/seller/products/autofill-photos")
         seller.post("/seller/products/autofill-photos")
     db.session.expire_all()
     covers = [p.primary_image.filename or p.primary_image.url for p in Product.query.all()]
-    assert all(covers) and len(set(covers)) == len(covers) == Product.query.count() == 80  # every watch has its own photo
+    assert all(covers) and len(set(covers)) == len(covers) == Product.query.count() == 60  # every watch has its own photo
 
 
 def test_fill_does_nothing_when_every_photo_works(seller, keyed):
@@ -214,6 +213,7 @@ def test_fill_does_nothing_when_every_photo_works(seller, keyed):
 
 
 def test_fill_works_without_a_key_when_online_and_is_staff_only(seller, client):
+    blank_demo_photos()
     with patch("velora.services.openverse.requests.get", side_effect=requests.ConnectionError("offline")), \
             patch("velora.services.photo_check.check_remote", return_value={}):
         r = seller.post("/seller/products/autofill-photos", follow_redirects=True)
@@ -225,6 +225,7 @@ def test_fill_works_without_a_key_when_online_and_is_staff_only(seller, client):
 
 
 def test_fill_stops_politely_when_pexels_says_no(seller, keyed):
+    blank_demo_photos()
     with fake_pexels(status=429), __import__("unittest.mock").mock.patch("velora.services.photo_check.remote_ok", _working_remote()):
         r = seller.post("/seller/products/autofill-photos", follow_redirects=True)
     assert "free limit is 200 searches" in page(r)
@@ -236,7 +237,7 @@ def test_products_page_counts_products_without_a_photo(seller):
     n = Product.query.filter(~Product.images.any()).count()
     assert n == 9 and f"<strong>{n}</strong> products have no photo" in html
     listed = seller.get("/seller/products?nophoto=1").get_data(as_text=True)
-    assert "Minimalist Leather Strap Watch" in listed and "Smart Fitness Watch" not in listed
+    assert "Sottile Ultra-Thin 38" in listed and "Pulse Active" not in listed
 
 
 def test_photo_check_really_works_in_worker_threads(app):
@@ -260,7 +261,7 @@ def test_fill_looks_at_a_second_page_when_the_first_is_all_used(seller, keyed):
     """If every photo on page 1 is already taken by another product, page 2 is tried before giving up."""
     from unittest.mock import patch
     from .test_pexels_photos import FakeResp
-    shades = Product.query.filter_by(slug="diver-automatic-200m").one()
+    shades = Product.query.filter_by(slug="abyss-300-black").one()
     for other in Product.query.filter(Product.id != shades.id):
         db.session.delete(other)
     db.session.commit()

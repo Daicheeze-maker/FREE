@@ -12,7 +12,7 @@ from .services.catalog import slugify
 
 
 # Watches whose 360° frames were cut from small thumbnails: shown a bit smaller so they don't look blurry
-SOFT_FRAMES = {"spectrum-chronograph"}
+SOFT_FRAMES = set()
 
 
 def spin_data(product):

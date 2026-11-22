@@ -31,7 +31,8 @@ def demo_status():
     from .services.catalog import slugify
     if Category.query.first() is None:
         return "empty"
-    demo = {slugify(r[0]) for r in PRODUCTS} | {"linen-wrap-midi-dress"}
+    from .seed import REMOVED_SLUGS
+    demo = {slugify(r[0]) for r in PRODUCTS} | REMOVED_SLUGS | {"linen-wrap-midi-dress"}
     if not Product.query.filter(Product.slug.in_(demo)).count():
         return "custom"
     wanted = {slugify(c[0]) for c in CATEGORIES}
