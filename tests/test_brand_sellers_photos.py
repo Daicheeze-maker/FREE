@@ -225,7 +225,8 @@ def test_page_carries_the_photo_fallback_chain_for_the_browser(client):
     for row in PRODUCTS:
         ids = row[10]
         assert ids[-1] in ("1523275335684-37898b6baf30", "1522312346375-d1a52e2b99b3", "1524592094714-0f0654e20314",
-                           "1547996160-81dfa63595aa", "1434056886845-dac89ffe9b56"), row[0]
+                           "1547996160-81dfa63595aa", "1434056886845-dac89ffe9b56", "1546868871-7041f2a55e12",
+                           "1579586337278-3befd40fd17a"), row[0]
 
 
 def test_static_scripts_are_versioned_so_browsers_never_keep_old_ones(client):
@@ -282,3 +283,41 @@ def test_site_spots_use_the_store_photos(client):
     html = client.get("/").get_data(as_text=True)
     assert "/static/img/watches/blue-skeleton-wrist.webp" in html and "/static/img/watches/watch-collection-gloves.webp" in html
     assert "/static/img/watches/navy-diver-rubber.webp" in client.get("/account/login").get_data(as_text=True)
+
+
+# ---------------------------------------------------------------- wrong photos and the sold-out watch are gone
+
+def test_no_shoe_photo_and_smart_watches_show_smart_watches(app):
+    from velora.seed import PRODUCTS
+    for row in PRODUCTS:
+        assert "1560343090-f0409e92791a" not in row[10], row[0]  # that link is a photo of a shoe
+    fitness = Product.query.filter_by(slug="smart-fitness-watch").one()
+    gps = Product.query.filter_by(slug="smart-gps-sport-watch").one()
+    for p in (fitness, gps):
+        assert "1434056886845" not in p.primary_image.url  # the analog watch photo is not on a smart watch
+    assert Product.query.filter_by(slug="crystal-bezel-watch").first() is None
+    assert Product.query.filter_by(stock=0).count() == 0  # nothing sold out in a fresh store
+
+
+def test_start_up_removes_the_sold_out_watch_and_repairs_wrong_photos(app):
+    from velora.cli import demo_status
+    from velora.models import Category, OrderItem
+    from velora.seed import refresh_catalog
+    ladies = Category.query.filter_by(slug="ladies-watches").one()
+    crystal = Product(name="Crystal Bezel Watch", slug="crystal-bezel-watch", sku="VM-8888", brand="Maison Lune",
+                      category=ladies, price_minor=1350000, stock=0, short_description="x", description="x")
+    crystal.images.append(ProductImage(url="https://images.unsplash.com/photo-1560343090-f0409e92791a?w=900", alt="x", credit="Unsplash"))
+    db.session.add(crystal)
+    fitness = Product.query.filter_by(slug="smart-fitness-watch").one()
+    for img in list(fitness.images):
+        fitness.images.remove(img)
+    fitness.images.append(ProductImage(url="https://images.unsplash.com/photo-1434056886845-dac89ffe9b56?w=900", alt="x", credit="Unsplash"))
+    db.session.commit()
+    assert demo_status() == "stale"
+    changes = refresh_catalog()
+    assert "removed 1 product(s) the store no longer sells" in changes
+    assert "replaced a wrong photo on Smart Fitness Watch" in changes
+    db.session.expire_all()
+    assert Product.query.filter_by(slug="crystal-bezel-watch").first() is None
+    assert "1546868871" in Product.query.filter_by(slug="smart-fitness-watch").one().primary_image.url
+    assert demo_status() == "current" and refresh_catalog() == []

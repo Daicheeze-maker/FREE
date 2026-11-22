@@ -31,6 +31,8 @@ CATEGORIES = [
 # Verified-working photos (they loaded on real screens) end each chain, so every watch always ends on a real watch photo.
 V1, V2, V3, V4, V5 = ("1523275335684-37898b6baf30", "1522312346375-d1a52e2b99b3", "1524592094714-0f0654e20314",
                       "1547996160-81dfa63595aa", "1434056886845-dac89ffe9b56")
+# Smart watches seen loading on real screens (V5 above is an analog watch: it only suits the hybrid)
+SW1, SW2 = "1546868871-7041f2a55e12", "1579586337278-3befd40fd17a"
 
 DRESS_COLORS, SPORT_COLORS, SMART_COLORS = "Silver,Gold,Rose Gold", "Black,Blue,Green", "Midnight,Starlight,Rose Gold"
 STRAP_COLORS = "Black,Brown,Tan"
@@ -64,7 +66,7 @@ PRODUCTS = [
      "A light, hard-wearing titanium diver rated to 300 m with a ceramic bezel and a helium escape valve.",
      "Grade 2 titanium, ceramic bezel, sapphire crystal, automatic movement.", "42 mm,44 mm", "Blue,Black,Grey", 800),
     ("Pro Dive Rubber Strap Watch", "Tidewater", 1, 9990, None, 22, "Quartz · 200 m", "Japan movement", False, 138,
-     ["1619134778706-7015533a6150", "1560343090-f0409e92791a", V4], "Quartz diver · soft rubber strap",
+     ["1619134778706-7015533a6150", V4], "Quartz diver · soft rubber strap",
      "A value dive watch with a rotating bezel and a soft rubber strap that is comfortable all day, in or out of the water.",
      "Stainless steel, mineral crystal, rubber strap, quartz movement.", "40 mm,44 mm", "Black,Blue,Green", 500),
 
@@ -82,7 +84,7 @@ PRODUCTS = [
      "Steel case, mineral crystal, silicone strap, quartz chronograph movement.", "41 mm,45 mm", "Black,Blue,Red", None),
 
     ("Field Automatic Watch", "Northfield", 3, 12500, None, 14, "Automatic · 10 ATM", "Japan movement", False, 77,
-     ["1548171916-c8fd1c9d4e5a", "1560343090-f0409e92791a", V1], "Legible dial · canvas strap",
+     ["1548171916-c8fd1c9d4e5a", V1], "Legible dial · canvas strap",
      "A no-nonsense field watch with a high-contrast, legible dial and a washable canvas strap.",
      "Stainless steel, hardened crystal, canvas strap, automatic movement.", "38 mm,40 mm", "Green,Black,Tan", 600),
     ("Pilot Aviator Watch", "Horloge & Co", 3, 15900, 17900, 10, "Automatic · 10 ATM", "Swiss movement", True, 88,
@@ -95,15 +97,15 @@ PRODUCTS = [
      "Stainless steel, mineral crystal, canvas strap, quartz movement.", "38 mm,42 mm", "Green,Tan,Black", 500),
 
     ("Smart Fitness Watch", "Pulse", 4, 8990, None, 40, "Heart rate · GPS · 5 ATM", "Imported", True, 305,
-     [V5], "Heart rate, sleep and workout tracking",
+     [SW1, SW2], "Heart rate, sleep and workout tracking",
      "A smart fitness watch with heart-rate and sleep tracking, built-in GPS, phone notifications and a 7-day battery.",
      "Aluminium case, AMOLED display, silicone strap. Works with Android and iPhone.", "40 mm,44 mm", SMART_COLORS, 500),
     ("Smart Hybrid Watch", "Pulse", 4, 6490, None, 30, "Hybrid · 6-month battery", "Imported", False, 121,
-     ["1546868871-7041f2a55e12", "1579586337278-3befd40fd17a", V5], "Analog dial · smart alerts",
+     [V5], "Analog dial · smart alerts",
      "A hybrid that looks like a classic analog watch but counts steps, tracks sleep and buzzes for calls, with a 6-month battery.",
      "Stainless steel, mineral crystal, leather strap, replaceable battery.", "38 mm,42 mm", "Black,Silver,Rose Gold", 500),
     ("Smart GPS Sport Watch", "Pulse", 4, 14990, 16990, 16, "GPS · multi-sport · 10 ATM", "Imported", False, 67,
-     ["1579586337278-3befd40fd17a", "1546868871-7041f2a55e12", V5], "Multi-sport GPS · 2-week battery",
+     [SW2, SW1], "Multi-sport GPS · 2-week battery",
      "A rugged multi-sport GPS watch with route maps, 24 sport modes and a two-week battery.",
      "Fibre-reinforced case, sapphire glass, silicone strap.", "42 mm,47 mm", "Black,Blue,Green", None),
 
@@ -119,10 +121,6 @@ PRODUCTS = [
      ["1539874754764-5a96559165b0", "1622434641406-a158123450f9", V1], "Milanese mesh · petite case",
      "A petite case on an adjustable Milanese mesh strap that fits any wrist without tools.",
      "Stainless steel case and mesh strap, mineral crystal.", "26 mm,30 mm", "Silver,Gold,Rose Gold", None),
-    ("Crystal Bezel Watch", "Maison Lune", 5, 13500, 15500, 0, "Quartz · 5 ATM", "Swiss movement", False, 58,
-     ["1560343090-f0409e92791a", "1508685096489-7aacd43bd3b1", V3], "Crystal-set bezel · bracelet",
-     "A crystal-set bezel that catches the light, on a polished link bracelet.",
-     "Stainless steel, crystals, sapphire-coated glass, quartz movement.", "30 mm,33 mm", "Silver,Gold,Rose Gold", 700),
     ("Spectrum Chronograph", "Aurelune Studio", 2, 12900, 14900, 30, "Quartz chronograph · 10 ATM", "Japan movement", True, 186,
      [V2], "Ten colour editions · drag for a 360° view",
      "A bold sport chronograph with a matte black case, three subdials and a soft rubber strap, in ten colour editions. "
@@ -220,6 +218,16 @@ REVIEWS = [
 
 # Collections an earlier release sold (fashion, jewelry, bags, gifts, cars). They are removed when the store becomes a watch store.
 OLD_COLLECTIONS = {"women", "men", "shoes", "accessories", "jewelry", "bags", "gifts-gourmet", "cars"}
+# Watches an earlier release sold that the store no longer carries
+REMOVED_SLUGS = {"crystal-bezel-watch"}
+# Stock photos an earlier release used that turned out to be wrong (a shoe, an analog watch on a smart watch...)
+WRONG_PHOTO_IDS = {"1560343090-f0409e92791a"}
+WRONG_PHOTO_ON = {"smart-fitness-watch": {"1434056886845-dac89ffe9b56"}, "smart-hybrid-watch": {"1546868871-7041f2a55e12"}}
+
+
+def has_wrong_photo(product):
+    bad = WRONG_PHOTO_IDS | WRONG_PHOTO_ON.get(product.slug, set())
+    return any((i.credit or "") == "Unsplash" and any(b in (i.url or "") for b in bad) for i in product.images)
 
 
 def refresh_catalog():
@@ -245,7 +253,7 @@ def refresh_catalog():
     db.session.flush()
 
     # Fashion, jewelry, bags and gift products go (the old "Watches" collection's own products stay)
-    gone = [p for p in Product.query.all() if p.category.slug in OLD_COLLECTIONS]
+    gone = [p for p in Product.query.all() if p.category.slug in OLD_COLLECTIONS or p.slug in REMOVED_SLUGS]
     if gone:
         ids = [p.id for p in gone]
         OrderItem.query.filter(OrderItem.product_id.in_(ids)).update({OrderItem.product_id: None}, synchronize_session=False)
@@ -257,7 +265,7 @@ def refresh_catalog():
                     delete_upload(img.filename)
             db.session.delete(p)
         db.session.flush()
-        changes.append(f"removed {len(gone)} non-watch product(s)")
+        changes.append(f"removed {len(gone)} product(s) the store no longer sells")
 
     rng, now = random.Random(7), utcnow()
     rows = {slugify(r[0]): (i, r) for i, r in enumerate(PRODUCTS)}
@@ -280,6 +288,11 @@ def refresh_catalog():
             product.sizes, product.colors = row[14] or None, row[15] or None
             product.engraving_fee_minor = row[16] * 100 if row[16] is not None else None
             changes.append(f"added size, colour and engraving options to {product.name}")
+        if has_wrong_photo(product):
+            for img in [i for i in product.images if (i.credit or "") == "Unsplash"]:
+                product.images.remove(img)
+                db.session.delete(img)
+            changes.append(f"replaced a wrong photo on {product.name}")
         if apply_own_photos(product):
             changes.append(f"added the store's own photos to {product.name}")
         elif not product.images:

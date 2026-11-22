@@ -86,12 +86,12 @@ Portrait photos (taller than wide) look best. Every image is checked, resized an
 |---|---|
 | Dress Watches | minimalist leather strap, gold-tone dress watch, moonphase automatic, skeleton |
 | Dive Watches | automatic diver 200 m, titanium diver, rubber-strap diver |
-| Chronographs | steel chronograph, racing chronograph, tachymeter sport chrono |
+| Chronographs | steel chronograph, racing chronograph, tachymeter sport chrono, Spectrum Chronograph (10 colours, 360° view) |
 | Field & Pilot | field automatic, pilot aviator, explorer on canvas |
 | Smart Watches | fitness watch, hybrid watch, GPS sport watch |
-| Ladies Watches | rose gold bracelet, pearl dial, petite mesh, crystal bezel |
+| Ladies Watches | rose gold bracelet, pearl dial, petite mesh |
 
-That is 21 watches. The **Spectrum Chronograph** comes in ten colour editions, each with its own photo, and has a **360° View**: drag the watch (or use the arrow keys) to turn it all the way around; picking a colour changes the photo and the 360° view. The photos of 10 of them, and of the homepage and sign-in spots, are the store's own (from the owner's Google Drive folder, saved in `velora/static/img/watches/`, so they load even offline); the others use stock photos. **Every watch has options** that the buyer picks on its page:
+That is 20 watches. The **Spectrum Chronograph** comes in ten colour editions, each with its own photo, and has a **360° View**: drag the watch (or use the arrow keys) to turn it all the way around; picking a colour changes the photo and the 360° view. The photos of 10 of them, and of the homepage and sign-in spots, are the store's own (from the owner's Google Drive folder, saved in `velora/static/img/watches/`, so they load even offline); the others use stock photos. **Every watch has options** that the buyer picks on its page:
 
 - **Case size** (for example 38 mm / 42 mm / 44 mm), **colour** (with colour swatches), and a **personal engraving** (up to 20 characters, with its own fee, on watches that offer it).
 - Size and colour are required before a watch can go into the bag; the same watch in two different sizes, colours or engravings is two bag lines (stock is shared). The engraving fee is added **by the server**, never by the browser, and the chosen options are saved on the order and shown in the bag, checkout, confirmation, order history, seller order page and the orders CSV.
@@ -262,7 +262,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 242 tests. External APIs are mocked, so no network is needed. They cover:
+There are 244 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**

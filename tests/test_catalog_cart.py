@@ -26,8 +26,11 @@ def test_filters_and_sorting(client):
     html = client.get("/shop/?sort=price_asc&max=6500").get_data(as_text=True)
     assert "Moonphase Automatic Dress Watch" not in html  # ₱24,900
     assert "Petite Mesh Watch" in html  # ₱5,990
-    html = client.get("/shop/?availability=in_stock&q=crystal").get_data(as_text=True)
-    assert "Crystal Bezel Watch" not in html  # stock 0
+    p = Product.query.filter_by(slug="petite-mesh-watch").one()
+    p.stock = 0
+    db.session.commit()
+    html = client.get("/shop/?availability=in_stock&q=petite").get_data(as_text=True)
+    assert "Petite Mesh Watch" not in html  # stock 0
     html = client.get("/shop/?brand=Pulse").get_data(as_text=True)
     assert "Smart Fitness Watch" in html and "Petite Mesh" not in html
 
@@ -64,7 +67,9 @@ def test_guest_session_cart_add_update_remove(client):
 
 
 def test_cannot_add_sold_out(client):
-    p = Product.query.filter_by(stock=0).first()
+    p = Product.query.filter_by(slug="petite-mesh-watch").one()
+    p.stock = 0
+    db.session.commit()
     r = client.post(f"/cart/add/{p.id}", headers={"X-Requested-With": "fetch"})
     assert r.status_code == 409 and not r.json["ok"]
 

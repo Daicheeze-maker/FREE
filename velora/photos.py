@@ -62,7 +62,6 @@ PRODUCT_PHOTO_QUERIES = {
     "rose-gold-bracelet-watch": "rose gold bracelet watch",
     "pearl-dial-ladies-watch": "pearl dial watch women",
     "petite-mesh-watch": "mesh strap watch women",
-    "crystal-bezel-watch": "crystal watch women",
     "spectrum-chronograph": "colorful rubber strap chronograph watch",
 }
 

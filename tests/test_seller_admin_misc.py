@@ -77,7 +77,9 @@ def test_archive_and_restore(seller):
 
 
 def test_restock(seller):
-    p = Product.query.filter_by(stock=0).first()
+    p = Product.query.filter_by(slug="petite-mesh-watch").one()
+    p.stock = 0
+    db.session.commit()
     seller.post(f"/seller/inventory/{p.id}", data={"add": "15"})
     db.session.refresh(p)
     assert p.stock == 15
@@ -172,7 +174,7 @@ def test_production_requires_secret_key(monkeypatch):
 def test_store_sells_only_watches(client):
     names = [c.name for c in Category.query.order_by(Category.position)]
     assert names == ["Dress Watches", "Dive Watches", "Chronographs", "Field & Pilot", "Smart Watches", "Ladies Watches"]
-    assert Product.query.count() == 21
+    assert Product.query.count() == 20
     nav = client.get("/").get_data(as_text=True).split("header__nav")[1].split("</nav>")[0]
     import html as _h
     assert all(n in _h.unescape(nav) for n in names)
@@ -184,7 +186,7 @@ def test_store_sells_only_watches(client):
 def test_every_product_is_a_watch_in_a_sensible_collection(app):
     expected = {"Dress Watches": ("Dress", "Leather Strap", "Skeleton"), "Dive Watches": ("Dive", "Diver"),
                 "Chronographs": ("Chrono",), "Field & Pilot": ("Field", "Pilot", "Explorer"),
-                "Smart Watches": ("Smart",), "Ladies Watches": ("Ladies", "Bracelet", "Mesh", "Crystal")}
+                "Smart Watches": ("Smart",), "Ladies Watches": ("Ladies", "Bracelet", "Mesh")}
     for cat, words in expected.items():
         items = Product.query.join(Category).filter(Category.name == cat).all()
         assert items, cat
@@ -249,7 +251,7 @@ def test_seed_runs_when_catalog_empty_even_if_accounts_exist(tmp_path):
         db.session.add(early)
         db.session.commit()
         assert seed() is True
-        assert Category.query.count() == 6 and Product.query.count() == 21
+        assert Category.query.count() == 6 and Product.query.count() == 20
         assert User.query.filter_by(email="early@example.com").count() == 1
         assert seed() is False
 

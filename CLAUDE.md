@@ -35,7 +35,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Catalog: watches with options
 
-- 6 collections: Dress Watches, Dive Watches, Chronographs, Field & Pilot, Smart Watches, Ladies Watches. 21 watches (`velora/seed.py` `PRODUCTS`).
+- 6 collections: Dress Watches, Dive Watches, Chronographs, Field & Pilot, Smart Watches, Ladies Watches. 20 watches (`velora/seed.py` `PRODUCTS`). Nothing is sold out in a fresh store.
 - **Spectrum Chronograph** (Chronographs): 10 colour editions (Black, White, Blue, Red, Green, Purple, Pink, Orange, Yellow, Teal),
   cut from the owner's grid image. One photo per colour (`static/img/watches/spectrum-<colour>.webp`) and a **drag-to-turn 360° view**.
 - Every watch has **case sizes** (`Product.sizes`), **colours** (`Product.colors`) and optional **engraving**
@@ -89,7 +89,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 242 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 244 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -105,8 +105,14 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
    file in the GitHub repo (the owner first asked for an Obsidian vault named CLAUDE, then chose GitHub).
 
 6. Added the **Spectrum Chronograph** in 10 colours from the owner's image, with a drag-to-turn 360° view.
+7. Removed the sold-out Crystal Bezel Watch (`seed.REMOVED_SLUGS`). Fixed wrong stock photos: one Unsplash link was a shoe,
+   and the Smart Fitness Watch showed an analog watch (`seed.WRONG_PHOTO_IDS` / `WRONG_PHOTO_ON`; `refresh_catalog` repairs
+   existing stores). Verified-on-screen smartwatch photos: `SW1`, `SW2` in `seed.py`.
 
 ## Open items / ideas
+
+- Stock photos the owner has seen that only roughly match: Rose Gold Bracelet Watch shows a black-dial men's watch, Petite
+  Mesh Watch shows a leather-strap chronograph. Replace them with the owner's own photos when available.
 
 - Spectrum's 360° frames are low resolution (cut from small thumbnails); replace with real photos for a sharper turn.
 
