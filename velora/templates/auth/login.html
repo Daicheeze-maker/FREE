@@ -19,6 +19,9 @@
         {{ field(form.remember) }}
         <button class="btn btn--dark btn--lg btn--block" type="submit" data-loading-text="Signing in…">Sign in {{ icon('arrow-right') }}</button>
       </form>
+      {% if admin_setup %}
+      <p class="alert alert--info" style="margin-top:18px">{{ icon('shield-check') }} <span>This store has no admin yet. <a href="{{ url_for('auth.setup_admin') }}"><strong>Set up the admin account</strong></a> (only works on this computer).</span></p>
+      {% endif %}
       <div class="auth__alt">
         <p>New here? Create an account to get a buyer profile and a linked seller profile.</p>
         <a class="btn btn--ghost btn--block" href="{{ url_for('auth.register', next=request.args.get('next')) }}">Create an account</a>

@@ -9,7 +9,7 @@ from flask import Blueprint, abort, current_app, flash, redirect, render_templat
 from flask_login import current_user, login_required, login_user, logout_user
 
 from ..extensions import db
-from ..forms import LoginForm, RegisterForm
+from ..forms import AdminSetupForm, LoginForm, RegisterForm
 from ..models import ROLE_CUSTOMER, ROLE_SELLER, SELLER_SUFFIX, User, utcnow
 from ..security import audit, client_ip, is_safe_redirect
 from ..services import cart as cart_service
@@ -85,7 +85,7 @@ def login():
         elif user and user.check_password(form.password.data):
             if not user.is_active_account:
                 flash("This account has been disabled. Contact support if you think this is a mistake.", "error")
-                return render_template("auth/login.html", form=form), 403
+                return render_template("auth/login.html", form=form, admin_setup=admin_setup_open()), 403
             if is_buyer:
                 _ensure_seller_profile(user)
             user.failed_login_count = 0
@@ -124,7 +124,7 @@ def login():
                     audit("auth.lockout", "user", user.id, "Account temporarily locked after failed logins", actor=user)
                 db.session.commit()
             flash("That email and password don't match.", "error")
-    return render_template("auth/login.html", form=form)
+    return render_template("auth/login.html", form=form, admin_setup=admin_setup_open())
 
 
 @bp.route("/register", methods=["GET", "POST"])
@@ -164,6 +164,43 @@ def register():
             nxt = request.args.get("next")
             return redirect(nxt if is_safe_redirect(nxt) else url_for("account.dashboard"))
     return render_template("auth/register.html", form=form)
+
+
+def admin_setup_open():
+    """The one-time admin set-up page works only while the store has no admin, and only from this computer itself."""
+    from ..models import ROLE_ADMIN
+    local = (request.remote_addr or "") in ("127.0.0.1", "::1") and not request.headers.get("X-Forwarded-For")
+    return local and User.query.filter_by(role=ROLE_ADMIN).first() is None
+
+
+@bp.route("/setup-admin", methods=["GET", "POST"])
+def setup_admin():
+    from ..models import ROLE_ADMIN
+    if not admin_setup_open():
+        abort(404)
+    form = AdminSetupForm()
+    if form.validate_on_submit():
+        email = form.email.data.lower()
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            user = User(email=email, full_name=form.full_name.data, role=ROLE_ADMIN)
+            db.session.add(user)
+        else:  # an email already used for a shop account becomes the admin
+            user.role, user.full_name = ROLE_ADMIN, form.full_name.data
+            linked = User.query.filter_by(email=email + SELLER_SUFFIX).first()
+            if linked is not None:
+                linked.is_active_account = False
+        user.set_password(form.password.data)
+        user.is_active_account, user.failed_login_count, user.locked_until = True, 0, None
+        db.session.flush()
+        audit("admin.setup", "user", user.id, f"First admin account set up: {email}", actor=user)
+        db.session.commit()
+        logout_user()
+        session.clear()
+        login_user(user)
+        flash("Your admin account is ready. Welcome to the Admin console!", "success")
+        return redirect(url_for("admin.dashboard"))
+    return render_template("auth/setup_admin.html", form=form)
 
 
 @bp.post("/switch-profile")

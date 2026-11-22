@@ -51,6 +51,13 @@ class RegisterForm(FlaskForm):
     accept = BooleanField("I agree to the terms and privacy policy", validators=[DataRequired("Please accept to continue.")])
 
 
+class AdminSetupForm(FlaskForm):
+    full_name = StringField("Your name", validators=[DataRequired(), Length(min=2, max=120)], filters=[strip])
+    email = EmailField("Admin email", validators=[DataRequired(), Email(), Length(max=255)], filters=[strip])
+    password = PasswordField("Password", validators=[DataRequired(), PasswordStrength(), Length(max=128)])
+    confirm = PasswordField("Confirm password", validators=[DataRequired(), EqualTo("password", "Passwords must match.")])
+
+
 class ProfileForm(FlaskForm):
     full_name = StringField("Full name", validators=[DataRequired(), Length(min=2, max=120)], filters=[strip])
     phone = StringField("Phone", validators=[Optional(), Length(max=40), Regexp(r"^[0-9 +()-]*$", message="Digits, spaces, + ( ) - only.")], filters=[strip])

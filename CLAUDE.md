@@ -31,7 +31,8 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - Register asks **Shop or Sell**. Every buyer gets a linked seller profile (email + `#seller`, `SELLER_SUFFIX`);
   "Sell" signs straight into the seller profile and opens Seller studio. Switch profiles from the account menu / sidebar.
 - Login checks the real password (no auto-registration).
-- Admins are made with `create-admin.bat` (double-click) / `python -m flask --app wsgi create-admin`, or by `start.bat`
+- **Easiest for the owner:** start the store, Sign in page → **Set up the admin account** (one-time page).
+- Admins are also made with `create-admin.bat` (double-click) / `python -m flask --app wsgi create-admin`, or by `start.bat`
   (`flask ensure-admin`) when `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set in the local `.env` (gitignored, stays on the PC).
   Never put a real password or the owner's login in the repository; `ensure-admin` never resets an existing admin's password.
 - Each buyer starts with **₱500,000 demo credit** (`STARTING_CREDIT_MINOR`), spent at checkout with an atomic UPDATE.
@@ -93,7 +94,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 254 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 261 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -117,6 +118,9 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
    themselves; `visible_products()` and the product page hide `REMOVED_SLUGS` even if an old database still has them; the
    homepage (New arrivals, Featured, hero card) only shows in-stock watches.
 10. `flask ensure-admin`, run by start.bat: creates the admin from `ADMIN_EMAIL`/`ADMIN_PASSWORD` in the local `.env`.
+11. Double-clicking `create-admin.bat` did nothing on the owner's PC. Added a one-time **Set up the admin account** page
+    (`/account/setup-admin`, linked from the sign-in page): only while the store has no admin, only from 127.0.0.1 (no
+    X-Forwarded-For). `create-admin.bat` now always stays open and says what happened.
 
 ## Open items / ideas
 

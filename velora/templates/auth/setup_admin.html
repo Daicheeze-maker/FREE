@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, field %}
+{% block title %}Set up the admin · {{ brand }}{% endblock %}
+{% block content %}
+<div class="auth">
+  <div class="auth__art">
+    <img src="{{ site_photo('login') }}" alt="A {{ brand }} watch" fetchpriority="high">
+    <p class="auth__quote">One step<br>to your store.</p>
+  </div>
+  <div class="auth__panel">
+    <div class="auth__form" data-reveal>
+      <a class="back-link" href="{{ url_for('auth.login') }}" data-back>{{ icon('arrow-left', 'ic--sm') }} Back</a>
+      <h1>Set up the admin</h1>
+      <p>Your store has no admin yet. Choose the email and password you'll use to open the Admin console. This page only works on this computer, and it disappears once the admin exists.</p>
+      <form method="post" novalidate>
+        {{ form.csrf_token }}
+        {{ field(form.full_name, "Your name", autocomplete="name") }}
+        {{ field(form.email, "you@example.com", autocomplete="email") }}
+        {{ field(form.password, "At least 8 characters", hint="Use letters and numbers.", autocomplete="new-password") }}
+        {{ field(form.confirm, "Repeat password", autocomplete="new-password") }}
+        <button class="btn btn--dark btn--lg btn--block" type="submit" data-loading-text="Setting up…">{{ icon('shield-check') }} Create admin account</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

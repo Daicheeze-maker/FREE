@@ -262,7 +262,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 248 tests. External APIs are mocked, so no network is needed. They cover:
+There are 261 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**
