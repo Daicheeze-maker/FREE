@@ -57,9 +57,10 @@ def create_app(config_name=None, **overrides):
         except (TypeError, ValueError):
             return None
 
-    from .blueprints import account, admin, auth, catalog, main, seller, shop
-    for bp in (main.bp, catalog.bp, auth.bp, shop.bp, account.bp, seller.bp, admin.bp):
+    from .blueprints import account, admin, api, auth, catalog, main, seller, shop
+    for bp in (main.bp, catalog.bp, auth.bp, shop.bp, account.bp, seller.bp, admin.bp, api.bp):
         app.register_blueprint(bp)
+    app.add_url_rule("/api/docs", "api_docs", api.api_docs)  # human-readable endpoint list
 
     _register_template_helpers(app)
     _register_error_handlers(app)
@@ -166,6 +167,11 @@ def _register_error_handlers(app):
         return request.accept_mimetypes.best == "application/json" or request.headers.get("X-Requested-With") == "fetch"
 
     def render_error(code, title, message):
+        if request.path.startswith("/api/"):  # the REST API always answers in its own JSON error shape
+            from .blueprints.api import error_response
+            names = {400: "bad_request", 401: "unauthorized", 403: "forbidden", 404: "not_found", 405: "method_not_allowed",
+                     413: "too_large", 415: "unsupported_media_type", 429: "too_many_requests", 500: "server_error"}
+            return error_response(code, names.get(code, "error"), message)
         if wants_json():
             return jsonify(ok=False, error=message), code
         return render_template("errors/error.html", code=code, title=title, message=message), code
@@ -185,6 +191,10 @@ def _register_error_handlers(app):
     @app.errorhandler(404)
     def not_found(e):
         return render_error(404, "Page not found", "We couldn't find what you were looking for.")
+
+    @app.errorhandler(405)
+    def method_not_allowed(e):
+        return render_error(405, "Not allowed", "That action isn't allowed here.")
 
     @app.errorhandler(413)
     def too_large(e):

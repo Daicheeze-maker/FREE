@@ -452,7 +452,7 @@ def seed_demo_accounts(products, rng, now):
         db.session.add_all([
             Notification(user_id=buyer.id, title="Welcome to Aurelune", body="Use WELCOME10 for 10% off.",
                          link="/shop/", icon="sparkles", is_read=True, created_at=now - timedelta(days=30)),
-            Notification(user_id=buyer.id, title="The Moonphase Automatic is back", body="Restocked in 39 mm and 42 mm.",
-                         link="/shop/p/moonphase-automatic-dress-watch", icon="watch", created_at=now - timedelta(days=1)),
+            Notification(user_id=buyer.id, title="The Luna Blue Moonphase is back", body="Restocked in 38 mm and 40 mm.",
+                         link="/shop/p/luna-blue-moonphase-40", icon="watch", created_at=now - timedelta(days=1)),
         ])
     db.session.commit()

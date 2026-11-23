@@ -1095,3 +1095,14 @@ details.disclosure[open] { padding-bottom: 8px; }
 .mega-item:hover .mega-item__icon { transform: translateY(-2px); }
 .aisle__icon .cicon { width: 42px; height: 42px; }
 .sidebar .cicon, .catalog-side .cicon { width: 24px; height: 24px; margin: -3px 0; }
+
+/* API docs page */
+.api-docs { display: grid; gap: 20px; padding-bottom: 48px; }
+.api-docs .card { padding: 22px; }
+.api-docs code { font-size: .88em; overflow-wrap: anywhere; }
+.api-docs__table table { width: 100%; min-width: 640px; }
+.api-docs__table .table-wrap { overflow-x: auto; }
+.api-method { display: inline-block; min-width: 58px; text-align: center; padding: 2px 8px; border-radius: 6px; font: 600 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--bg-2); }
+.api-method--post { background: var(--accent-soft); color: var(--accent); }
+.api-method--patch { background: color-mix(in srgb, #E39A2D 20%, transparent); }
+.api-method--delete { background: color-mix(in srgb, #B5432F 16%, transparent); color: #B5432F; }

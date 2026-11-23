@@ -99,6 +99,15 @@ def wipe_and_reseed():
 
 
 def register_cli(app):
+    @app.cli.command("doctor")
+    def doctor_cmd():
+        """Check that this machine/VM can run the store cleanly (packages, .env, database, pages, API, port)."""
+        import sys
+        from .doctor import run
+        click.echo(f"{app.config['BRAND_NAME']} health check")
+        if not run(click.echo):
+            sys.exit(1)
+
     @app.cli.command("init-db")
     def init_db_cmd():
         """Create/upgrade the database schema (non-destructive)."""

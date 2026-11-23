@@ -235,6 +235,12 @@ def open_notification(note_id):
     note.is_read = True
     db.session.commit()
     link = note.link if note.link and note.link.startswith("/") and not note.link.startswith("//") else url_for("account.notifications")
+    if link.startswith("/shop/p/"):  # an old notification about a watch the store no longer sells
+        from ..services.catalog import visible_products
+        slug = link.split("?")[0].removeprefix("/shop/p/").strip("/")
+        if not visible_products().filter_by(slug=slug).first():
+            flash("That watch isn't sold any more. Here are the watches we have now.", "info")
+            return redirect(url_for("catalog.listing"))
     return redirect(link)
 
 

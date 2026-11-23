@@ -97,6 +97,10 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        if connection.dialect.name == "sqlite":
+            # Batch migrations rebuild tables; with foreign keys enforced that could cascade-delete rows.
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
@@ -105,6 +109,10 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
+        if connection.dialect.name == "sqlite":
+            connection.exec_driver_sql("PRAGMA foreign_keys=ON")  # this connection goes back to the pool: re-enable
+            connection.commit()
 
 
 if context.is_offline_mode():

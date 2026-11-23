@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}API · {{ brand }}{% endblock %}
+{% block content %}
+<div class="container api-docs">
+  <header class="page-head">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="{{ url_for('main.home') }}">Home</a>{{ icon('chevron-right', 'ic--sm') }}<span>API</span></nav>
+    <h1>{{ brand }} REST API</h1>
+    <p class="muted">Version 1 · JSON over HTTP · base address <code>{{ request.host_url.rstrip('/') }}/api/v1</code></p>
+  </header>
+
+  <section class="card prose api-docs__intro">
+    <h2>How to use it</h2>
+    <ol>
+      <li>Get a token: <code>POST /api/v1/auth/token</code> with <code>{"email": "...", "password": "..."}</code>.</li>
+      <li>Send it on every request that needs an account: <code>Authorization: Bearer &lt;token&gt;</code>. Tokens last {{ config.API_TOKEN_HOURS }} hours.</li>
+      <li>Send request bodies as JSON (<code>Content-Type: application/json</code>).</li>
+    </ol>
+    <p><strong>Status codes:</strong> 200 OK · 201 Created · 204 No Content · 400 bad request · 401 not signed in · 403 not allowed · 404 not found · 405 wrong method · 409 conflict (sold out, not enough credit, wrong order step) · 415 not JSON · 422 a field needs fixing · 429 too many attempts · 502/504 an outside service failed or timed out · 503 unavailable.</p>
+    <p><strong>Errors</strong> always look like <code>{"error": {"status": 422, "code": "validation_failed", "message": "...", "fields": {"price": "Required."}}}</code>.</p>
+    <p>Full guide with examples: <code>docs/API.md</code> in the project folder. Machine-readable list: <a href="{{ url_for('api.index') }}"><code>GET /api/v1</code></a>.</p>
+  </section>
+
+  <section class="card api-docs__table">
+    <h2>Endpoints</h2>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Method</th><th>Path</th><th>Who</th><th>What it does</th></tr></thead>
+        <tbody>
+          {% for method, path, who, what in endpoints %}
+          <tr><td><span class="api-method api-method--{{ method|lower }}">{{ method }}</span></td><td><code>{{ path }}</code></td><td>{{ who }}</td><td>{{ what }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card prose">
+    <h2>Outside APIs the store uses</h2>
+    <ul>
+      <li><strong>Frankfurter</strong> (European Central Bank rates): display currencies. Through this API: <code>GET /api/v1/rates</code>.</li>
+      <li><strong>Mapbox</strong> or <strong>OpenStreetMap Nominatim</strong>: turns a map pin into an address. Through this API: <code>GET /api/v1/geocode/reverse</code>.</li>
+      <li>Also: OpenStreetMap map tiles, Pexels and Openverse photos, Open Food Facts import. All have timeouts and fall back gracefully.</li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

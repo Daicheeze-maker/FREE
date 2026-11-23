@@ -51,6 +51,7 @@ class Config:
     WTF_CSRF_TIME_LIMIT = 60 * 60 * 4
 
     # Commerce
+    API_TOKEN_HOURS = int(os.environ.get("API_TOKEN_HOURS", "24"))  # REST API Bearer tokens
     BASE_CURRENCY = "PHP"
     DISPLAY_CURRENCIES = ["PHP", "USD", "EUR", "GBP", "JPY", "SGD", "AUD"]
     PRODUCTS_PER_PAGE = 12
