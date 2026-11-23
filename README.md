@@ -13,7 +13,7 @@ It runs directly on Windows 10/11 or Ubuntu, on bare metal or inside a virtual m
 ### Ubuntu / Linux (also macOS)
 
 ```bash
-sudo apt update && sudo apt install -y python3 python3-venv python3-pip   # Ubuntu 22.04+/24.04
+sudo apt update && sudo apt install -y python3 python3-venv git   # Ubuntu 22.04+ (also 26.04)
 cd velora-market            # the project folder
 bash start.sh               # first run sets everything up; then opens http://127.0.0.1:5000
 ```

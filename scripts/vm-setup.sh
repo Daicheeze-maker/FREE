@@ -19,15 +19,15 @@ say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 say "1/5 System packages"
 if command -v apt-get >/dev/null 2>&1; then
   need=()
-  for pkg in python3 python3-venv python3-pip git curl; do
+  for pkg in python3 python3-venv git curl; do  # pip comes inside the .venv; python3-pip would pull in compilers
     dpkg -s "$pkg" >/dev/null 2>&1 || need+=("$pkg")
   done
   if [ ${#need[@]} -gt 0 ]; then
     echo "Installing: ${need[*]} (your password may be asked)"
     sudo apt-get update -y
-    sudo apt-get install -y "${need[@]}"
+    sudo apt-get install -y --no-install-recommends "${need[@]}"
   else
-    echo "Python, venv, pip, git and curl are already installed."
+    echo "Python, venv, git and curl are already installed."
   fi
 else
   echo "Not an apt-based system: make sure python3 (3.11+), python3-venv and curl are installed."
