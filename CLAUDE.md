@@ -88,6 +88,23 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 - Frames fill the viewer (`object-fit: cover`); watches in `spin.SOFT_FRAMES` (now empty) would be shown smaller. Between frames a
   short fade happens around the middle of each step (no long see-through double image).
 
+## Rubrics (final output: IPT + Platform Technologies)
+
+- The owner's two grading rubrics (Integrative Programming Technologies, Platform Technologies) drive the work. Mapping of
+  every criterion to files: `docs/DEMO.md` (also the live demo script).
+- **REST API** `/api/v1` (`velora/blueprints/api.py`, docs `docs/API.md`, page `/api/docs`): Bearer tokens (itsdangerous,
+  salted with the password-hash tail; `g._login_user` is set so the website cookie is never used → CSRF-exempt safely),
+  products CRUD (DELETE = archive), cart, orders (Idempotency-Key), rates (Frankfurter) and geocode (Mapbox/Nominatim)
+  with 502/503/504. Errors: `{"error": {"status","code","message","fields"}}`; app error handlers answer JSON for `/api/`.
+  `ENDPOINTS` list feeds `/api/v1` and `/api/docs`; a test checks it matches the routes.
+- **SQLite:** `extensions._sqlite_pragmas` sets foreign_keys=ON, WAL, busy_timeout on every connection.
+  `migrations/env.py` turns foreign keys OFF during migrations (batch table rebuilds) and back ON afterwards.
+- **VM:** `scripts/vm-setup.sh` (apt, setup.sh, HOST=0.0.0.0, systemd `deploy/aurelune.service`), `scripts/vm-check.sh`
+  (resources, pip check, `flask doctor`, service, port via ss or /proc/net/tcp, HTTP pages, journal errors).
+  `serve.py` exits with a clear message if the port is taken. Tested from scratch on Python 3.12 / Ubuntu 24.04 in the
+  sandbox (no systemd there, so the service itself is untested).
+- `tests/test_no_broken_pages.py` crawls every link per role; keep it passing.
+
 ## Phone numbers
 
 - `velora/phones.py` with the free **`phonenumbers`** package (Google libphonenumber rules, offline, in requirements.txt).
@@ -123,7 +140,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 309 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 335 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -164,6 +181,8 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
     Artifact page). Rebuild it if the flow or APIs change.
 21. Owner asked why they were "automatically a seller": old automatic seller profiles now need admin approval (Lazada/Shopee
     style); stale Sign in text fixed; `security.audit`/`client_ip` work from the command line (no request context).
+22. **Rubric work:** REST API v1, foreign keys + WAL, VM setup/check scripts + systemd service, `flask doctor`, page
+    crawler (found and fixed a notification linking to a removed watch), docs/API.md, docs/DEMO.md, README sections.
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
     `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.

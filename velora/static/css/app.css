@@ -1106,3 +1106,7 @@ details.disclosure[open] { padding-bottom: 8px; }
 .api-method--post { background: var(--accent-soft); color: var(--accent); }
 .api-method--patch { background: color-mix(in srgb, #E39A2D 20%, transparent); }
 .api-method--delete { background: color-mix(in srgb, #B5432F 16%, transparent); color: #B5432F; }
+.api-docs > * { min-width: 0; }
+.api-docs .card.prose { max-width: none; }
+.api-docs .card h2 { margin-top: 0; }
+.api-docs__table .table-wrap { max-width: 100%; }

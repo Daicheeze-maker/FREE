@@ -103,6 +103,41 @@ That is **60 watches**, 10 per collection. Every photo in the store, including t
 
 ## 2. Running in a Virtual Machine
 
+### Quick setup (Ubuntu 22.04 / 24.04 VM): one command
+
+Recommended VM: **VirtualBox**, Ubuntu 24.04 LTS Desktop, **2 CPUs, 4096 MB RAM, 25 GB disk**, network adapter **NAT**.
+Inside the VM, open Terminal in the store folder and run:
+
+```bash
+bash scripts/vm-setup.sh
+```
+
+It installs Python and tools with apt, creates the isolated **`.venv`** with the pinned packages from `requirements.txt`,
+writes **`.env`** (fresh `SECRET_KEY`, `HOST=0.0.0.0`, `PORT=5000`), creates the database, installs the **`aurelune`
+systemd service** (starts at boot, restarts automatically if it stops, see `deploy/aurelune.service`) and finishes with
+the health check. Use `bash scripts/vm-setup.sh --no-service` to skip the service and start the store yourself with
+`bash start.sh`.
+
+| Task | Command (in the VM) |
+|---|---|
+| Health check: resources, `.venv`, packages, database, port, pages, recent log | `bash scripts/vm-check.sh` |
+| App-only checks (also on Windows) | `.venv/bin/python -m flask --app wsgi doctor` |
+| Service status / restart / stop | `sudo systemctl status aurelune` · `sudo systemctl restart aurelune` · `sudo systemctl stop aurelune` |
+| Live log (errors and requests) | `journalctl -u aurelune -f` |
+| Is it listening, and on which address? | `ss -ltnp \| grep 5000` |
+
+**Open it from your own PC (port forwarding).** Shut the VM down, then in VirtualBox: *Settings → Network → Adapter 1
+(NAT) → Advanced → Port Forwarding → +*: Protocol TCP, Host IP `127.0.0.1`, Host Port `5000`, Guest Port `5000`. Or, on
+your PC, in a terminal:
+
+```bash
+VBoxManage modifyvm "Aurelune" --natpf1 "aurelune,tcp,127.0.0.1,5000,,5000"
+```
+
+Start the VM and open **http://127.0.0.1:5000** on your PC. If port 5000 is busy on the PC, use another Host Port (e.g.
+8080) and open http://127.0.0.1:8080. The store itself prints a clear message, instead of crashing, if its port is
+already taken inside the VM.
+
 The app needs **outbound internet only for the two optional APIs** (product photos ship with the project). Shopping, cart, checkout and the dashboards all work offline from the local SQLite database. When an API is unreachable, the related feature shows a clear “unavailable” state.
 
 ### Networking modes
@@ -145,6 +180,13 @@ The SQLite database and uploaded images live in `instance/` by default (`instanc
 ### Health check
 
 `GET /healthz` returns `{"status":"ok","database":"ok"}` with HTTP 200. If the database is unreachable it returns 503.
+`GET /api/v1/health` adds the product count and the last success/error of each outside API.
+
+### Database reliability
+
+SQLite runs with **foreign keys enforced** (relational integrity), **WAL** journal mode (readers never block the writer
+while Waitress serves 8 requests at once) and a 5-second busy timeout. Schema changes go through Alembic migrations
+(`migrations/`), applied by `init-db` at every start; they never delete data.
 
 ---
 
@@ -153,15 +195,38 @@ The SQLite database and uploaded images live in `instance/` by default (`instanc
 | Profile | How to get it | Dashboard | Can do |
 |---|---|---|---|
 | **Guest shopper** | Not signed in | Storefront | Browse, search, filter (aisle / maker / price / availability), sort (featured, newest, popular, price, rating), view products, reviews and nutrition, use a session bag, switch currency, register / sign in. No access to account, seller or admin pages (server-side redirects or 403). |
-| **Customer** | Self-registration (**Create account**); signs in with their own password. A linked seller profile is created with it | `/account/` — stats, live tracker for the active order, recent orders, notifications, wishlist, “waiting for your review”, recently viewed | Persistent bag (merged from the guest bag at login), wishlist, addresses, discount codes, address-free demo checkout, order history and tracking, cancel while *Pending/Confirmed*, review only **delivered** purchases (one per product), notifications, profile and password change. |
-| **Seller / store manager** | Assigned by an admin, or the linked seller profile every buyer gets (use *Switch to seller profile* in the account menu) | `/seller/` — revenue chart, KPIs, fulfilment queue, order pipeline, low-stock alerts with one-click restock, top sellers, latest feedback | **Model photos**, product CRUD, archive and restore, secure image uploads, categories, inventory, order processing with enforced status transitions, promotions and discount codes, review moderation and public replies, **Open Food Facts import**, CSV exports. This is a single-store catalog, not a multi-vendor marketplace. |
+| **Customer** | Self-registration (**Create account**); signs in with their own password | `/account/` — stats, live tracker for the active order, recent orders, notifications, wishlist, “waiting for your review”, recently viewed | Persistent bag (merged from the guest bag at login), wishlist, addresses, discount codes, address-free demo checkout, order history and tracking, cancel while *Pending/Confirmed*, review only **delivered** purchases (one per product), notifications, profile and password change. |
+| **Seller / store manager** | A buyer applies (*Sell on Aurelune*), the admin approves at **Admin → Seller requests**; then *Switch to seller profile* in the account menu | `/seller/` — revenue chart, KPIs, fulfilment queue, order pipeline, low-stock alerts with one-click restock, top sellers, latest feedback | **Model photos**, product CRUD, archive and restore, secure image uploads, categories, inventory, order processing with enforced status transitions, promotions and discount codes, review moderation and public replies, **Open Food Facts import**, CSV exports. This is a single-store catalog, not a multi-vendor marketplace. |
 | **Administrator** | Seeded, or created with `python -m flask --app wsgi create-admin` | `/admin/` (blue “Admin console” theme) — store KPIs, 30-day revenue, integrations status, audit feed, accounts by role, inventory value | Everything a seller can do, plus users and roles, enable/disable accounts, clear login locks, sales and inventory reports, store settings (shipping rules, low-stock threshold, announcement), **API health with live test buttons**, and a full **audit log**. |
 
 Roles are stored only in the database. Registration has no role field, so a submitted `role=admin` is ignored. Every protected route checks the role on the server. Admins can't demote or disable themselves, and at least one active admin always remains.
 
 ---
 
-## 4. External API integrations
+## 4. APIs
+
+### The store's own REST API: `/api/v1`
+
+A JSON REST API with Bearer-token sign-in, proper HTTP methods (GET, POST, PATCH, DELETE), status codes (200, 201, 204,
+400, 401, 403, 404, 405, 409, 415, 422, 429, 502, 503, 504) and one error shape. It covers products (full CRUD for
+sellers/admins), the bag, orders (place, track, cancel, move along) and two outside APIs (exchange rates, map
+addresses). **Full guide with examples: [`docs/API.md`](docs/API.md).** In the running store: **/api/docs** (page) and
+**/api/v1** (JSON list).
+
+| Method | Path | What it does |
+|---|---|---|
+| POST | `/api/v1/auth/token` | Sign in; returns a Bearer token |
+| GET | `/api/v1/products`, `/api/v1/products/<id or slug>` | Search/list watches, one watch |
+| POST / PATCH / DELETE | `/api/v1/products[/<id>]` | Create, change, archive a watch (seller, admin) |
+| GET / POST / PATCH / DELETE | `/api/v1/cart`, `/api/v1/cart/items[/<id>]` | The bag |
+| GET / POST | `/api/v1/orders` | Order history; place an order (demo credit, `Idempotency-Key`) |
+| GET / PATCH | `/api/v1/orders/<number>` | One order; move it to the next status (seller, admin) |
+| POST | `/api/v1/orders/<number>/cancel` | Cancel your own order |
+| GET | `/api/v1/rates` | Exchange rates from **Frankfurter** |
+| GET | `/api/v1/geocode/reverse` | Map pin to address via **Mapbox / OpenStreetMap Nominatim** |
+| GET | `/api/v1`, `/api/v1/health`, `/api/v1/me`, `/api/v1/categories` | Endpoint list, health, account, collections |
+
+### External API integrations
 
 These are real HTTP integrations made with `requests` (Open Food Facts and Frankfurter run in the store; Pexels is used only by staff to pick photos). Each call is recorded on the admin **API health** page (last success, latency, error count, last error). The admin can trigger a live test there.
 
@@ -266,7 +331,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 309 tests. External APIs are mocked, so no network is needed. They cover:
+There are 335 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**
@@ -278,9 +343,12 @@ There are 309 tests. External APIs are mocked, so no network is needed. They cov
   - order ownership, cancellation rules with restocking, seller status transitions;
   - reviews (purchase required, duplicate blocked, rating range).
 - **Integrations:** currency conversion, caching, stale-cache and offline fallback, Open Food Facts parsing, normalization, rate limits, import and offline display.
+- **REST API:** every endpoint, token sign-in, status codes (201, 204, 401, 403, 404, 405, 409, 415, 422, 502, 503, 504), validation messages, idempotent orders, outside-API timeouts.
+- **No broken pages:** a crawler opens every link as visitor, buyer, seller and admin and fails on any 404 or 500.
+- **VM tools:** `flask doctor`, the port-conflict message, the service file and the VM scripts.
 - **Staff tools and setup:** invalid, oversized and spoofed uploads, path traversal, CSV export, settings, model-photo uploads, cover photos and the bulk loader, database initialization via migrations, and the non-destructive seed.
 
-Useful commands: `python -m flask --app wsgi create-admin`, `python -m flask --app wsgi refresh-rates`, `python -m flask --app wsgi check-images` (checks every remote product photo; broken ones fall back to a local placeholder automatically), `python -m flask --app wsgi db upgrade` / `db migrate`.
+Useful commands: `python -m flask --app wsgi doctor` (health check), `python -m flask --app wsgi create-admin`, `python -m flask --app wsgi refresh-rates`, `python -m flask --app wsgi check-images` (checks every remote product photo; broken ones fall back to a local placeholder automatically), `python -m flask --app wsgi db upgrade` / `db migrate`.
 
 ---
 
@@ -295,14 +363,18 @@ velora/
   forms.py             Flask-WTF forms + server-side validation
   security.py          role decorator, audit logging, headers, safe redirects
   money.py             Decimal / integer-minor-unit helpers
-  seed.py  cli.py      demo data + CLI commands
+  seed.py  cli.py      demo data + CLI commands (init-db, seed, upgrade-demo, doctor, ...)
+  doctor.py            health check behind `flask doctor` and scripts/vm-check.sh
   services/            cart, pricing, orders, payments, currency, openfoodfacts,
                        catalog, reports, uploads, api_health
-  blueprints/          main, catalog, auth, shop, account, seller, admin
+  blueprints/          main, catalog, auth, shop, account, seller, admin, api (REST /api/v1)
   templates/           Jinja2 (storefront, account, seller studio, admin console)
   static/              css/app.css, js/app.js, vendor/ (GSAP, Lucide), fonts/, img/
 migrations/            Alembic migration(s)
-scripts/               setup/run for Linux (.sh) and Windows (.bat), Gunicorn runner
+scripts/               setup/run for Linux (.sh) and Windows (.bat), Gunicorn runner,
+                       vm-setup.sh (one-command VM install), vm-check.sh (VM health check)
+deploy/aurelune.service systemd service for the VM (auto-start, auto-restart)
+docs/                  API.md (REST API), DEMO.md (live demo script), aurelune-process-flow.pdf
 tests/                 pytest suite
 serve.py  wsgi.py      Waitress runner / WSGI entry point
 ```
