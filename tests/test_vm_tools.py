@@ -61,8 +61,8 @@ def test_api_demo_script_and_presentation_script_are_complete():
     for needed in ("-X PATCH", "-X DELETE", "Idempotency-Key", "/rates", "/geocode/reverse", "/products", "401", "422", "409"):
         assert needed in text or needed in ("-X PATCH", "-X DELETE") and ("PATCH" in text and "DELETE" in text), needed
     script = (ROOT / "docs" / "PRESENTATION_SCRIPT.md").read_text(encoding="utf-8")
-    for speaker in ("Speaker 1", "Speaker 2", "Speaker 3", "Speaker 4"):
-        assert f"## {speaker}:" in script
+    for speaker, name in (("Speaker 1", "Aries"), ("Speaker 2", "Carmelo"), ("Speaker 3", "Andrei"), ("Speaker 4", "Carmela")):
+        assert f"## {speaker}, {name}:" in script
     # every row of both rubrics is mapped to a speaker
     for row in ("IPT: Core e-commerce", "IPT: API integration and design", "IPT: Python back end and database",
                 "IPT: Virtual machine and localhost", "IPT: UI/UX and documentation", "PlatTech: Error-free execution",

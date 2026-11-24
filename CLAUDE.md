@@ -188,7 +188,7 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
     style); stale Sign in text fixed; `security.audit`/`client_ip` work from the command line (no request context).
 22. **Rubric work:** REST API v1, foreign keys + WAL, VM setup/check scripts + systemd service, `flask doctor`, page
     crawler (found and fixed a notification linking to a removed watch), docs/API.md, docs/DEMO.md, README sections.
-23. 4-person presentation script (md, PDF, page), `scripts/api-demo.sh`, and a rubric audit that found and closed two gaps
+23. 4-person presentation script for Aries + Carmelo (VM) and Andrei + Carmela (shop) (md, PDF, page), `scripts/api-demo.sh`, and a rubric audit that found and closed two gaps
     (CRUD methods were not shown; bag update / empty bag were not shown).
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
