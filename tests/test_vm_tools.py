@@ -52,3 +52,24 @@ def test_service_file_and_scripts_are_complete():
         assert b"\r\n" not in path.read_bytes()  # Linux scripts must have LF line endings
     setup = (ROOT / "scripts" / "vm-setup.sh").read_text()
     assert "HOST 0.0.0.0" in setup and "systemctl enable aurelune" in setup and "vm-check.sh" in setup
+
+
+def test_api_demo_script_and_presentation_script_are_complete():
+    demo = ROOT / "scripts" / "api-demo.sh"
+    assert subprocess.run(["bash", "-n", str(demo)]).returncode == 0 and b"\r\n" not in demo.read_bytes()
+    text = demo.read_text()
+    for needed in ("-X PATCH", "-X DELETE", "Idempotency-Key", "/rates", "/geocode/reverse", "/products", "401", "422", "409"):
+        assert needed in text or needed in ("-X PATCH", "-X DELETE") and ("PATCH" in text and "DELETE" in text), needed
+    script = (ROOT / "docs" / "PRESENTATION_SCRIPT.md").read_text(encoding="utf-8")
+    for speaker in ("Speaker 1", "Speaker 2", "Speaker 3", "Speaker 4"):
+        assert f"## {speaker}:" in script
+    # every row of both rubrics is mapped to a speaker
+    for row in ("IPT: Core e-commerce", "IPT: API integration and design", "IPT: Python back end and database",
+                "IPT: Virtual machine and localhost", "IPT: UI/UX and documentation", "PlatTech: Error-free execution",
+                "PlatTech: Localhost and VM network", "PlatTech: VM provisioning", "PlatTech: Service and database reliability",
+                "PlatTech: VM verification"):
+        assert row in script, row
+    # the commands the speakers type must exist in the project
+    for command in ("scripts/vm-check.sh", "scripts/api-demo.sh", "systemctl status aurelune", "journalctl -u aurelune"):
+        assert command in script
+    assert (ROOT / "scripts" / "vm-check.sh").is_file() and (ROOT / "scripts" / "api-demo.sh").is_file()

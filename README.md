@@ -331,7 +331,7 @@ These are real HTTP integrations made with `requests` (Open Food Facts and Frank
 python -m pytest -q
 ```
 
-There are 335 tests. External APIs are mocked, so no network is needed. They cover:
+There are 336 tests. External APIs are mocked, so no network is needed. They cover:
 - **Auth and access:** registration, login and lockout, disabled accounts, role permissions and unauthorized admin access, the four distinct dashboards, open redirects, CSRF, health and headers.
 - **Catalog and bag:** catalog, search, filters and pagination, cart quantity updates, guest-cart merge, persistent carts, wishlist, newsletter.
 - **Checkout and orders:**
@@ -372,9 +372,11 @@ velora/
   static/              css/app.css, js/app.js, vendor/ (GSAP, Lucide), fonts/, img/
 migrations/            Alembic migration(s)
 scripts/               setup/run for Linux (.sh) and Windows (.bat), Gunicorn runner,
-                       vm-setup.sh (one-command VM install), vm-check.sh (VM health check)
+                       vm-setup.sh (one-command VM install), vm-check.sh (VM health check),
+                       api-demo.sh (step-by-step REST API demo: GET/POST/PATCH/DELETE)
 deploy/aurelune.service systemd service for the VM (auto-start, auto-restart)
-docs/                  API.md (REST API), DEMO.md (live demo script), aurelune-process-flow.pdf
+docs/                  API.md (REST API), DEMO.md (live demo script), PRESENTATION_SCRIPT.md (4-person script),
+                       aurelune-process-flow.pdf, aurelune-presentation-script.pdf
 tests/                 pytest suite
 serve.py  wsgi.py      Waitress runner / WSGI entry point
 ```

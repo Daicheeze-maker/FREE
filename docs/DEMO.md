@@ -1,5 +1,7 @@
 # Live demo script (about 12 minutes)
 
+> **Presenting as a team of four?** Use `docs/PRESENTATION_SCRIPT.md` (also as `docs/aurelune-presentation-script.pdf`): it splits this walkthrough between two VM speakers and two e-commerce speakers, with the exact words to say. `bash scripts/api-demo.sh` runs the whole REST API demo step by step.
+
 A walkthrough for the final presentation, in an order that covers every rubric criterion. Do the **Before the demo**
 part at home, so the live part is just clicking and showing.
 

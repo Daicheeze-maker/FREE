@@ -104,6 +104,11 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
   `serve.py` exits with a clear message if the port is taken. Tested from scratch on Python 3.12 / Ubuntu 24.04 in the
   sandbox (no systemd there, so the service itself is untested).
 - `tests/test_no_broken_pages.py` crawls every link per role; keep it passing.
+- **Presentation:** `docs/PRESENTATION_SCRIPT.md` (+ PDF, + Artifact page) is the owner's 4-person script (2 VM speakers, 2 shop
+  speakers) and maps every row of both rubrics to a speaker; `scripts/api-demo.sh` is the 15-step live API demo (GET, POST,
+  PATCH, DELETE, 200/201/204/401/403/404/409/422/502-504; step 15 needs an admin login). The rubric PDFs were re-sent once and
+  were byte-identical. Known gaps vs the rubric wording: database is SQLite (no separate DB service) and there is no external
+  payment/shipping/email API (demo credit by design); the two outside APIs are Frankfurter and Mapbox/Nominatim.
 
 ## Phone numbers
 
@@ -140,7 +145,7 @@ Flask + SQLAlchemy + Alembic, SQLite by default, Waitress server, GSAP animation
 
 ## Tests
 
-`python -m pytest -q` (about 335 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
+`python -m pytest -q` (about 336 tests, ~3½ min; external APIs are faked). `tests/conftest.py`: `seed(demo_accounts=True)`
 creates sample people only for tests; `in_stock_product()` switches off a watch's options so tests can add it plainly;
 `optioned_product()` is a normal watch with options.
 
@@ -183,6 +188,8 @@ creates sample people only for tests; `in_stock_product()` switches off a watch'
     style); stale Sign in text fixed; `security.audit`/`client_ip` work from the command line (no request context).
 22. **Rubric work:** REST API v1, foreign keys + WAL, VM setup/check scripts + systemd service, `flask doctor`, page
     crawler (found and fixed a notification linking to a removed watch), docs/API.md, docs/DEMO.md, README sections.
+23. 4-person presentation script (md, PDF, page), `scripts/api-demo.sh`, and a rubric audit that found and closed two gaps
+    (CRUD methods were not shown; bag update / empty bag were not shown).
 14. The owner starts the store with `.\scripts\run.bat` too: it crashed after a pull added `phonenumbers` because only
     start.bat installed requirements. **Every** start script (start.bat/.sh, scripts/run.bat/.sh) now runs
     `python -m pip install -r requirements.txt`. When adding a package, remember the owner's PC needs it installed.
